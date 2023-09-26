@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-paho-mqtt = "0.12.2"
+paho-mqtt = "0.12"
