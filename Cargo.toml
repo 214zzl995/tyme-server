@@ -5,3 +5,10 @@ edition = "2021"
 
 [dependencies]
 paho-mqtt = "0.12"
+env_logger = "*"
+futures = "0.3"
+futures-timer = "3.0"
+anyhow = "*"
+lazy_static = "*"
+parking_lot="*"
+async-std = "1"
