@@ -1,0 +1,22 @@
+broker = "k37bbe35.ala.cn-hangzhou.emqxsl.cn"
+port = 8883
+clientId = "tyme-server-0"
+version = 5
+topics = []
+
+[lwt]
+topic = "LWT"
+qos = 1
+
+[lwt.content]
+type = "MarkDown"
+text = "[LWT] I'm go"
+
+[auth]
+enable = true
+user_name = "leri"
+password = "R7ddsQxAGchQPQB"
+
+[ssl]
+enable = true
+trust_store = "./ssl/emqxsl-ca.crt"

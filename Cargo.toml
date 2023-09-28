@@ -8,7 +8,10 @@ paho-mqtt = "0.12"
 env_logger = "*"
 futures = "0.3"
 futures-timer = "3.0"
+tokio = { version = "1", features = ["full"] }
 anyhow = "*"
 lazy_static = "*"
-parking_lot="*"
-async-std = "1"
+parking_lot = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+toml_edit = {version = "0.20", features = ["serde"]}
