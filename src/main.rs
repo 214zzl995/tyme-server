@@ -1,6 +1,7 @@
 use std::{collections::HashMap, env};
 
 use config::SysConfig;
+use tokio::signal;
 
 #[macro_use]
 extern crate lazy_static;
@@ -27,12 +28,19 @@ lazy_static! {
 async fn main() {
     if env::args().nth(1) == Some("init".to_string()) {
         SysConfig::initial().unwrap();
-    }else{
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        runtime.spawn(subscribe::subscribe());
+    } else {
+        let ctrl_c = async {
+            signal::ctrl_c()
+                .await
+                .expect("failed to install Ctrl+C handler");
+        };
 
-        loop{}
+        tokio::select! {
+           _= subscribe::subscribe() => {},
+           _= ctrl_c => {}
+        }
 
+        clint::diable_connect();
         
     }
 }

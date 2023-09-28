@@ -1,4 +1,5 @@
 use std::time::Duration;
+use paho_mqtt::{self as mqtt};
 
 use futures::StreamExt;
 
@@ -15,7 +16,6 @@ pub async fn subscribe() {
                 }
                 println!("{}", msg);
             } else {
-                // A "None" means we were disconnected. Try to reconnect...
                 println!("Lost connection. Attempting reconnect.");
                 while let Err(err) =clint.reconnect().await {
                     println!("Error reconnecting: {}", err);
@@ -25,3 +25,11 @@ pub async fn subscribe() {
         }
     
 }
+
+// Create a set of poperties with a single Subscription ID
+fn _sub_id(id: i32) -> mqtt::Properties {
+    mqtt::properties![
+        mqtt::PropertyCode::SubscriptionIdentifier => id
+    ]
+}
+

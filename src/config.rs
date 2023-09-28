@@ -5,20 +5,19 @@ use std::{
     fs::{self, File},
     io::Read,
     path::PathBuf,
-    process,
 };
 
 lazy_static! {
-    pub static ref SYSCONIFG: SysConfig = SysConfig::obtain();
+    pub static ref SYSCONIFG: SysConfig = SysConfig::obtain().expect("Config Error");
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct SysConfig {
     pub broker: String,
     pub port: i32,
-    #[serde(rename = "clientId")]
     pub client_id: String,
-    pub topics:Vec<String>,
+    pub keep_alive_interval: Option<u64>,
+    pub topics: Vec<String>,
     pub version: u32,
     pub lwt: Option<Message>,
     pub auth: Auth,
@@ -45,15 +44,14 @@ pub struct Ssl {
 }
 
 impl SysConfig {
-    fn obtain() -> Self {
+    fn obtain() -> anyhow::Result<Self> {
         let config_path: Option<Option<String>> = ARGS.get("-c").cloned();
 
         let config_file_path = if let Some(Some(path)) = config_path {
             let arg_path = PathBuf::from(path);
 
             if arg_path.is_dir() {
-                eprintln!("Illegal command parameter -c");
-                process::exit(1);
+                return Err(anyhow::anyhow!("Illegal command parameter -c"));
             } else {
                 arg_path
             }
@@ -64,8 +62,7 @@ impl SysConfig {
 
         //check exist
         if !config_file_path.exists() {
-            eprintln!("Configuration file does not exist");
-            process::exit(1);
+            return Err(anyhow::anyhow!("Configuration file does not exist"));
         }
 
         let mut str_val = String::new();
@@ -78,22 +75,25 @@ impl SysConfig {
         let config: SysConfig = match toml_edit::de::from_str(&str_val) {
             Ok(config) => config,
             Err(err) => {
-                eprintln!("An error occurred while deserializing the configuration file. Reason for the error: {}",err);
-                process::exit(1);
+                return Err(anyhow::anyhow!(
+                    "An error occurred while deserializing the configuration file. Reason for the error: {}",err
+                ));
             }
         };
         if config.ssl.enable && config.ssl.trust_store.is_none() {
-            eprintln!("trust_store cannot be empty when opening ssl connection");
-            process::exit(1);
+            return Err(anyhow::anyhow!(
+                "trust_store cannot be empty when opening ssl connection"
+            ));
         }
 
         if config.auth.enable && (config.auth.user_name.is_none() || config.auth.password.is_none())
         {
-            eprintln!("When the identity authentication is Yes, the username and password cannot be empty.");
-            process::exit(1);
+            return  Err(anyhow::anyhow!(
+                "When the identity authentication is Yes, the username and password cannot be empty."
+            ));
         }
 
-        config
+        Ok(config)
     }
 
     ///Generate initial config file
@@ -128,6 +128,7 @@ impl Default for SysConfig {
             auth: Default::default(),
             ssl: Default::default(),
             topics: Default::default(),
+            keep_alive_interval: Default::default(),
         }
     }
 }
