@@ -80,13 +80,13 @@
 
   onMount(() => {
     getConfig().then((res) => {
-      sysConfig = res
+      sysConfig = res;
     });
   });
 </script>
 
 <div class="fixed bottom-5 right-5 z-[999]">
-  <GradientButton class="w-none" color="purpleToBlue" on:click={saveConfig}>
+  <GradientButton shadow class="w-none" color="purpleToBlue" on:click={saveConfig}>
     <iconify-icon icon="fluent:save-24-filled" class:hidden={saveLoading} />
 
     <div hidden={!saveLoading}>
@@ -299,10 +299,10 @@
             bind:value={sysConfig.mqtt_config.auth.password}
             class="max-w-none h-11"
           >
-            <button
+            <GradientButton
               slot="right"
               on:click={() => (mqttAuthPasswordshow = !mqttAuthPasswordshow)}
-              class="pointer-events-auto flex items-centers"
+              color="purpleToBlue"
             >
               <iconify-icon
                 icon="ant-design:eye-invisible-twotone"
@@ -313,8 +313,8 @@
                 icon="ant-design:eye-twotone"
                 class:hidden={!mqttAuthPasswordshow}
               />
-            </button></Input
-          >
+            </GradientButton>
+          </Input>
         </div>
       </div>
 
@@ -425,7 +425,7 @@
             bind:value={sysConfig.web_console_config.password}
             class="max-w-none h-11"
           >
-            <button
+            <GradientButton
               slot="right"
               on:click={() =>
                 (webConsolePasswordshow = !webConsolePasswordshow)}
@@ -440,7 +440,7 @@
                 icon="ant-design:eye-twotone"
                 class:hidden={!webConsolePasswordshow}
               />
-            </button></Input
+            </GradientButton></Input
           >
         </div>
       </div>
@@ -475,7 +475,7 @@
             bind:value={sysConfig.web_console_config.api_token}
             class="max-w-none h-11"
           >
-            <button
+            <GradientButton
               slot="right"
               on:click={() => (webConsoleTokenshow = !webConsoleTokenshow)}
               class="pointer-events-auto flex items-centers"
@@ -489,7 +489,7 @@
                 icon="ant-design:eye-twotone"
                 class:hidden={!webConsoleTokenshow}
               />
-            </button></Input
+            </GradientButton></Input
           >
         </div>
       </div>
