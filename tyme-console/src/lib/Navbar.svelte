@@ -33,7 +33,7 @@
   };
 </script>
 
-<div class="fixed top-0 left-0 w-full z-[999]">
+<div class="w-full z-[999]">
   <Navbar class="px-2 sm:px-4 py-2.5 z-20  border-b ">
     <NavBrand href="/">
       <span

@@ -1,2 +1,7 @@
-
-<p class="mp-6"><strong>Tencent, your mother exploded</strong></p>
+<div>
+  <h1 class="text-2xl md:text-3xl"><strong>Tencent, </strong></h1>
+  <h1 class="text-3xl md:text-4xl mt-6 md:ml-32"><strong>When will </strong></h1>
+  <h1 class="text-4xl md:text-9xl mt-16"><strong>your mother <span class="text-pink-300">die?</span></strong></h1>
+  <h1 class="text-6xl md:text-9xl mt-16"><strong> 🙌</strong></h1>
+  <h1 class="text-5xl md:text-9xl mt-16 origin-top-left -rotate-12"><strong>🎉🎉🎉</strong></h1>
+</div>
