@@ -1,0 +1,10 @@
+{
+  "html.format.contentUnformatted": "",
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    
+  },
+  "svelte.ask-to-enable-ts-plugin": false
+}

@@ -10,6 +10,7 @@ mod clint;
 mod config;
 mod message;
 mod subscribe;
+mod web_console;
 
 lazy_static! {
     pub static ref ARGS: HashMap<String, Option<String>> = {
@@ -37,10 +38,10 @@ async fn main() {
 
         tokio::select! {
            _= subscribe::subscribe() => {},
+           _= web_console::run_web_console() => {} ,
            _= ctrl_c => {}
         }
 
         clint::diable_connect();
-        
     }
 }

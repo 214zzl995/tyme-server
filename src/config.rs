@@ -13,6 +13,13 @@ lazy_static! {
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct SysConfig {
+    pub mqtt_config: MQTTConfig,
+    pub web_console_config: WebConsoleConfig,
+    pub log_location: PathBuf,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct MQTTConfig {
     pub broker: String,
     pub port: i32,
     pub client_id: String,
@@ -41,6 +48,17 @@ pub struct Ssl {
     pub private_key_password: Option<String>,
     pub ca_path: Option<PathBuf>,
     pub protos: Option<Vec<String>>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct WebConsoleConfig {
+    pub public: bool,
+    pub user_name: String,
+    pub password: String,
+    pub port: u16,
+    pub secret: String,
+    pub front_end_path: Option<PathBuf>,
+    pub api_token: Option<String>,
 }
 
 impl SysConfig {
@@ -80,13 +98,15 @@ impl SysConfig {
                 ));
             }
         };
-        if config.ssl.enable && config.ssl.trust_store.is_none() {
+        if config.mqtt_config.ssl.enable && config.mqtt_config.ssl.trust_store.is_none() {
             return Err(anyhow::anyhow!(
                 "trust_store cannot be empty when opening ssl connection"
             ));
         }
 
-        if config.auth.enable && (config.auth.user_name.is_none() || config.auth.password.is_none())
+        if config.mqtt_config.auth.enable
+            && (config.mqtt_config.auth.user_name.is_none()
+                || config.mqtt_config.auth.password.is_none())
         {
             return  Err(anyhow::anyhow!(
                 "When the identity authentication is Yes, the username and password cannot be empty."
@@ -118,6 +138,30 @@ impl SysConfig {
 }
 
 impl Default for SysConfig {
+    fn default() -> Self {
+        Self {
+            mqtt_config: Default::default(),
+            web_console_config: Default::default(),
+            log_location: Default::default(),
+        }
+    }
+}
+
+impl Default for WebConsoleConfig {
+    fn default() -> Self {
+        Self {
+            public: false,
+            user_name: String::from("root"),
+            password: nanoid::nanoid!(8),
+            port: 12566,
+            secret: nanoid::nanoid!(64),
+            front_end_path: Default::default(),
+            api_token: Default::default(),
+        }
+    }
+}
+
+impl Default for MQTTConfig {
     fn default() -> Self {
         Self {
             broker: Default::default(),

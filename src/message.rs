@@ -18,7 +18,8 @@ pub struct MessageContent {
 #[derive(Deserialize, Serialize, Clone)]
 pub enum MessageType {
     MarkDown,
-    Text,
+    Json,
+    Raw
 }
 
 impl Message {
@@ -27,3 +28,5 @@ impl Message {
         Ok(mqtt::Message::new(self.topic.clone(), payload, self.qos))
     }
 }
+
+
