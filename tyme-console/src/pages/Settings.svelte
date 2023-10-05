@@ -10,7 +10,8 @@
   import Spinner from "flowbite-svelte/Spinner.svelte";
   import "iconify-icon";
   import { onMount } from "svelte";
-  import { getConfig } from "../js/fetch";
+  import { getConfig, putConfig, uploadCrt } from "../js/fetch";
+  import { user } from "../js/store";
 
   let qos = [
     {
@@ -67,6 +68,8 @@
     sysConfig.mqtt_config.ssl.trust_store.lastIndexOf("/") + 1
   );
 
+  let crtFiles;
+
   let mqttAuthPasswordshow = false;
   let webConsolePasswordshow = false;
   let webConsoleTokenshow = false;
@@ -75,7 +78,28 @@
   let saveStatus = "";
 
   const saveConfig = () => {
-    if (saveLoading == false) saveLoading = !saveLoading;
+    if (saveLoading == false) {
+      saveLoading = !saveLoading;
+    } else return;
+
+    if (crtFiles !== undefined && crtFiles.length !== 0) {
+      sysConfig.mqtt_config.ssl.trust_store = "./ssl/" + crtFiles[0].name;
+      upLoadCrtFile();
+    }
+
+    putConfig(sysConfig).finally(() => {
+      console.log("更新配置成功");
+      crtFiles = undefined;
+      saveLoading = !saveLoading;
+    });
+  };
+
+  const upLoadCrtFile = () => {
+    const formData = new FormData();
+    formData.append("file", crtFiles[0]);
+    uploadCrt(crtFiles[0].name, formData).finally(() => {
+      console.log("上传成功");
+    });
   };
 
   onMount(() => {
@@ -86,7 +110,12 @@
 </script>
 
 <div class="fixed bottom-5 right-5 z-[999]">
-  <GradientButton shadow class="w-none" color="purpleToBlue" on:click={saveConfig}>
+  <GradientButton
+    shadow
+    class="w-none"
+    color="purpleToBlue"
+    on:click={saveConfig}
+  >
     <iconify-icon icon="fluent:save-24-filled" class:hidden={saveLoading} />
 
     <div hidden={!saveLoading}>
@@ -99,7 +128,7 @@
   </GradientButton>
 </div>
 
-<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-3 ">
+<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-3">
   <div class="bg-white rounded shadow-md p-8 w-full mb-3">
     <form>
       <h1 class="font-bold text-2xl">System</h1>
@@ -344,6 +373,7 @@
         <div class="col-span-12 md:col-span-8 row-span-1 md:row-span-3">
           <Fileupload
             bind:disabled={mqttSslEnable}
+            bind:files={crtFiles}
             accept=".crt"
             class="max-w-none md:max-w-md"
           />

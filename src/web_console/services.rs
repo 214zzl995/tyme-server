@@ -2,7 +2,7 @@ use axum::{
     handler::HandlerWithoutStateExt,
     http::StatusCode,
     middleware,
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
 use axum_sessions::{async_session::SessionStore, SessionLayer};
@@ -112,6 +112,7 @@ pub fn back_chat_route_c() -> Router<()> {
         .route("/send", post(routes::chat::handler))
         .route("/upload/:file_name", post(routes::file::upload_crt))
         .route("/config", get(routes::sys::get_config))
+        .route("/config", put(routes::sys::update_config))
 }
 
 pub fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {

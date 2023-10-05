@@ -6,7 +6,9 @@
   let response;
 
   onMount(async () => {
-    response = await getSecure();
+    getSecure().then((res) => {
+      response = res.session;
+    });
   });
 </script>
 

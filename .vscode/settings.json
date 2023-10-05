@@ -6,5 +6,10 @@
   "editor.codeActionsOnSave": {
     
   },
-  "svelte.ask-to-enable-ts-plugin": false
+  "svelte.ask-to-enable-ts-plugin": false,
+  "typescript.autoClosingTags": true,
+  "typescript.disableAutomaticTypeAcquisition": false,
+  "typescript.enablePromptUseWorkspaceTsdk": false,
+  "typescript.format.enable": true,
+  "javascript.validate.enable": true
 }

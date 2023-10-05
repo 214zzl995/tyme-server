@@ -11,10 +11,6 @@ export async function getSession() {
     }
 }
 
-/**
- * @param {any} username
- * @param {any} password
- */
 export async function postLogin(username, password) {
     const res = await fetch("/auth/login", {
         method: "POST",

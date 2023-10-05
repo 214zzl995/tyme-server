@@ -1,50 +1,15 @@
 import api from './request.js';
 
-export async function getSecure() {
-    let res = await fetch('/secure', { credentials: 'same-origin' });
-    let secureResponse = await res.json();
-    return JSON.stringify(secureResponse.session);
-}
 
+export const getSecure = (/** @type {{}} */ params) => api.get(`/secure`)
 
+export const getConfig = (/** @type {{}} */ params) => api.get(`/c/config`)
 
-export const getConfig = (/** @type {{}} */ params) => api(`/c/config`, params)
+export const putConfig = ( /** @type {any} */ body) => api.put('/c/config', body)
 
+export const getApi = (/** @type {string} */ api_token) => api.get('/check', undefined, undefined, {
+    'Authorization': 'Bearer ' + api_token,
+})
 
+export const uploadCrt = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post('/c/upload/' + filename, body, "", "multipart/form-data")
 
-export async function sendTest() {
-    var myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    var raw = JSON.stringify({
-        "topic": "hello",
-        "qos": 1,
-        "content": {
-            "type": "Text",
-            "text": "Ma"
-        }
-    });
-
-    await fetch("/c/send", {
-        headers: myHeaders,
-        method: 'POST',
-        body: raw,
-        redirect: 'follow',
-        credentials: 'same-origin'
-    })
-        .then(response => response.text())
-        .then(result => console.log(result))
-        .catch(error => console.log('error', error));
-}
-
-/**
- * @param {string} api_token
- */
-export async function getApi(api_token) {
-    let res = await fetch('/check', {
-        headers: {
-            'Authorization': 'Bearer ' + api_token,
-            Accept: "application/json",
-        },
-    });
-    return await res.json();
-} 
