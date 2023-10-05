@@ -5,7 +5,7 @@ export const getSecure = (/** @type {{}} */ params) => api.get(`/secure`)
 
 export const getConfig = (/** @type {{}} */ params) => api.get(`/c/config`)
 
-export const putConfig = ( /** @type {any} */ body) => api.put('/c/config', body)
+export const putConfig = ( /** @type {any} */ body) => api.post('/c/config', body)
 
 export const getApi = (/** @type {string} */ api_token) => api.get('/check', undefined, undefined, {
     'Authorization': 'Bearer ' + api_token,

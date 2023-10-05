@@ -13,6 +13,10 @@ const request = (/** @type {string} */ partialUrl, /** @type {any} */ body, /** 
     const needContentType = ['POST', 'PUT', 'GET'].includes(method.toUpperCase());
     const url = baseUrl + partialUrl + (query ? queryString(query) : '');
 
+    if (contentType == "application/json"){
+        body = JSON.stringify(body)
+    }
+
     /** @type {RequestInit} */
     let requestConfig = {
         credentials: 'same-origin',
@@ -25,11 +29,10 @@ const request = (/** @type {string} */ partialUrl, /** @type {any} */ body, /** 
             ...headers
         },
         mode, // 用来决定是否允许跨域请求  值有 三个 same-origin，no-cors（默认）以及 cores;
-        cache: "force-cache" // 是否缓存请求资源 可选值有 default 、 no-store 、 reload 、 no-cache 、 force-cache 或者 only-if-cached 。
+        cache: "default" // 是否缓存请求资源 可选值有 default 、 no-store 、 reload 、 no-cache 、 force-cache 或者 only-if-cached 。
     }
 
     return new Promise((success, fail) => fetch(url, requestConfig).then(response => {
-        console.log(response)
         success(response.json());
         fail(response);
     }))

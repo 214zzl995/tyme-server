@@ -4,9 +4,9 @@ log_location = "./log"
 broker = "k37bbe35.ala.cn-hangzhou.emqxsl.cn"
 port = 8883
 client_id = "tyme-server-0"
-version = 5
 keep_alive_interval = 60
 topics = ["test"]
+version = 5
 
 [mqtt_config.lwt]
 topic = "LWT"
@@ -23,8 +23,7 @@ password = "R7ddsQxAGchQPQB"
 
 [mqtt_config.ssl]
 enable = true
-trust_store = "./ssl/emqxsl-ca.crt"
-
+trust_store = "./ssl/emqxsl-ca - 副本.crt"
 
 [web_console_config]
 public = false
@@ -32,5 +31,5 @@ user_name = "root"
 password = "FxL3nw70"
 port = 12566
 secret = "ex17O5O8qllScecP_Ywpbn6ALX8WnMnmMqm_is6B3X3yfCLKzT8HD9ON986nV8wv"
-front_end_path ="./tyme-console/dist"
-api_token ="1uY-1MPhNtIzQ1NK"
+front_end_path = "./tyme-console/dist"
+api_token = "1uY-1MPhNtIzQ1NK"
