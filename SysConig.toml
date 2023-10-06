@@ -23,10 +23,10 @@ password = "R7ddsQxAGchQPQB"
 
 [mqtt_config.ssl]
 enable = true
-trust_store = "./ssl/emqxsl-ca - 副本.crt"
+trust_store = "./ssl/emqxsl-ca.crt"
 
 [web_console_config]
-public = false
+public = true
 user_name = "root"
 password = "FxL3nw70"
 port = 12566

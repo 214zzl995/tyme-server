@@ -30,8 +30,6 @@
         { label: "About", id: 1 },
         { label: "Login", id: 2 },
         { label: "CheckApi", id: 5 },
-        { label: "Chat", id: 6 },
-        { label: "Setting", id: 7 },
       ];
     }
   };
