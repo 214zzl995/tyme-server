@@ -56,7 +56,7 @@
 
   <!-- PAGE LOADING -->
   <div class="overflow-auto bg-green-50 pt-5 flex-1">
-    <div class="w-full h-fit flex justify-center">
+    <div class="w-full flex justify-center">
       {#if menu === 1}
         <About />
       {:else if menu === 2}
