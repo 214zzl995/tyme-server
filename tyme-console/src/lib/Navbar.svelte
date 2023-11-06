@@ -8,17 +8,10 @@
   import { onMount } from "svelte";
 
   export let navItems = [{ label: "logo", id: 0 }];
-  export let menu = 1;
+  export let menu;
 
-  let nowHash = "";
-
-  let navBarHide;
-
+  $: nowHash = navItems.find((item) => item.id === menu)?.label;
   $: navBarHide = true;
-
-  onMount(() => {
-    nowHash = navItems.find((item) => item.id === menu)?.label;
-  });
 
   const menuCilck = () => {
      navBarHide = !navBarHide;
@@ -34,7 +27,6 @@
   };
 </script>
 
-自己写一个吧 这东西 不太行
 <div class="w-full z-[999]">
   <Navbar class="px-2 sm:px-4 py-2.5 z-20  border-b ">
     <NavBrand href="/">

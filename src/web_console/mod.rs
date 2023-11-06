@@ -6,7 +6,7 @@ use tokio::{
     signal,
     sync::mpsc::{self, Sender},
 };
-use tower_sessions::{cookie::time::Duration, Expiry, MemoryStore, SessionManagerLayer};
+use tower_sessions::{MemoryStore, SessionManagerLayer};
 
 use crate::config::SYSCONIFG;
 
@@ -44,7 +44,7 @@ pub async fn run_web_console() -> anyhow::Result<()> {
 
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false)
-        .with_expiry(Expiry::OnInactivity(Duration::seconds(10)));
+        .with_name("web_console.sid");
 
     let app = Router::new()
         .merge(services::front_public_route())

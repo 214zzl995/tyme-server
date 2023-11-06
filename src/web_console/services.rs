@@ -31,7 +31,7 @@ pub fn front_public_route() -> Router {
 
     Router::new()
         .fallback_service(
-            ServeDir::new(front_end_path).not_found_service(handle_error.into_service()),
+            ServeDir::new(front_end_path).not_found_service(handle_error.into_service()).precompressed_gzip(),
         )
         .layer(TraceLayer::new_for_http())
 }

@@ -1,6 +1,5 @@
 <script>
   import { user } from "./js/store.js";
-  import { getSession } from "./js/auth.js";
   import NavBar from "./lib/Navbar.svelte";
   import LogIn from "./pages/Login.svelte";
   import LogOut from "./pages/Logout.svelte";
@@ -11,7 +10,8 @@
   import Chat from "./pages/Chat.svelte";
   import Settings from "./pages/Settings.svelte";
 
-  let menu = 2;
+  // 添加loading界面 默认为loading界面
+  $: menu = 0;
 
   $: loggedin = $user !== "";
 
@@ -34,17 +34,15 @@
     }
   };
 
+  // check if logged in
   let currentHash = window.location.hash.substring(1);
 
-  if (currentHash !== "") {
-    menu = set_menu_items(loggedin).find(
-      (item) => item.label === currentHash
-    )?.id;
-  }
-
-  // check if logged in
   onMount(() => {
-    getSession();
+    if (currentHash !== "") {
+      menu =
+        set_menu_items(loggedin).find((item) => item.label === currentHash)
+          ?.id || 2;
+    }
     let html = document.documentElement;
     html.setAttribute("data-theme", "light");
   });
@@ -57,7 +55,9 @@
   <!-- PAGE LOADING -->
   <div class="overflow-auto bg-green-50 pt-5 flex-1">
     <div class="w-full flex justify-center">
-      {#if menu === 1}
+      {#if menu === 0}
+        <div class="w-1/2 flex justify-center" />
+      {:else if menu === 1}
         <About />
       {:else if menu === 2}
         <LogIn />
