@@ -56,7 +56,6 @@ pub struct WebConsoleConfig {
     pub user_name: String,
     pub password: String,
     pub port: u16,
-    pub secret: String,
     pub front_end_path: Option<PathBuf>,
     pub api_token: Option<String>,
 }
@@ -154,7 +153,6 @@ impl Default for WebConsoleConfig {
             user_name: String::from("root"),
             password: nanoid::nanoid!(8),
             port: 12566,
-            secret: nanoid::nanoid!(64),
             front_end_path: Default::default(),
             api_token: Default::default(),
         }

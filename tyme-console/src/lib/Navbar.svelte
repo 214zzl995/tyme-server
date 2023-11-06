@@ -1,3 +1,4 @@
+
 <script>
   import NavBrand from "flowbite-svelte/NavBrand.svelte";
   import NavLi from "flowbite-svelte/NavLi.svelte";
@@ -33,6 +34,7 @@
   };
 </script>
 
+自己写一个吧 这东西 不太行
 <div class="w-full z-[999]">
   <Navbar class="px-2 sm:px-4 py-2.5 z-20  border-b ">
     <NavBrand href="/">

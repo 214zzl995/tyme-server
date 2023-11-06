@@ -20,14 +20,14 @@
 </script>
 
 {#if !$user}
-  {#if errorMessage}
-    <div>
-      {errorMessage}
-    </div>
-  {/if}
   <div
     class="w-11/12 sm:w-2/4 md:w-2/5 lg:w-1/4 p-8 bg-white rounded shadow-md"
   >
+    {#if errorMessage}
+      <div>
+        {errorMessage}
+      </div>
+    {/if}
     <container>
       <form class="grid gap-x-1 gap-y-3 mb-6 md:grid-cols-1">
         <div>

@@ -1,12 +1,12 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::Router;
-use axum_sessions::{async_session::MemoryStore, SessionLayer};
 use parking_lot::Mutex;
 use tokio::{
     signal,
     sync::mpsc::{self, Sender},
 };
+use tower_sessions::{cookie::time::Duration, Expiry, MemoryStore, SessionManagerLayer};
 
 use crate::config::SYSCONIFG;
 
@@ -40,11 +40,11 @@ pub async fn run_web_console() -> anyhow::Result<()> {
 
     let shared_state = Arc::new(store::Store::new(api_token));
 
-    let session_layer = SessionLayer::new(
-        MemoryStore::new(),
-        SYSCONIFG.web_console_config.secret.as_bytes(),
-    )
-    .with_cookie_name("Auth");
+    let session_store = MemoryStore::default();
+
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false)
+        .with_expiry(Expiry::OnInactivity(Duration::seconds(10)));
 
     let app = Router::new()
         .merge(services::front_public_route())

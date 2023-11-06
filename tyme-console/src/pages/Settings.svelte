@@ -475,19 +475,6 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-12 grid-rows-12 md:mt-2 mt-3">
-        <Label
-          class="col-span-12 md:col-span-4 row-span-2 md:row-span-12 block text-center flex"
-        >
-          <p class="my-auto">
-            <span class="text-red-600"> * </span>Console Secret:
-          </p>
-        </Label>
-        <div class="col-span-12 md:col-span-8 row-span-10 md:row-span-12">
-          <Textarea rows="8" bind:value={sysConfig.web_console_config.secret} />
-        </div>
-      </div>
-
       <div class="grid grid-cols-12 grid-rows-2 mt-2">
         <Label
           class="col-span-12 md:col-span-4 row-span-1 md:row-span-2 block text-center flex"

@@ -19,7 +19,7 @@ axum = { version = "0.6" }
 nanoid = "0.4"
 tower = { version = "0.4", features = ["full"] }
 tower-http = { version = "0.4", features = ["fs", "trace"] }
-axum-sessions = "0.5"
+tower-sessions = "0.4.1"
 tokio-util = { version = "0.7", features = ["io"] }
 
 
