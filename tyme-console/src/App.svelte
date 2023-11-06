@@ -10,8 +10,7 @@
   import Chat from "./pages/Chat.svelte";
   import Settings from "./pages/Settings.svelte";
 
-  // 添加loading界面 默认为loading界面
-  $: menu = 0;
+  $: menu = 2;
 
   $: loggedin = $user !== "";
 
@@ -20,16 +19,21 @@
       return [
         { label: "About", id: 1 },
         { label: "Secure", id: 3 },
-        { label: "Logout", id: 4 },
-        { label: "CheckApi", id: 5 },
-        { label: "Chat", id: 6 },
-        { label: "Setting", id: 7 },
+        { label: "CheckApi", id: 4 },
+        { label: "Chat", id: 5 },
+        { label: "Setting", id: 6 },
+        {
+          label: "Logout",
+          id: 99,
+          icon: "solar:logout-linear",
+          color: "text-red-500",
+        },
       ];
     } else {
       return [
         { label: "About", id: 1 },
         { label: "Login", id: 2 },
-        { label: "CheckApi", id: 5 },
+        { label: "CheckApi", id: 4 },
       ];
     }
   };
@@ -64,13 +68,13 @@
       {:else if menu === 3}
         <Secure />
       {:else if menu === 4}
-        <LogOut />
-      {:else if menu === 5}
         <ApiCheck />
-      {:else if menu === 6}
+      {:else if menu === 5}
         <Chat />
-      {:else if menu === 7}
+      {:else if menu === 6}
         <Settings />
+      {:else if menu === 99}
+        <LogOut />
       {:else}
         <h2>Page Not Found or Completed Yet</h2>
       {/if}

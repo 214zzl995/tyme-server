@@ -56,11 +56,21 @@
     </container>
   </div>
 {:else}
-  <div>
-    <container>
-      Logged in as: {$user} <br />
-      Now you may access the <strong>secure area </strong>from the Nav above
-    </container>
+  <div
+    class="w-11/12 sm:w-2/4 md:w-2/5 lg:w-1/4 p-8 bg-white rounded shadow-md"
+  >
+    <div class="flex">
+      <iconify-icon
+        icon="mingcute:check-line"
+        width="3rem"
+        class="mb-3 rounded-full text-emerald-600 border-4 p-5"
+      />
+
+      <container class="ml-5">
+        Logged in as: {$user} <br />
+        Now you may access the <strong>secure area </strong>from the Nav above
+      </container>
+    </div>
   </div>
 {/if}
 

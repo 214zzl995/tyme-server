@@ -1,11 +1,10 @@
-
 <script>
   import NavBrand from "flowbite-svelte/NavBrand.svelte";
   import NavLi from "flowbite-svelte/NavLi.svelte";
   import NavUl from "flowbite-svelte/NavUl.svelte";
   import NavHamburger from "flowbite-svelte/NavHamburger.svelte";
   import Navbar from "flowbite-svelte/Navbar.svelte";
-  import { onMount } from "svelte";
+  import "iconify-icon";
 
   export let navItems = [{ label: "logo", id: 0 }];
   export let menu;
@@ -14,7 +13,7 @@
   $: navBarHide = true;
 
   const menuCilck = () => {
-     navBarHide = !navBarHide;
+    navBarHide = !navBarHide;
   };
 
   const handleMenuSelection = (
@@ -44,8 +43,14 @@
         <NavLi
           href="#{item.label}"
           on:click={() => handleMenuSelection(item.id, item.label)}
+          class="{item.background || ""} {item.color || ""}"
         >
-          {item.label}
+          <div class="flex flex-row justify-center items-center">
+            {#if item.icon}
+              <iconify-icon icon={item.icon} class="mr-2 font-medium" />
+            {/if}
+            {item.label}
+          </div>
         </NavLi>
       {/each}
     </NavUl>

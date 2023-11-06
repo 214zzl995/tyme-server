@@ -11,7 +11,6 @@
   import "iconify-icon";
   import { onMount } from "svelte";
   import { getConfig, putConfig, uploadCrt } from "../js/fetch";
-  import { user } from "../js/store";
 
   let qos = [
     {

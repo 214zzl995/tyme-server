@@ -12,25 +12,9 @@
   });
 </script>
 
-<div class="mt-6">
+<div class="w-11/12 sm:w-2/4 md:w-2/5 lg:w-2/4 p-8 bg-white rounded shadow-md">
   <container class="wider mobile">
-    <p>Logged in as {$user}</p>
+    <p class="mb-3 font-bold">Logged in as {$user}</p>
     <p class="mono">Response: {response}</p>
   </container>
 </div>
-
-<style>
-  div {
-    margin: 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  @media only screen and (max-width: 620px) {
-    container.mobile {
-      width: 300px;
-      word-wrap: break-word;
-    }
-  }
-</style>
