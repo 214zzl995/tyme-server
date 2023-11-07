@@ -15,6 +15,8 @@ const QOS: &[i32] = &[1, 1];
 lazy_static! {
     pub static ref CLINT: Arc<Mutex<AsyncClient>> =
         Arc::new(Mutex::new(get_clint().expect("Clint Error")));
+    pub static ref TOPICS: Arc<Mutex<Vec<String>>> =
+        Arc::new(Mutex::new(SYSCONIFG.mqtt_config.topics.clone()));
 }
 
 fn get_clint() -> anyhow::Result<AsyncClient> {
@@ -89,6 +91,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
 
             if conn_rsp.session_present {
                 println!("Client session already present on broker.");
+                // Will not resubscribe when kicked out by broker
             } else {
                 // Register subscriptions on the server, using Subscription ID's.
                 println!(
@@ -120,6 +123,8 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
 pub fn diable_connect() {
     let clint = CLINT.lock();
     clint.stop_consuming();
+    clint.stop_stream();
+
     if clint.is_connected() {
         clint.disconnect(None);
     }

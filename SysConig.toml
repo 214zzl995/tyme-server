@@ -5,7 +5,7 @@ broker = "k37bbe35.ala.cn-hangzhou.emqxsl.cn"
 port = 8883
 client_id = "tyme-server-0"
 keep_alive_interval = 60
-topics = ["test"]
+topics = ["test","hello"]
 version = 5
 
 [mqtt_config.lwt]

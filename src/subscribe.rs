@@ -17,13 +17,13 @@ pub async fn subscribe() {
                 println!("{}", msg);
             } else {
                 println!("Lost connection. Attempting reconnect.");
-                while let Err(err) =clint.reconnect().await {
+                while let Err(err) = clint.reconnect().await {
                     println!("Error reconnecting: {}", err);
                     tokio::time::sleep(Duration::from_millis(1000)).await;
                 }
+                println!("Reconnected.");
             }
         }
-    
 }
 
 // Create a set of poperties with a single Subscription ID

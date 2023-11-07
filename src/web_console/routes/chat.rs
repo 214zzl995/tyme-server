@@ -10,3 +10,8 @@ pub async fn handler(Json(msg): Json<Message>) -> impl IntoResponse {
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
 }
+
+#[allow(clippy::unused_async)]
+pub async fn get_all_toppic() -> impl IntoResponse {
+    Json(json!({"result": "ok", "topics": crate::clint::TOPICS.clone()}))
+}

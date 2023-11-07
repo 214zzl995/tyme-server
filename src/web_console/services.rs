@@ -31,7 +31,9 @@ pub fn front_public_route() -> Router {
 
     Router::new()
         .fallback_service(
-            ServeDir::new(front_end_path).not_found_service(handle_error.into_service()).precompressed_gzip(),
+            ServeDir::new(front_end_path)
+                .not_found_service(handle_error.into_service())
+                .precompressed_gzip(),
         )
         .layer(TraceLayer::new_for_http())
 }
@@ -106,18 +108,19 @@ pub fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
         .with_state(state)
 }
 
-pub fn _back_chat_route<S>(state: S) -> Router<S>
+pub fn back_chat_route<S>(state: S) -> Router<S>
 where
     S: Send + Sync + 'static + Clone,
 {
-    let route = Router::new().route("/send", post(routes::chat::handler));
-
-    route.with_state(state)
+    Router::new()
+        .route("/send", post(routes::chat::handler))
+        .route("/get-all-topic", get(routes::chat::get_all_toppic))
+        .with_state(state)
 }
 
 pub fn back_chat_route_c() -> Router<()> {
     Router::new()
-        .route("/send", post(routes::chat::handler))
+        .merge(back_chat_route(()))
         .route("/upload/:file_name", post(routes::file::upload_crt))
         .route(
             "/config",
@@ -127,6 +130,6 @@ pub fn back_chat_route_c() -> Router<()> {
 
 pub fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {
     Router::new()
-        .route("/send", post(routes::chat::handler))
+        .merge(back_chat_route(state.clone()))
         .with_state(state)
 }
