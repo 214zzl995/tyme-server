@@ -47,7 +47,8 @@ const config = {
       },
       height: {
         'chat': 'calc(100vh - 7rem)',
-        'main': 'calc(100vh - 6rem)',
+        'main': 'calc(100vh - 4rem)',
+        'md-main': 'calc(100vh - 5rem)',
       }
     }
   }

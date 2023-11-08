@@ -9,8 +9,9 @@
   import About from "./pages/About.svelte";
   import Chat from "./pages/Chat.svelte";
   import Settings from "./pages/Settings.svelte";
+  import Toasts from "./lib/Toasts.svelte";
 
-  let menu = 2;
+  let menu = 98;
 
   $: loggedin = $user !== "";
 
@@ -18,10 +19,10 @@
     if (loggedin) {
       return [
         { label: "About", id: 1 },
-        { label: "Secure", id: 3 },
-        { label: "CheckApi", id: 4 },
-        { label: "Chat", id: 5 },
-        { label: "Setting", id: 6 },
+        { label: "Secure", id: 2 },
+        { label: "CheckApi", id: 3 },
+        { label: "Chat", id: 4 },
+        { label: "Setting", id: 5 },
         {
           label: "Logout",
           id: 99,
@@ -32,8 +33,13 @@
     } else {
       return [
         { label: "About", id: 1 },
-        { label: "Login", id: 2 },
-        { label: "CheckApi", id: 4 },
+        { label: "CheckApi", id: 3 },
+        {
+          label: "Login",
+          id: 98,
+          icon: "solar:login-linear",
+          color: "text-primary-500",
+        },
       ];
     }
   };
@@ -43,7 +49,7 @@
   if (currentHash !== "") {
     menu =
       set_menu_items($user !== "").find((item) => item.label === currentHash)
-        ?.id || 2;
+        ?.id || 98;
   }
 
   onMount(() => {
@@ -52,27 +58,31 @@
   });
 </script>
 
+<Toasts />
+
 <div class="h-screen flex flex-col">
   <!-- MENNU BAR ON TOP -->
   <NavBar navItems={set_menu_items(loggedin)} bind:menu />
 
   <!-- PAGE LOADING -->
-  <div class="overflow-auto bg-green-50 pt-5 flex-1">
+  <div
+    class="overflow-auto bg-green-50 flex-1 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]"
+  >
     <div class="w-full flex justify-center">
       {#if menu === 0}
         <div class="w-1/2 flex justify-center" />
       {:else if menu === 1}
         <About />
       {:else if menu === 2}
-        <LogIn />
-      {:else if menu === 3}
         <Secure />
-      {:else if menu === 4}
+      {:else if menu === 3}
         <ApiCheck />
-      {:else if menu === 5}
+      {:else if menu === 4}
         <Chat />
-      {:else if menu === 6}
+      {:else if menu === 5}
         <Settings />
+      {:else if menu === 98}
+        <LogIn />
       {:else if menu === 99}
         <LogOut />
       {:else}

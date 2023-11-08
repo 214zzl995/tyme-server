@@ -11,6 +11,9 @@
     id="favorite"
     name="favorite-checkbox"
     value="favorite-button"
+    on:click={() => {
+      value = checked ? "Json" : "MarkDown";
+    }}
   />
   <label for="favorite" class="container">
     <div class="action">

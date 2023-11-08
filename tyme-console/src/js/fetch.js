@@ -16,3 +16,6 @@ export const getApi = (/** @type {string} */ api_token) => api.get('/check', und
 export const uploadCrt = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post('/c/upload/' + filename, body, "", "multipart/form-data")
 
 export const getChatMsg = (/** @type {{}} */ params) => api.get(`/c/get-chat-msg`)
+
+
+export const sendMsg = (/** @type {any} */ params) => api.post(`/c/send`, params)

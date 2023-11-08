@@ -26,14 +26,14 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<String>>) -> impl IntoRespon
 
 #[allow(clippy::unused_async)]
 pub async fn get_chat_msg() -> impl IntoResponse {
-    let mut msgs: Vec<Message> = vec![
+    let msgs: Vec<Message> = vec![
         Message {
             topic: "test".to_string(),
             qos: 0,
             mine: Some(true),
             content: MessageContent {
                 message_type: MessageType::MarkDown,
-                raw: "## Hello".to_string(),
+                raw: "##### 这个地方就是给你看看用的 还没写".to_string(),
                 html: None,
             },
         },
@@ -57,10 +57,7 @@ pub async fn get_chat_msg() -> impl IntoResponse {
                 html: None,
             },
         },
-    ];
-
-    for _ in 0..100 {
-        msgs.push(Message {
+        Message {
             topic: "test".to_string(),
             qos: 0,
             mine: Some(false),
@@ -72,21 +69,27 @@ pub async fn get_chat_msg() -> impl IntoResponse {
  #解决方案1
  #设置环境变量 这种方式只配置OPENSSL环境所在位置
  OPENSSL_DIR="C:\\Users\\Leri\\Path\\vcpkg\\packages\\openssl_x86-windows"  
- ``` "#),
+ ``` "#
+                ),
                 html: None,
             },
-        })
-    }
+        },
+    ];
 
     let msgs: Vec<Message> = msgs
         .into_iter()
         .map(|mut msg| {
             if msg.content.message_type.eq(&MessageType::MarkDown) {
-                let html: String = markdown::to_html(&msg.content.raw);
+                let html: String =
+                    markdown::to_html_with_options(&msg.content.raw, &markdown::Options::gfm())
+                        .unwrap();
                 msg.content.html = Some(html);
             } else if msg.content.message_type.eq(&MessageType::Json) {
-                let html: String =
-                    markdown::to_html(&format!("```json \n{}\n```", &msg.content.raw));
+                let html: String = markdown::to_html_with_options(
+                    &format!("```json \n{}\n```", &msg.content.raw),
+                    &markdown::Options::gfm(),
+                )
+                .unwrap();
                 msg.content.html = Some(html);
             } else {
                 msg.content.html = Some(msg.content.raw.clone());

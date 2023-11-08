@@ -5,20 +5,20 @@
 
   let pageNumber = 0;
 
-  $: sources = [];
+  $: msgs = [];
 
   onMount(() => {
     getChatMsg().then((res) => {
       // sources.push(res.data);
-      sources = res.data;
-      console.log(sources);
+      msgs = res.data;
+      console.log(msgs);
     });
   });
 </script>
 
 <div class="w-full h-full overflow-y-scroll">
-  {#each sources as source}
-    <ChatCard source={source.content.html} mine={source.mine} />
+  {#each msgs as msg}
+    <ChatCard {msg} />
   {/each}
 </div>
 
