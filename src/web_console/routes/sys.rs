@@ -17,6 +17,10 @@ pub async fn update_config(Json(config): Json<SysConfig>) -> impl IntoResponse {
     let conf = current_dir.join("SysConig.toml");
 
     let config_str = toml_edit::ser::to_string_pretty(&config).unwrap();
+    {
+        let mut loc_config = SYSCONIFG.lock();
+        *loc_config = config.clone();
+    }
 
     match tokio::fs::write(&conf, config_str).await {
         Ok(_) => Json(json!({"result": "ok"})),

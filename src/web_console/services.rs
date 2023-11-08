@@ -23,7 +23,7 @@ use super::{
 // *********
 // Front end to server svelte build bundle, css and index.html from public folder
 pub fn front_public_route() -> Router {
-    let front_end_path = SYSCONIFG
+    let front_end_path = SYSCONIFG.lock().clone()
         .web_console_config
         .front_end_path
         .clone()
@@ -113,19 +113,21 @@ where
     S: Send + Sync + 'static + Clone,
 {
     Router::new()
-        .route("/send", post(routes::chat::handler))
-        .route("/get-all-topic", get(routes::chat::get_all_toppic))
+        .route("/send", post(routes::send))
+        .route("/get-all-topic", get(routes::get_all_toppic))
+        .route("/subscribe-topics", post(routes::subscribe_topic))
         .with_state(state)
 }
 
 pub fn back_chat_route_c() -> Router<()> {
     Router::new()
         .merge(back_chat_route(()))
-        .route("/upload/:file_name", post(routes::file::upload_crt))
+        .route("/upload/:file_name", post(routes::upload_crt))
         .route(
             "/config",
-            get(routes::sys::get_config).post(routes::sys::update_config),
+            get(routes::sys::get_config).post(routes::update_config),
         )
+        .route("/get-chat-msg", get(routes::get_chat_msg))
 }
 
 pub fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {

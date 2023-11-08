@@ -3,6 +3,7 @@
   import { getAllTopic } from "./../js/fetch.js";
   import Topic from "../lib/Topic.svelte";
   import Editor from "../lib/Editor.svelte";
+  import ChatList from "../lib/ChatList.svelte";
 
   let topicList = [];
   let topicIndex = 1;
@@ -32,8 +33,11 @@
     </div>
   </div>
 
-  <div class="bg-white rounded shadow-md flex-1 flex flex-col">
-    <div class="flex-1"><span /></div>
+  <div class="bg-white rounded shadow-md flex-auto flex flex-col overflow-hidden">
+    <div class="overflow-hidden">
+      <span />
+      <ChatList />
+    </div>
     <div class="flex-none min-h-56">
       <Editor />
     </div>

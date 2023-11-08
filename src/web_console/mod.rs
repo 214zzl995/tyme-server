@@ -20,17 +20,18 @@ lazy_static! {
 }
 
 pub async fn run_web_console() -> anyhow::Result<()> {
-    let host = if SYSCONIFG.web_console_config.public {
+    let config = SYSCONIFG.lock().clone();
+    let host = if config.web_console_config.public {
         [0, 0, 0, 0]
     } else {
         [127, 0, 0, 1]
     };
 
-    let addr = SocketAddr::from((host, SYSCONIFG.web_console_config.port));
+    let addr = SocketAddr::from((host, config.web_console_config.port));
 
     let server = axum::Server::try_bind(&addr)?;
 
-    let api_token = SYSCONIFG
+    let api_token = config
         .web_console_config
         .api_token
         .clone()

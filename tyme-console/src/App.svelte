@@ -10,7 +10,7 @@
   import Chat from "./pages/Chat.svelte";
   import Settings from "./pages/Settings.svelte";
 
-  $: menu = 2;
+  let menu = 2;
 
   $: loggedin = $user !== "";
 
@@ -38,15 +38,15 @@
     }
   };
 
-  // check if logged in
   let currentHash = window.location.hash.substring(1);
 
+  if (currentHash !== "") {
+    menu =
+      set_menu_items($user !== "").find((item) => item.label === currentHash)
+        ?.id || 2;
+  }
+
   onMount(() => {
-    if (currentHash !== "") {
-      menu =
-        set_menu_items(loggedin).find((item) => item.label === currentHash)
-          ?.id || 2;
-    }
     let html = document.documentElement;
     html.setAttribute("data-theme", "light");
   });

@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct Message {
     pub topic: String,
     pub qos: i32,
+    pub mine: Option<bool>,
     pub content: MessageContent,
 }
 
@@ -12,10 +13,11 @@ pub struct Message {
 pub struct MessageContent {
     #[serde(rename = "type")]
     pub message_type: MessageType,
-    pub text: String,
+    pub raw: String,
+    pub html: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, PartialEq)]
 pub enum MessageType {
     MarkDown,
     Json,

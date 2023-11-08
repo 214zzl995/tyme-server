@@ -1,14 +1,15 @@
 use crate::{message::Message, ARGS};
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
     env,
     fs::{self, File},
     io::Read,
-    path::PathBuf,
+    path::PathBuf, sync::Arc,
 };
 
 lazy_static! {
-    pub static ref SYSCONIFG: SysConfig = SysConfig::obtain().expect("Config Error");
+    pub static ref SYSCONIFG:  Arc<Mutex<SysConfig>> = Arc::new(Mutex::new(SysConfig::obtain().expect("Config Error")));
 }
 
 #[derive(Deserialize, Serialize, Clone)]
