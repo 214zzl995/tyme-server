@@ -14,7 +14,6 @@ pub async fn subscribe() {
             if msg.retained() {
                 print!("(R) ");
             }
-            println!("{}", msg);
 
             let mut msg = Message::from_mqtt(msg).unwrap();
 

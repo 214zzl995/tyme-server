@@ -22,16 +22,9 @@ lazy_static! {
 }
 
 #[allow(clippy::unused_async)]
-pub async fn send(session: Session, Json(msg): Json<Message>) -> impl IntoResponse {
+pub async fn send(Json(msg): Json<Message>) -> impl IntoResponse {
     match crate::clint::publish(msg.clone()).await {
-        Ok(_) => {
-            let mut ws_msg = msg.clone();
-            ws_msg.to_html();
-
-            ws_send(session.clone(), &ws_msg).await;
-
-            Json(json!({"result": "ok", "message": "Push success"}))
-        }
+        Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
 }
@@ -53,9 +46,11 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<String>>) -> impl IntoRespon
 pub async fn get_chat_msg() -> impl IntoResponse {
     let msgs: Vec<Message> = vec![
         Message {
+            id: Some(nanoid::nanoid!()),
             topic: "test".to_string(),
             qos: 0,
             mine: Some(true),
+            timestamp: Some(1625241600000),
             content: MessageContent {
                 message_type: MessageType::MarkDown,
                 raw: "##### 这个地方就是给你看看用的 还没写".to_string(),
@@ -63,9 +58,11 @@ pub async fn get_chat_msg() -> impl IntoResponse {
             },
         },
         Message {
+            id: Some(nanoid::nanoid!()),
             topic: "test".to_string(),
             qos: 0,
             mine: Some(false),
+            timestamp: Some(1625241600000),
             content: MessageContent {
                 message_type: MessageType::Json,
                 raw: r#"{"name": "hello"}"#.to_string(),
@@ -73,9 +70,11 @@ pub async fn get_chat_msg() -> impl IntoResponse {
             },
         },
         Message {
+            id: Some(nanoid::nanoid!()),
             topic: "test".to_string(),
             qos: 0,
             mine: Some(false),
+            timestamp: Some(1625241600000),
             content: MessageContent {
                 message_type: MessageType::Raw,
                 raw: "Hello".to_string(),
@@ -83,9 +82,11 @@ pub async fn get_chat_msg() -> impl IntoResponse {
             },
         },
         Message {
+            id: Some(nanoid::nanoid!()),
             topic: "test".to_string(),
             qos: 0,
             mine: Some(false),
+            timestamp: Some(1625241600000),
             content: MessageContent {
                 message_type: MessageType::MarkDown,
                 raw: format!(
@@ -232,7 +233,7 @@ pub fn remove_clint(session: &Session) {
     CLINTS.lock().remove(&user_id);
 }
 
-pub async fn ws_send(session: Session, msg: &Message) {
+pub async fn _ws_send(session: Session, msg: &Message) {
     let user_id = session.id().0.to_string();
 
     let msg = serde_json::to_string(msg).unwrap();

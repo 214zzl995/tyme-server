@@ -16,7 +16,7 @@ pub use chat::get_all_toppic;
 pub use chat::subscribe_topic;
 pub use chat::get_chat_msg;
 pub use chat::ws_handler;
-pub use chat::ws_send;
+pub use chat::_ws_send;
 pub use chat::ws_send_all;
 
 pub use file::upload_crt;

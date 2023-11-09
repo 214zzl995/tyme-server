@@ -6,19 +6,24 @@
 
   let pageNumber = 0;
 
+  let divRef;
+
   $: msgs = [];
 
   const socketMessageListener = (/** @type {{ data: any; }} */ event) => {
     const data = JSON.parse(event.data);
-    msgs.push(data);
-    console.log(msgs);
+    pushMsgs([data]);
+  };
+
+  const scrollToBottom = () => {
+    if (divRef) {
+          //滚动到对应位置 
+    }
   };
 
   onMount(() => {
     getChatMsg().then((res) => {
-
-      msgs = res.data;
-      console.log(msgs);
+      pushMsgs(res.data);
     });
 
     if ($socket) {
@@ -39,9 +44,17 @@
       );
     }
   });
+
+  /**
+     * @param {any[]} msg
+     */
+  function pushMsgs(msg) {
+    msgs = [...msgs, ...msg]; // 使用展开运算符创建一个新数组，以便 Svelte 能够检测到变化
+    scrollToBottom();
+  }
 </script>
 
-<div class="w-full h-full overflow-y-scroll">
+<div class="w-full h-full overflow-y-scroll" bind:this={divRef}>
   {#each msgs as msg}
     <ChatCard {msg} />
   {/each}

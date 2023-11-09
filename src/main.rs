@@ -11,6 +11,7 @@ mod config;
 mod message;
 mod subscribe;
 mod web_console;
+mod db;
 
 lazy_static! {
     pub static ref ARGS: HashMap<String, Option<String>> = {
