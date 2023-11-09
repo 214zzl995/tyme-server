@@ -3,6 +3,7 @@ use serde::Deserialize;
 use serde_json::json;
 use tower_sessions::Session;
 
+
 /// route to handle log in
 #[allow(clippy::unused_async)]
 #[allow(clippy::missing_panics_doc)]
@@ -22,6 +23,7 @@ pub async fn login(session: Session, Json(login): Json<Login>) -> impl IntoRespo
 pub async fn logout(session: Session) -> impl IntoResponse {
     let user = session.get_value("user_id").unwrap_or_default();
     println!("Logging out user: {}", user);
+
     // drop session
     session.delete();
     Json(json!({"result": "ok"}))

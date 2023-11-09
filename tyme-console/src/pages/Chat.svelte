@@ -1,18 +1,23 @@
 <script>
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { getAllTopic } from "./../js/fetch.js";
   import Topic from "../lib/Topic.svelte";
   import Editor from "../lib/Editor.svelte";
   import ChatList from "../lib/ChatList.svelte";
 
+
   /** @type {string[]} */
   let topicList = [];
   let topicIndex = 1;
+
+
 
   onMount(() => {
     getAllTopic().then((res) => {
       topicList = res.topics;
     });
+
+    
   });
 
   const changeTopic = (/** @type {{ detail: number; }} */ event) => {
@@ -42,7 +47,7 @@
       <ChatList />
     </div>
     <div class="flex-none min-h-56">
-      <Editor topic = {topicList[topicIndex]}  />
+      <Editor topic={topicList[topicIndex]} />
     </div>
   </div>
 </div>

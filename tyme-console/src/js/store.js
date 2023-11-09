@@ -1,5 +1,15 @@
 import { writable } from 'svelte/store';
+import Socket from './socket';
+
 export const user = writable("");
+
+export const socket = writable(undefined);
+
+export const createSocket = (/** @type {any} */ options) => {
+    socket.set(new Socket(options));
+}
+
+//登陆后保持 websocket 连接
 
 /** @type import('svelte/store').Writable<{id:number,type:"gray" | "red" | "yellow" | "green" | "indigo" | "purple" | "blue" | "primary" | "orange" | "none" | undefined,dismissible:Boolean,message:string,timeout:number}[]> */
 export const toasts = writable([]);

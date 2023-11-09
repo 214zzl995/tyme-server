@@ -15,9 +15,12 @@ mod routes;
 mod services;
 mod store;
 
+pub use routes::chat::ws_send_all;
+
 lazy_static! {
     static ref SD_CANNEL: Mutex<Option<Sender<bool>>> = Mutex::new(None);
 }
+
 
 pub async fn run_web_console() -> anyhow::Result<()> {
     let config = SYSCONIFG.lock().clone();
@@ -52,7 +55,7 @@ pub async fn run_web_console() -> anyhow::Result<()> {
         .merge(services::backend(session_layer, shared_state));
 
     let server = server
-        .serve(app.into_make_service())
+        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal());
 
     println!("WebConsole Listening on {}", addr);

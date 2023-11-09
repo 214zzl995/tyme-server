@@ -38,11 +38,14 @@ async fn main() {
 
         tokio::select! {
            _= subscribe::subscribe() => {},
-           _= web_console::run_web_console() => {} ,
+           res = web_console::run_web_console() => {
+                if let Err(err) = res {
+                    println!("WebConsole Error:{}", err);
+                }
+           },
            _= ctrl_c => {}
         }
 
         clint::diable_connect();
-        
     }
 }
