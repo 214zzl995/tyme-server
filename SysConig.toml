@@ -3,21 +3,14 @@ log_location = "./log"
 [mqtt_config]
 broker = "k37bbe35.ala.cn-hangzhou.emqxsl.cn"
 port = 8883
-client_id = "tyme-server-0"
+client_id = "test"
 keep_alive_interval = 60
 topics = [
-    "test",
-    "hello",
+    "system/#",
+    "command/#",
 ]
 version = 5
-
-[mqtt_config.lwt]
-topic = "LWT"
-qos = 1
-
-[mqtt_config.lwt.content]
-type = "MarkDown"
-raw = "[LWT] I'm go"
+lwt = "Im offline"
 
 [mqtt_config.auth]
 enable = true

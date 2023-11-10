@@ -8,15 +8,16 @@ use paho_mqtt::{self as mqtt};
 use parking_lot::Mutex;
 
 use crate::config::SYSCONIFG;
-use crate::message::Message;
+use crate::message::{Message, MessageContent, Topic};
 
 const QOS: &[i32] = &[1, 1];
 
 lazy_static! {
     pub static ref CLINT: Arc<Mutex<AsyncClient>> =
         Arc::new(Mutex::new(get_clint().expect("Clint Error")));
-    pub static ref TOPICS: Arc<Mutex<Vec<String>>> =
-        Arc::new(Mutex::new(SYSCONIFG.lock().clone().mqtt_config.topics.clone()));
+    pub static ref TOPICS: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(
+        SYSCONIFG.lock().clone().mqtt_config.topics.clone()
+    ));
 }
 
 fn get_clint() -> anyhow::Result<AsyncClient> {
@@ -47,7 +48,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
     };
     let create_opts = mqtt::CreateOptionsBuilder::new()
         .server_uri(host)
-        .client_id(config.mqtt_config.client_id.clone())
+        .client_id(config.get_clint_name())
         .finalize();
 
     let ssl_opts = mqtt::SslOptionsBuilder::new()
@@ -77,7 +78,21 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         }
 
         if let Some(lwt) = &config.mqtt_config.lwt {
-            conn_opts.will_message(lwt.to_mqtt()?);
+            let topic = Topic::try_from(format!("system/{}/lwt", config.get_clint_name()))?;
+            let lwt_msg = Message {
+                id: None,
+                topic,
+                qos: mqtt::QOS_1,
+                timestamp: None,
+                mine: None,
+                content: MessageContent {
+                    message_type: crate::message::MessageType::Raw,
+                    raw: lwt.clone(),
+                    html: None,
+                },
+                retain: Some(false),
+            };
+            conn_opts.will_message(lwt_msg.to_mqtt()?);
         };
 
         let conn_opts = conn_opts.finalize();
@@ -103,13 +118,8 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                     mqtt::SubscribeOptions::with_retain_as_published();
                     config.mqtt_config.topics.len()
                 ];
-                cli.subscribe_many_with_options(
-                    &config.mqtt_config.topics,
-                    QOS,
-                    &sub_opts,
-                    None,
-                )
-                .await?;
+                cli.subscribe_many_with_options(&config.mqtt_config.topics, QOS, &sub_opts, None)
+                    .await?;
             }
         }
 

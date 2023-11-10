@@ -5,6 +5,8 @@ use tokio::signal;
 
 #[macro_use]
 extern crate lazy_static;
+extern crate serde_json;
+
 
 mod clint;
 mod config;

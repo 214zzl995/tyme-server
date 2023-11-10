@@ -14,7 +14,7 @@ use serde_json::json;
 use tokio::sync::mpsc::{self, Sender};
 use tower_sessions::Session;
 
-use crate::message::{Message, MessageContent, MessageType};
+use crate::message::{Message, MessageContent, MessageType, Topic};
 
 lazy_static! {
     static ref CLINTS: Arc<Mutex<HashMap<String, Sender<wsMessage>>>> =
@@ -47,7 +47,8 @@ pub async fn get_chat_msg() -> impl IntoResponse {
     let msgs: Vec<Message> = vec![
         Message {
             id: Some(nanoid::nanoid!()),
-            topic: "test".to_string(),
+            topic: Topic::try_from("system/test1/test").unwrap(),
+            retain: Some(false),
             qos: 0,
             mine: Some(true),
             timestamp: Some(1625241600000),
@@ -59,7 +60,8 @@ pub async fn get_chat_msg() -> impl IntoResponse {
         },
         Message {
             id: Some(nanoid::nanoid!()),
-            topic: "test".to_string(),
+            topic: Topic::try_from("system/test1/test").unwrap(),
+            retain: Some(false),
             qos: 0,
             mine: Some(false),
             timestamp: Some(1625241600000),
@@ -71,7 +73,8 @@ pub async fn get_chat_msg() -> impl IntoResponse {
         },
         Message {
             id: Some(nanoid::nanoid!()),
-            topic: "test".to_string(),
+            topic: Topic::try_from("system/test1/test").unwrap(),
+            retain: Some(false),
             qos: 0,
             mine: Some(false),
             timestamp: Some(1625241600000),
@@ -83,9 +86,10 @@ pub async fn get_chat_msg() -> impl IntoResponse {
         },
         Message {
             id: Some(nanoid::nanoid!()),
-            topic: "test".to_string(),
+            topic: Topic::try_from("system/test/test").unwrap(),
+            retain: Some(false),
             qos: 0,
-            mine: Some(false),
+            mine: Some(true),
             timestamp: Some(1625241600000),
             content: MessageContent {
                 message_type: MessageType::MarkDown,

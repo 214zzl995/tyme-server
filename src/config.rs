@@ -1,15 +1,17 @@
-use crate::{message::Message, ARGS};
+use crate::ARGS;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
     env,
     fs::{self, File},
     io::Read,
-    path::PathBuf, sync::Arc,
+    path::PathBuf,
+    sync::Arc,
 };
 
 lazy_static! {
-    pub static ref SYSCONIFG:  Arc<Mutex<SysConfig>> = Arc::new(Mutex::new(SysConfig::obtain().expect("Config Error")));
+    pub static ref SYSCONIFG: Arc<Mutex<SysConfig>> =
+        Arc::new(Mutex::new(SysConfig::obtain().expect("Config Error")));
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -27,7 +29,7 @@ pub struct MQTTConfig {
     pub keep_alive_interval: Option<u64>,
     pub topics: Vec<String>,
     pub version: u32,
-    pub lwt: Option<Message>,
+    pub lwt: Option<String>,
     pub auth: Auth,
     pub ssl: Ssl,
 }
@@ -134,6 +136,10 @@ impl SysConfig {
             }
         }
         Ok(())
+    }
+
+    pub fn get_clint_name(&self) -> String {
+        format!("tyme-server-{}", self.mqtt_config.client_id)
     }
 }
 
