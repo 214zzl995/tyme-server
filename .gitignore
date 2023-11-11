@@ -1,3 +1,4 @@
 /target
 /ssl/emqxsl-ca.crt
 /assets/.idea
+/data
