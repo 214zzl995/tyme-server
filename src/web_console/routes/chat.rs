@@ -3,7 +3,7 @@ use std::{collections::HashMap, net::SocketAddr, ops::ControlFlow, sync::Arc};
 use axum::{
     extract::{
         ws::{Message as wsMessage, WebSocket},
-        ConnectInfo, WebSocketUpgrade,
+        ConnectInfo, Path, WebSocketUpgrade,
     },
     response::IntoResponse,
     Json, TypedHeader,
@@ -14,7 +14,7 @@ use serde_json::json;
 use tokio::sync::mpsc::{self, Sender};
 use tower_sessions::Session;
 
-use crate::message::{Message, MessageContent, MessageType, Topic};
+use crate::message::Message;
 
 lazy_static! {
     static ref CLINTS: Arc<Mutex<HashMap<String, Sender<wsMessage>>>> =
@@ -27,6 +27,11 @@ pub async fn send(Json(msg): Json<Message>) -> impl IntoResponse {
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
+}
+
+#[allow(clippy::unused_async)]
+pub async fn get_mqtt_user() -> impl IntoResponse {
+    Json(json!({"result": "ok", "message": "Get success", "user": crate::SYSCONIFG.lock().get_clint_name()}))
 }
 
 #[allow(clippy::unused_async)]
@@ -43,76 +48,9 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<String>>) -> impl IntoRespon
 }
 
 #[allow(clippy::unused_async)]
-pub async fn get_chat_msg() -> impl IntoResponse {
-    let msgs: Vec<Message> = vec![
-        Message {
-            id: Some(nanoid::nanoid!()),
-            topic: Topic::try_from("system/test1/test").unwrap(),
-            retain: Some(false),
-            qos: 0,
-            mine: Some(true),
-            timestamp: Some(1625241600000),
-            content: MessageContent {
-                message_type: MessageType::MarkDown,
-                raw: "##### 这个地方就是给你看看用的 还没写".to_string(),
-                html: None,
-            },
-        },
-        Message {
-            id: Some(nanoid::nanoid!()),
-            topic: Topic::try_from("system/test1/test").unwrap(),
-            retain: Some(false),
-            qos: 0,
-            mine: Some(false),
-            timestamp: Some(1625241600000),
-            content: MessageContent {
-                message_type: MessageType::Json,
-                raw: r#"{"name": "hello"}"#.to_string(),
-                html: None,
-            },
-        },
-        Message {
-            id: Some(nanoid::nanoid!()),
-            topic: Topic::try_from("system/test1/test").unwrap(),
-            retain: Some(false),
-            qos: 0,
-            mine: Some(false),
-            timestamp: Some(1625241600000),
-            content: MessageContent {
-                message_type: MessageType::Raw,
-                raw: "Hello".to_string(),
-                html: None,
-            },
-        },
-        Message {
-            id: Some(nanoid::nanoid!()),
-            topic: Topic::try_from("system/test/test").unwrap(),
-            retain: Some(false),
-            qos: 0,
-            mine: Some(true),
-            timestamp: Some(1625241600000),
-            content: MessageContent {
-                message_type: MessageType::MarkDown,
-                raw: format!(
-                    r#"2. rust检查不到vcpkg
- ```toml
- #解决方案1
- #设置环境变量 这种方式只配置OPENSSL环境所在位置
- OPENSSL_DIR="C:\\Users\\Leri\\Path\\vcpkg\\packages\\openssl_x86-windows"  
- ``` "#
-                ),
-                html: None,
-            },
-        },
-    ];
-
-    let msgs: Vec<Message> = msgs
-        .into_iter()
-        .map(|mut msg| {
-            msg.to_html();
-            msg
-        })
-        .collect();
+pub async fn get_chat_msg(Path(header): Path<String>) -> impl IntoResponse {
+    println!("get_chat_msg:{}", header);
+    let msgs: Vec<Message> = crate::db::get_msg_by_topic_name(&header).unwrap();
 
     Json(json!({"result": "ok", "data": msgs}))
 }

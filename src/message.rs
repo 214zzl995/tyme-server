@@ -1,5 +1,6 @@
 use std::time::SystemTime;
 
+use anyhow::Context;
 use paho_mqtt::{self as mqtt};
 use serde::{Deserialize, Serialize};
 
@@ -73,7 +74,6 @@ impl TryFrom<mqtt::Message> for Message {
         let content = serde_json::from_str::<MessageContent>(&msg.payload_str()).unwrap();
 
         let topic = msg.topic().to_owned();
-        //根据斜杠解析toppic
         let topic_node: Vec<&str> = topic.split('/').collect();
 
         if topic_node.len() < 3 {
@@ -110,7 +110,7 @@ impl TryFrom<&str> for Topic {
             panic!("topic error");
         }
 
-        let header = topic_node[0].to_string();
+        let header = get_pattern(&topic_str).context("Unable to find matching topic")?;
         let publish = topic_node[1].to_string();
         let title = topic_node[2].to_string();
 
@@ -132,7 +132,8 @@ impl TryFrom<String> for Topic {
             panic!("topic error");
         }
 
-        let header = topic_node[0].to_string();
+        let header = get_pattern(&topic_str).context("Unable to find matching topic")?;
+
         let publish = topic_node[1].to_string();
         let title = topic_node[2].to_string();
 
@@ -143,4 +144,46 @@ impl TryFrom<String> for Topic {
             title: Some(title),
         })
     }
+}
+
+fn get_pattern<T: AsRef<str>>(topic: &T) -> Option<String> {
+    for pattern in crate::clint::TOPICS.lock().clone() {
+        if mqtt_topic_matches(&pattern, topic.as_ref()) {
+            return Some(pattern);
+        }
+    }
+    None
+}
+
+fn mqtt_topic_matches(pattern: &str, topic: &str) -> bool {
+    let mut pattern_parts = pattern.split('/').peekable();
+    let mut topic_parts = topic.split('/').peekable();
+
+    while pattern_parts.peek().is_some() || topic_parts.peek().is_some() {
+        match (pattern_parts.next(), topic_parts.next()) {
+            (Some("#"), _) => {
+                // # 匹配该级别及其所有子级
+                return true;
+            }
+            (Some("+"), None) | (None, Some(_)) => {
+                // + 需要匹配一个级别，如果没有额外的级别，则不匹配
+                return false;
+            }
+            (Some("+"), Some(_)) => {
+                // + 匹配任何单个级别
+            }
+            (Some(pattern), Some(topic)) => {
+                // 如果两者不相等，则不匹配
+                if pattern != topic {
+                    return false;
+                }
+            }
+            _ => {
+                // 其他情况，不匹配
+                return false;
+            }
+        }
+    }
+
+    true
 }

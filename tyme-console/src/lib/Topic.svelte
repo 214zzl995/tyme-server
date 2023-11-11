@@ -14,8 +14,8 @@
   };
 </script>
 
-<div class="md:w-full md:h-14 w-20 h-full md:mb-2 mr-2">
-  <button class:active={checked} class="w-full h-full" on:click={changeTopic}>
+<div class="md:w-full md:h-14 h-full md:mb-2 mr-2 ">
+  <button class:active={checked} class="w-full h-full px-2" on:click={changeTopic}>
     <span class="circle1" />
     <span class="circle2" />
     <span class="circle3" />

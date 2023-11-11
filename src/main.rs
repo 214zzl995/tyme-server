@@ -15,6 +15,10 @@ mod subscribe;
 mod web_console;
 mod db;
 
+pub use config::SYSCONIFG;
+pub use message::{Message, MessageContent, MessageType, Topic};
+pub use clint::CLINT;
+
 lazy_static! {
     pub static ref ARGS: HashMap<String, Option<String>> = {
         let mut args = env::args();

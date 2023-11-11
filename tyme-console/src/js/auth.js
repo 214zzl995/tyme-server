@@ -1,4 +1,5 @@
-import { user, createSocket } from './store.js';
+import { getMqttUser } from './fetch.js';
+import { user, createSocket, mqttUser } from './store.js';
 
 export async function getSession() {
     const res = await fetch('/auth/session', { credentials: 'same-origin' });
@@ -27,13 +28,21 @@ export async function getSession() {
             onclose: (/** @type {any} */ event) => {
                 console.log("onclose", event);
             },
-
         })
+
+        //获取 mqtt 用户名
+        getMqttUser().then((/** @type {any} */ res) => {
+            mqttUser.set(res.user);
+        });
     } else {
         user.set('');
     }
 }
 
+/**
+ * @param {any} username
+ * @param {any} password
+ */
 export async function postLogin(username, password) {
     const res = await fetch("/auth/login", {
         method: "POST",

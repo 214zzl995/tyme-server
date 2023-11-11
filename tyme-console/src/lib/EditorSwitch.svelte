@@ -1,7 +1,23 @@
 <script>
-  export let value = "MarkDown";
+  import { onMount } from "svelte";
+  export let value;
 
   $: checked = value === "MarkDown";
+
+  onMount(() => {
+    const editorType = localStorage.getItem("editorType");
+    if (editorType) {
+      value = editorType;
+    }else{
+      value = "MarkDown";
+    }
+  });
+
+  $: {
+    if (value !== undefined) {
+      localStorage.setItem("editorType", value);
+    }
+  }
 </script>
 
 <div>
@@ -25,6 +41,8 @@
 
 <style>
   label {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
     background-color: white;
     display: flex;
     align-items: center;
@@ -35,7 +53,7 @@
     color: black;
     font-size: 0.7rem;
     font-weight: 600;
-    text-align: end;
+    text-align: center;
   }
 
   input {

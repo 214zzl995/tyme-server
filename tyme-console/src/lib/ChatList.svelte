@@ -4,28 +4,45 @@
   import { getChatMsg } from "../js/fetch";
   import { socket } from "../js/store.js";
 
+  export let header = "";
+
   let pageNumber = 0;
 
   let divRef;
 
   $: msgs = [];
 
+  $: {
+    if (header !== "") {
+      msgs = [];
+      getChatMsg(header).then((res) => {
+        pushMsgs(res.data);
+        scrollToBottom(false);
+      });
+    }
+  }
+
   const socketMessageListener = (/** @type {{ data: any; }} */ event) => {
     const data = JSON.parse(event.data);
+    if(data.topic.header !== header){
+      return;
+    }
     pushMsgs([data]);
+    scrollToBottom(true);
   };
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (/** @type {Boolean?} */ isAnimation) => {
     if (divRef) {
-          //滚动到对应位置 
+      requestAnimationFrame(() =>
+        divRef.scrollBy({
+          top: divRef.scrollHeight,
+          behavior: isAnimation ? "smooth" : "auto" ,
+        })
+      );
     }
   };
 
   onMount(() => {
-    getChatMsg().then((res) => {
-      pushMsgs(res.data);
-    });
-
     if ($socket) {
       $socket.getWebSocket.addEventListener(
         "message",
@@ -46,12 +63,11 @@
   });
 
   /**
-     * @param {any[]} msg
-     */
-  function pushMsgs(msg) {
+   * @param {any[]} msg
+   */
+  const pushMsgs = (msg) => {
     msgs = [...msgs, ...msg]; // 使用展开运算符创建一个新数组，以便 Svelte 能够检测到变化
-    scrollToBottom();
-  }
+  };
 </script>
 
 <div class="w-full h-full overflow-y-scroll" bind:this={divRef}>

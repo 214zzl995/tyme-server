@@ -22,9 +22,10 @@ pub fn _get_msg_by_id(id: &String) -> anyhow::Result<Message> {
     Ok(msg)
 }
 
-pub fn _get_msg_by_topic_name(topic_name: &String) -> anyhow::Result<Vec<Message>> {
+pub fn get_msg_by_topic_name(topic_name: &String) -> anyhow::Result<Vec<Message>> {
     let topic_tree = DB.open_tree(topic_name).unwrap();
-    let msgs = topic_tree
+
+    let mut msgs = topic_tree
         .iter()
         .map(|x| {
             let (_, msg) = x.unwrap();
@@ -32,6 +33,8 @@ pub fn _get_msg_by_topic_name(topic_name: &String) -> anyhow::Result<Vec<Message
             msg
         })
         .collect::<Vec<Message>>();
+
+    let _ = msgs.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     Ok(msgs)
 }
 

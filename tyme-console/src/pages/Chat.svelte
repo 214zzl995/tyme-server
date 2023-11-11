@@ -5,23 +5,40 @@
   import Editor from "../lib/Editor.svelte";
   import ChatList from "../lib/ChatList.svelte";
 
-
   /** @type {string[]} */
   let topicList = [];
-  let topicIndex = 1;
-
-
+  let topicIndex = -1;
 
   onMount(() => {
     getAllTopic().then((res) => {
       topicList = res.topics;
-    });
 
-    
+      const url = new URL(window.location.href);
+      const topic = decodeURIComponent(url.searchParams.get("topic"));
+      if (topic != "null") {
+        topicIndex = topicList.indexOf(topic);
+
+        if (topicIndex == -1) {
+          topicIndex = 0;
+        }
+      } else {
+        topicIndex = 0;
+      }
+      changeTopic({ detail: topicIndex });
+    });
   });
 
   const changeTopic = (/** @type {{ detail: number; }} */ event) => {
     topicIndex = event.detail;
+    const loc = window.location;
+    let url = `${loc.origin}${loc.pathname}?topic=${encodeURIComponent(
+      topicList[topicIndex]
+    )}${loc.hash}`;
+
+    var state = { page: "about" };
+    var title = "about";
+    window.history.replaceState(state, title, url);
+
   };
 </script>
 
@@ -44,10 +61,10 @@
   >
     <div class="overflow-hidden">
       <span />
-      <ChatList />
+      <ChatList header={topicList[topicIndex]} />
     </div>
-    <div class="flex-none min-h-56">
-      <Editor topic={topicList[topicIndex]} />
+    <div class="flex-none h-48 md:h-64">
+      <Editor header = {topicList[topicIndex]}/>
     </div>
   </div>
 </div>

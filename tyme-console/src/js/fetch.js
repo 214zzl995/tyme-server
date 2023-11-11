@@ -13,9 +13,10 @@ export const getApi = (/** @type {string} */ api_token) => api.get('/check', und
     'Authorization': 'Bearer ' + api_token,
 })
 
-export const uploadCrt = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post('/c/upload/' + filename, body, "", "multipart/form-data")
+export const uploadCrt = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post(`/c/upload/${filename}`, body, "", "multipart/form-data")
 
-export const getChatMsg = (/** @type {{}} */ params) => api.get(`/c/get-chat-msg`)
-
+export const getChatMsg = (/** @type {string} */ topic) => api.get(`/c/get-chat-msg/${encodeURIComponent(topic)}`)
 
 export const sendMsg = (/** @type {any} */ params) => api.post(`/c/send`, params)
+
+export const getMqttUser = (/** @type {{}} */ params) => api.get(`/c/get-mqtt-user`)

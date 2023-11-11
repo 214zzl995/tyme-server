@@ -45,9 +45,7 @@
   let sysConfig;
   $: sysConfig = {
     mqtt_config: {
-      lwt: {
-        content: {},
-      },
+      lwt: "",
       auth: {},
       ssl: {
         trust_store: "./ssl/emqxsl-ca.crt",
@@ -215,51 +213,6 @@
           />
         </div>
       </div>
-      <div class="grid grid-cols-12 grid-rows-2 mt-2">
-        <Label
-          class="col-span-12 md:col-span-4 row-span-1 md:row-span-2 block text-center flex"
-        >
-          <p class="my-auto">
-            <span class="text-red-600"> * </span>Lwt-Topic:
-          </p>
-        </Label>
-        <div class="col-span-12 md:col-span-8 row-span-1 md:row-span-2">
-          <Input
-            placeholder="LWT"
-            bind:value={sysConfig.mqtt_config.lwt.topic}
-            class="max-w-none md:max-w-md"
-          />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-12 grid-rows-2 mt-2">
-        <Label
-          class="col-span-12 md:col-span-4 row-span-1 md:row-span-2 block text-center flex"
-        >
-          <p class="my-auto">
-            <span class="text-red-600"> * </span>Lwt-Qos:
-          </p>
-        </Label>
-        <div class="col-span-12 md:col-span-8 row-span-1 md:row-span-2">
-          <Select items={qos} bind:value={sysConfig.mqtt_config.lwt.qos} />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-12 grid-rows-2 mt-2">
-        <Label
-          class="col-span-12 md:col-span-4 row-span-1 md:row-span-2 block text-center flex"
-        >
-          <p class="my-auto">
-            <span class="text-red-600"> * </span>Lwt Content Type:
-          </p>
-        </Label>
-        <div class="col-span-12 md:col-span-8 row-span-1 md:row-span-2">
-          <Select
-            items={lwtContentType}
-            bind:value={sysConfig.mqtt_config.lwt.content.type}
-          />
-        </div>
-      </div>
 
       <div class="grid grid-cols-12 grid-rows-12 md:mt-2 mt-3">
         <Label
@@ -272,7 +225,7 @@
         <div class="col-span-12 md:col-span-8 row-span-10 md:row-span-12">
           <Textarea
             rows="8"
-            bind:value={sysConfig.mqtt_config.lwt.content.text}
+            bind:value={sysConfig.mqtt_config.lwt}
           />
         </div>
       </div>

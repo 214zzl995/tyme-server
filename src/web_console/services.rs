@@ -130,8 +130,9 @@ pub fn back_chat_route_c() -> Router<()> {
             "/config",
             get(routes::sys::get_config).post(routes::update_config),
         )
-        .route("/get-chat-msg", get(routes::get_chat_msg))
+        .route("/get-chat-msg/:header", get(routes::get_chat_msg))
         .route("/ws", get(routes::ws_handler))
+        .route("/get-mqtt-user", get(routes::get_mqtt_user))
 }
 
 pub fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {
