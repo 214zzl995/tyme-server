@@ -26,7 +26,7 @@ pub async fn subscribe() {
                 msg.to_html();
                 tokio::spawn(async move {
                     crate::web_console::ws_send_all(&msg).await;
-                    crate::db::insert_msg(&msg).unwrap();
+                    crate::s_db::insert_msg(&msg).unwrap();
                 });
             } else {
                 eprintln!("Error converting message");

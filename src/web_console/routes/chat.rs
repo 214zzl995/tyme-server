@@ -50,7 +50,7 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<String>>) -> impl IntoRespon
 #[allow(clippy::unused_async)]
 pub async fn get_chat_msg(Path(header): Path<String>) -> impl IntoResponse {
     println!("get_chat_msg:{}", header);
-    let msgs: Vec<Message> = crate::db::get_msg_by_topic_name(&header).unwrap();
+    let msgs: Vec<Message> = crate::s_db::get_msg_by_topic_name(&header).unwrap();
 
     Json(json!({"result": "ok", "data": msgs}))
 }

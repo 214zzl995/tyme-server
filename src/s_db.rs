@@ -6,6 +6,7 @@ lazy_static! {
     static ref DB: sled::Db = {
         let config = sled::Config::default()
             .flush_every_ms(Some(1000))
+            .cache_capacity(13_1072)
             .path(std::path::Path::new("data"));
         let db = config.open().unwrap();
         db

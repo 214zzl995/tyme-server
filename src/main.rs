@@ -7,17 +7,17 @@ use tokio::signal;
 extern crate lazy_static;
 extern crate serde_json;
 
-
 mod clint;
 mod config;
 mod message;
+mod r_db;
+mod s_db;
 mod subscribe;
 mod web_console;
-mod db;
 
+pub use clint::CLINT;
 pub use config::SYSCONIFG;
 pub use message::{Message, MessageContent, MessageType, Topic};
-pub use clint::CLINT;
 
 lazy_static! {
     pub static ref ARGS: HashMap<String, Option<String>> = {
@@ -34,6 +34,8 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
+    r_db::RDB.put(b"my key", b"my value").unwrap();
+
     if env::args().nth(1) == Some("init".to_string()) {
         SysConfig::initial().unwrap();
     } else {
