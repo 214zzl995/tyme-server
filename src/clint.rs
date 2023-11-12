@@ -118,7 +118,9 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                     mqtt::SubscribeOptions::with_retain_as_published();
                     config.mqtt_config.topics.len()
                 ];
-                cli.subscribe_many_with_options(&config.mqtt_config.topics, QOS, &sub_opts, None)
+
+                let qos = vec![mqtt::QOS_1; config.mqtt_config.topics.len()];
+                cli.subscribe_many_with_options(&config.mqtt_config.topics, &qos, &sub_opts, None)
                     .await?;
             }
         }
