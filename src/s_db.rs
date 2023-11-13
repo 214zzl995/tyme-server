@@ -7,7 +7,7 @@ lazy_static! {
         let config = sled::Config::default()
             .flush_every_ms(Some(1000))
             .cache_capacity(13_1072)
-            .path(std::path::Path::new("data"));
+            .path(std::path::Path::new("s-data"));
         let db = config.open().unwrap();
         db
     };

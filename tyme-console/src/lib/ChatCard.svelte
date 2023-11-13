@@ -19,7 +19,7 @@
     class:bg-stone-100={!mine}
     class:bg-blue-100={mine}
   >
-    <div class="flex gap-3 text-xs">
+    <div class="flex gap-px md:gap-3 md:flex-row flex-col text-xs">
       <span class="time">
         {format(msg.timestamp, 'yyyy-MM-dd HH:mm:ss')}
       </span>

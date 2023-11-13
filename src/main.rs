@@ -11,7 +11,6 @@ mod clint;
 mod config;
 mod message;
 mod r_db;
-mod s_db;
 mod subscribe;
 mod web_console;
 
@@ -34,7 +33,6 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
-    r_db::RDB.put(b"my key", b"my value").unwrap();
 
     if env::args().nth(1) == Some("init".to_string()) {
         SysConfig::initial().unwrap();
