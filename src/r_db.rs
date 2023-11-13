@@ -16,8 +16,30 @@ lazy_static! {
         rocksdb::DB::open_cf(&db_opts, path,cfs).unwrap()
     };
 }
+pub fn get_msg_by_header_with_id(topic_name: &String,id:&String) -> Option<Message> {
+    let cf_name = topic_name.clone();
+    let cf_options = Options::default();
 
-pub fn get_msg_by_topic_name(topic_name: &String) -> anyhow::Result<Vec<Message>> {
+    let header = match RDB.cf_handle(cf_name.clone().as_str()) {
+        Some(h) => h,
+        None => {
+            RDB.create_cf(cf_name.clone(), &cf_options).unwrap();
+            RDB.cf_handle(cf_name.clone().as_str()).unwrap()
+        }
+    };
+
+    let id = id.as_bytes();
+
+    match RDB.get_cf(&header, id).unwrap() {
+        Some(msg) => {
+            let msg = bincode::deserialize::<Message>(&msg).unwrap();
+            return Some(msg)
+        }
+        None => None,
+    }
+}
+
+pub fn get_msg_by_header_name(topic_name: &String) -> anyhow::Result<Vec<Message>> {
     let cf_name = topic_name.clone();
     let cf_options = Options::default();
 
@@ -64,7 +86,6 @@ pub fn insert_msg(msg: &Message) -> anyhow::Result<()> {
     let id = msg.id.clone().unwrap();
     let id = id.as_bytes();
     let msg = bincode::serialize::<Message>(&msg)?;
-    let msg = sled::IVec::from_iter(msg);
 
     RDB.put_cf(&header, id, msg)?;
 

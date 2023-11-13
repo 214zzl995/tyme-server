@@ -49,7 +49,7 @@
     gap: 14px;
     cursor: pointer;
     user-select: none;
-    border-radius: 10px;
+    border-radius:0.5rem;
     color: black;
     font-size: 0.7rem;
     font-weight: 600;

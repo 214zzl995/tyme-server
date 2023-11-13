@@ -19,4 +19,4 @@ export const getChatMsg = (/** @type {string} */ topic) => api.get(`/c/get-chat-
 
 export const sendMsg = (/** @type {any} */ params) => api.post(`/c/send`, params)
 
-export const getMqttUser = (/** @type {{}} */ params) => api.get(`/c/get-mqtt-user`)
+export const getMqttUser = () => api.get(`/c/get-mqtt-user`)

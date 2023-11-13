@@ -1,11 +1,13 @@
 use std::{collections::HashMap, net::SocketAddr, ops::ControlFlow, sync::Arc};
 
+use askama::Template;
 use axum::{
     extract::{
         ws::{Message as wsMessage, WebSocket},
-        ConnectInfo, Path, WebSocketUpgrade,
+        ConnectInfo, Path, Query, WebSocketUpgrade,
     },
-    response::IntoResponse,
+    http::StatusCode,
+    response::{IntoResponse, Response},
     Json, TypedHeader,
 };
 use futures::{SinkExt, StreamExt};
@@ -21,6 +23,19 @@ lazy_static! {
         Arc::new(Mutex::new(HashMap::new()));
 }
 
+#[derive(serde::Deserialize)]
+pub struct MsgParams {
+    pub id: String,
+}
+
+#[derive(Template)]
+#[template(path = "msg.html")]
+struct MsgTemplate {
+    name: String,
+    content: String,
+}
+
+
 #[allow(clippy::unused_async)]
 pub async fn send(Json(msg): Json<Message>) -> impl IntoResponse {
     match crate::clint::publish(msg.clone()).await {
@@ -31,7 +46,9 @@ pub async fn send(Json(msg): Json<Message>) -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn get_mqtt_user() -> impl IntoResponse {
-    Json(json!({"result": "ok", "message": "Get success", "user": crate::SYSCONIFG.lock().get_clint_name()}))
+    Json(
+        json!({"result": "ok", "message": "Get success", "user": crate::SYSCONIFG.lock().get_clint_name()}),
+    )
 }
 
 #[allow(clippy::unused_async)]
@@ -49,10 +66,26 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<String>>) -> impl IntoRespon
 
 #[allow(clippy::unused_async)]
 pub async fn get_chat_msg(Path(header): Path<String>) -> impl IntoResponse {
-    println!("get_chat_msg:{}", header);
-    let msgs: Vec<Message> = crate::r_db::get_msg_by_topic_name(&header).unwrap();
+    let msgs: Vec<Message> = crate::r_db::get_msg_by_header_name(&header).unwrap();
 
     Json(json!({"result": "ok", "data": msgs}))
+}
+
+#[allow(clippy::unused_async)]
+pub async fn msg(Path(header): Path<String>, msg_params: Query<MsgParams>) -> impl IntoResponse {
+    if let Some(msg) = crate::r_db::get_msg_by_header_with_id(&header, &msg_params.id) {
+        let template = MsgTemplate {
+            name: "丁真珍珠".to_string(),
+            content: msg.content.html.unwrap(),
+        };
+        return template.into_response();
+    } else {
+        return Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("Msg Not Found".to_string())
+            .unwrap()
+            .into_response();
+    }
 }
 
 #[allow(clippy::unused_async)]

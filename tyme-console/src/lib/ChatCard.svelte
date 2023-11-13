@@ -1,11 +1,18 @@
 <script>
   import "iconify-icon";
-  import { format } from 'date-fns';
+  import { format } from "date-fns";
 
   export let msg;
 
   $: mine = msg.mine;
   $: source = msg.content.html;
+
+  const showMsgNewTab = () => {
+    let url = `\/c\/msg\/${encodeURIComponent(
+      msg.topic.header
+    )}?id=${msg.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 </script>
 
 <div
@@ -21,7 +28,7 @@
   >
     <div class="flex gap-px md:gap-3 md:flex-row flex-col text-xs">
       <span class="time">
-        {format(msg.timestamp, 'yyyy-MM-dd HH:mm:ss')}
+        {format(msg.timestamp, "yyyy-MM-dd HH:mm:ss")}
       </span>
       <span class="topic">
         title: {msg.topic.title}
@@ -36,7 +43,14 @@
     <div
       class="flex flex-row gap-2.5 items-center justify-end text-slate-500 mb-1"
     >
-      <iconify-icon class="cursor-pointer" icon="akar-icons:enlarge" />
+      <iconify-icon
+        class="cursor-pointer"
+        icon="akar-icons:enlarge"
+        on:click={showMsgNewTab}
+        role="button"
+        on:keydown={(e) => {}}
+        tabindex="0"
+      />
 
       <div class="text-right font-semibold text-sm">
         qos:{msg.qos}

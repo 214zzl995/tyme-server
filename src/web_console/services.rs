@@ -131,6 +131,7 @@ pub fn back_chat_route_c() -> Router<()> {
             get(routes::sys::get_config).post(routes::update_config),
         )
         .route("/get-chat-msg/:header", get(routes::get_chat_msg))
+        .route("/msg/:header", get(routes::msg))
         .route("/ws", get(routes::ws_handler))
         .route("/get-mqtt-user", get(routes::get_mqtt_user))
 }

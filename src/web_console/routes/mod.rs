@@ -19,6 +19,7 @@ pub use chat::ws_handler;
 pub use chat::_ws_send;
 pub use chat::ws_send_all;
 pub use chat::get_mqtt_user;
+pub use chat::msg;
 
 pub use file::upload_crt;
 pub use sys::get_config;

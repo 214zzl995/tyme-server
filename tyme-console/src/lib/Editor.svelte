@@ -6,6 +6,7 @@
   import { sendMsg } from "./../js/fetch.js";
   import Spinner from "flowbite-svelte/Spinner.svelte";
   import { onMount } from "svelte";
+  import { mqttUser } from "./../js/store.js";
 
   export let header = "";
 
@@ -16,14 +17,16 @@
   let submitSussess = false;
   let submitLoading = false;
 
+  const pattern = /^[a-zA-Z]+\/#$/;
+
   $: {
     if (inputTopic !== "") {
-       localStorage.setItem("inputTopic", inputTopic);
+      localStorage.setItem("inputTopic", inputTopic);
     }
   }
 
-  $:{
-    if (text !== ""){
+  $: {
+    if (text !== "") {
       sessionStorage.setItem("text", text);
     }
   }
@@ -41,6 +44,17 @@
       text = textS;
     }
   });
+
+  /**
+   * @param {string} topic
+   */
+  const isTopicValid = (topic) => {
+    return !/[+#]/.test(topic) && !/^\/|\/$/.test(topic);
+  };
+
+  const autoTopic = () => {
+    inputTopic = `${header.replace(/[/#]/g, "")}\/${$mqttUser}/`;
+  };
 
   const handleSubmit = async () => {
     if (submitLoading) {
@@ -79,6 +93,25 @@
       return;
     }
 
+    if (!isTopicValid(inputTopic)) {
+      topicError = true;
+      addToast({
+        type: "red",
+        message: "Topic 格式错误",
+        dismissible: true,
+        timeout: 3000,
+      });
+      submitLoading = false;
+
+      return;
+    }
+
+    if (topicError) {
+      setTimeout(() => {
+        topicError = false;
+      }, 1000);
+    }
+
     const msg = {
       topic: { topic: inputTopic },
       qos: 1,
@@ -100,6 +133,7 @@
           });
         } else {
           submitSussess = true;
+          text = "";
           setTimeout(() => {
             submitSussess = false;
           }, 1000);
@@ -116,10 +150,27 @@
   <div
     class="w-full px-6 py-1 text-xl flex flex-row justify-between items-center"
   >
-    <iconify-icon
-      class="cursor-pointer"
-      icon="streamline:mail-smiley-happy-face-chat-message-smiley-smile-emoji-face-satisfied"
-    />
+    <div class="flex gap-2 items-center">
+      <div
+        class="flex gap-1 items-center rounded-lg bg-white px-2 py-1 cursor-pointer"
+      >
+        <iconify-icon
+          icon="streamline:mail-smiley-happy-face-chat-message-smiley-smile-emoji-face-satisfied"
+        />
+      </div>
+
+      <div
+        class="flex gap-1 items-center rounded-lg bg-white px-2 py-1 cursor-pointer"
+        on:click={autoTopic}
+        role="button"
+        tabindex="0"
+        class:hidden={!pattern.test(header)}
+        on:keydown={(e) => {}}
+      >
+        <iconify-icon icon="streamline:auto-flash" />
+        <span class="text-sm">Auto Topic</span>
+      </div>
+    </div>
 
     <!-- Json MarkDown -->
     <EditorSwitch bind:value={type} />
@@ -132,9 +183,9 @@
     <p class="text-sm">Topic:</p>
     <input
       type="text"
-      class="border-0 outline-none text h-full flex-1 text-sm rounded-lg ml-2"
-      class:border-2={topicError}
+      class="border-2 outline-none text h-full flex-1 text-sm rounded-lg ml-2 focus:border-white focus:border-2"
       class:border-rose-600={topicError}
+      class:border-white={!topicError}
       bind:value={inputTopic}
     />
   </div>
@@ -144,7 +195,17 @@
       bind:value={text}
     />
     <div class="absolute bottom-2 right-4 h-full py-2">
-      <Button class="w-16 m-2 h-full" on:click={handleSubmit}>
+      <Button
+        class="w-16 m-2 h-full"
+        on:click={handleSubmit}
+        on:keydown={(e) => {
+          e.preventDefault();
+          if (e.key === "Enter" && e.ctrlKey) {
+            console.log("submit");
+            handleSubmit();
+          }
+        }}
+      >
         {#if submitLoading && !submitSussess}
           <Spinner size="4" />
         {:else if submitSussess && !submitLoading}
