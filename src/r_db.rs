@@ -1,5 +1,5 @@
 use anyhow::Context;
-use rocksdb::{DBWithThreadMode, IteratorMode, MultiThreaded, Options};
+use rocksdb::{DBWithThreadMode, IteratorMode, MultiThreaded, Options, LogLevel};
 
 use crate::Message;
 
@@ -10,6 +10,9 @@ lazy_static! {
         db_opts.create_missing_column_families(true);
         db_opts.create_if_missing(true);
         db_opts.set_max_write_buffer_number(16);
+        db_opts.set_disable_auto_compactions(true);
+        db_opts.set_keep_log_file_num(5);
+        db_opts.set_log_level(LogLevel::Warn);
 
         let cfs = crate::SYSCONIFG.lock().clone().mqtt_config.topics;
     

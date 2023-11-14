@@ -1,3 +1,4 @@
+use log::{info, error};
 use paho_mqtt::{self as mqtt};
 use std::time::Duration;
 
@@ -14,7 +15,7 @@ pub async fn subscribe() {
             if msg.retained() {
                 print!("(R) ");
             }
-            println!(
+            info!(
                 "<<< [{:02}] ({}) {:?} : {:?}",
                 msg.qos(),
                 msg.topic(),
@@ -29,15 +30,15 @@ pub async fn subscribe() {
                     crate::r_db::insert_msg(&msg).unwrap();
                 });
             } else {
-                eprintln!("Error converting message");
+                error!("Error converting message");
             }
         } else {
-            println!("Lost connection. Attempting reconnect.");
+            info!("Lost connection. Attempting reconnect.");
             while let Err(err) = clint.reconnect().await {
-                println!("Error reconnecting: {}", err);
+                info!("Error reconnecting: {}", err);
                 tokio::time::sleep(Duration::from_millis(1000)).await;
             }
-            println!("Reconnected.");
+            info!("Reconnected.");
         }
     }
 }

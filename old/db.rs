@@ -38,23 +38,3 @@ pub fn insert_msg(msg: Message) -> anyhow::Result<()> {
     DB.lock().insert(id.as_bytes(), &msg)?;
     Ok(())
 }
-
-#[test]
-fn db_test() {
-    let id = nanoid::nanoid!();
-    println!("{}", id);
-    let msg = Message {
-        id: Some(id),
-        topic: "test".to_string(),
-        qos: 0,
-        mine: Some(true),
-        timestamp: Some(1625241600000),
-        content: crate::message::MessageContent {
-            message_type: crate::message::MessageType::MarkDown,
-            raw: "##### 这个地方就是给你看看用的 还没写".to_string(),
-            html: None,
-        },
-    };
-
-    insert_msg(msg.clone()).unwrap();
-}

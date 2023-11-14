@@ -1,6 +1,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::Router;
+use log::info;
 use parking_lot::Mutex;
 use tokio::{
     signal,
@@ -40,7 +41,7 @@ pub async fn run_web_console() -> anyhow::Result<()> {
         .clone()
         .unwrap_or(nanoid::nanoid!(8));
 
-    println!("WebConsole API Token:{}", api_token);
+    info!("WebConsole API Token:{}", api_token);
 
     let shared_state = Arc::new(store::Store::new(api_token));
 
@@ -58,7 +59,7 @@ pub async fn run_web_console() -> anyhow::Result<()> {
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal());
 
-    println!("WebConsole Listening on {}", addr);
+    info!("WebConsole Listening on {}", addr);
 
     let _ = server.await;
 

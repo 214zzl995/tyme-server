@@ -11,6 +11,7 @@ use axum::{
     Json, TypedHeader,
 };
 use futures::{SinkExt, StreamExt};
+use log::info;
 use parking_lot::Mutex;
 use serde_json::json;
 use tokio::sync::mpsc::{self, Sender};
@@ -100,16 +101,16 @@ pub async fn ws_handler(
     } else {
         String::from("Unknown browser")
     };
-    println!("`{user_agent}` at {addr} connected.");
+    info!("`{user_agent}` at {addr} connected.");
 
     ws.on_upgrade(move |socket| handle_socket(socket, addr, session))
 }
 
 async fn handle_socket(mut socket: WebSocket, who: SocketAddr, session: Session) {
     if socket.send(wsMessage::Ping(vec![1, 2, 3])).await.is_ok() {
-        println!("Pinged {who}...");
+        info!("Pinged {who}...");
     } else {
-        println!("Could not send ping {who}!");
+        info!("Could not send ping {who}!");
         return;
     }
 
@@ -119,7 +120,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, session: Session)
                 return;
             }
         } else {
-            println!("client {who} abruptly disconnected");
+            info!("client {who} abruptly disconnected");
             return;
         }
     }
@@ -153,39 +154,39 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, session: Session)
     tokio::select! {
         rv_a = (&mut send_task) => {
             match rv_a {
-                Ok(_) => println!("Send task completed"),
-                Err(_) => println!("Send task failed")
+                Ok(_) => info!("Send task completed"),
+                Err(_) => info!("Send task failed")
             }
             recv_task.abort();
         }
         rv_b = (&mut recv_task) => {
             match rv_b {
-                Ok(b) => println!("Received {b} messages"),
-                Err(b) => println!("Error receiving messages {b:?}")
+                Ok(b) => info!("Received {b} messages"),
+                Err(b) => info!("Error receiving messages {b:?}")
             }
             send_task.abort();
         }
     }
 
-    println!("Websocket context {who} destroyed");
+    info!("Websocket context {who} destroyed");
 }
 
 fn process_message(msg: wsMessage, who: SocketAddr, session: Session) -> ControlFlow<(), ()> {
     match msg {
         wsMessage::Text(t) => {
-            println!(">>> {who} sent str: {t:?}");
+            info!(">>> {who} sent str: {t:?}");
         }
         wsMessage::Binary(d) => {
-            println!(">>> {} sent {} bytes: {:?}", who, d.len(), d);
+            info!(">>> {} sent {} bytes: {:?}", who, d.len(), d);
         }
         wsMessage::Close(c) => {
             if let Some(cf) = c {
-                println!(
+                info!(
                     ">>> {} sent close with code {} and reason `{}`",
                     who, cf.code, cf.reason
                 );
             } else {
-                println!(">>> {who} somehow sent close message without CloseFrame");
+                info!(">>> {who} somehow sent close message without CloseFrame");
             }
             remove_clint(&session);
 
@@ -193,10 +194,10 @@ fn process_message(msg: wsMessage, who: SocketAddr, session: Session) -> Control
         }
 
         wsMessage::Pong(v) => {
-            println!(">>> {who} sent pong with {v:?}");
+            info!(">>> {who} sent pong with {v:?}");
         }
         wsMessage::Ping(v) => {
-            println!(">>> {who} sent ping with {v:?}");
+            info!(">>> {who} sent ping with {v:?}");
         }
     }
     ControlFlow::Continue(())

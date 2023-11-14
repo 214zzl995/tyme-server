@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env};
 
 use config::SysConfig;
-use tokio::signal;
+use flexi_logger::{colored_detailed_format, Age, Cleanup, Criterion, Duplicate, Naming};
 
 #[macro_use]
 extern crate lazy_static;
@@ -16,7 +16,9 @@ mod web_console;
 
 pub use clint::CLINT;
 pub use config::SYSCONIFG;
+use log::error;
 pub use message::{Message, MessageContent, MessageType, Topic};
+use tokio::signal;
 
 lazy_static! {
     pub static ref ARGS: HashMap<String, Option<String>> = {
@@ -32,7 +34,26 @@ lazy_static! {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
+    use flexi_logger::{FileSpec, Logger, WriteMode};
+
+    let file_spec = FileSpec::default().directory(SYSCONIFG.lock().clone().log_location);
+
+    let _ = Logger::try_with_str("info")?
+        .write_mode(WriteMode::BufferAndFlush)
+        .log_to_file(file_spec)
+        .duplicate_to_stderr(Duplicate::All)
+        .format_for_stderr(colored_detailed_format)
+        .format_for_stdout(colored_detailed_format)
+        .rotate(
+            Criterion::Age(Age::Day),
+            Naming::Timestamps,
+            Cleanup::KeepLogFiles(7),
+        )
+        .start()?;
+
+
+    error!("fuck");
 
     if env::args().nth(1) == Some("init".to_string()) {
         SysConfig::initial().unwrap();
@@ -45,14 +66,11 @@ async fn main() {
 
         tokio::select! {
            _= subscribe::subscribe() => {},
-           res = web_console::run_web_console() => {
-                if let Err(err) = res {
-                    println!("WebConsole Error:{}", err);
-                }
-           },
+           _= web_console::run_web_console() => {},
            _= ctrl_c => {}
         }
 
         clint::diable_connect();
-    }
+    };
+    Ok(())
 }

@@ -7,6 +7,7 @@ use axum::{
     response::Response,
     Json,
 };
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::web_console::store::Store;
@@ -31,18 +32,17 @@ pub async fn auth<B: Send + Sync>(
     let auth_header = if let Some(auth_header) = auth_header {
         auth_header
     } else {
-        println!("Authorization header missing");
+        info!("Authorization header missing");
         return Err((StatusCode::UNAUTHORIZED, Json(JsonError::unauthorized())));
     };
 
-    println!("Received Authorization Header: {}", auth_header);
+    info!("Received Authorization Header: {}", auth_header);
 
     // check bearer authorization to see if it matches
     if store.api_token_check(auth_header) {
         Ok(next.run(req).await)
     } else {
-        println!("Authorization token does NOT match");
-        //            return Ok(Json(json!( {"error": "Unauthorized"} )).into_response());
+        info!("Authorization token does NOT match");
         Err((StatusCode::UNAUTHORIZED, Json(JsonError::unauthorized())))
     }
 }

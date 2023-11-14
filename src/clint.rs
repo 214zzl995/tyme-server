@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use futures::executor::block_on;
+use log::info;
 use mqtt::ConnectOptionsBuilder;
 use paho_mqtt::AsyncClient;
 use paho_mqtt::{self as mqtt};
@@ -33,7 +34,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         protocol, config.mqtt_config.broker, config.mqtt_config.port
     );
 
-    println!("Connecting to the MQTT server at '{}'...", host);
+    info!("Connecting to the MQTT server at '{}'...", host);
 
     let trust_store = if let Some(trust_store) = &config.mqtt_config.ssl.trust_store {
         if !trust_store.exists() {
@@ -100,17 +101,17 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         let rsp = cli.connect(conn_opts).await?;
 
         if let Some(conn_rsp) = rsp.connect_response() {
-            println!(
+            info!(
                 "Connected to: '{}' with MQTT version {}",
                 conn_rsp.server_uri, conn_rsp.mqtt_version
             );
 
             if conn_rsp.session_present {
-                println!("Client session already present on broker.");
+                info!("Client session already present on broker.");
                 // Will not resubscribe when kicked out by broker
             } else {
                 // Register subscriptions on the server, using Subscription ID's.
-                println!(
+                info!(
                     r#"Subscribing to topics [{}]..."#,
                     config.mqtt_config.topics.join(", ")
                 );

@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { getAllTopic } from "./../js/fetch.js";
   import Topic from "../lib/Topic.svelte";
   import Editor from "../lib/Editor.svelte";
@@ -9,12 +9,18 @@
   let topicList = [];
   let topicIndex = -1;
 
+  $: {
+    if (topicIndex != -1) {
+      sessionStorage.setItem("topicPage", topicList[topicIndex]);
+    }
+  }
+
   onMount(() => {
     getAllTopic().then((res) => {
       topicList = res.topics;
 
       const url = new URL(window.location.href);
-      const topic = decodeURIComponent(url.searchParams.get("topic"));
+      const topic = sessionStorage.getItem("topicPage");
       if (topic != "null") {
         topicIndex = topicList.indexOf(topic);
 
@@ -29,16 +35,7 @@
   });
 
   const changeTopic = (/** @type {{ detail: number; }} */ event) => {
-    topicIndex = event.detail;
-    const loc = window.location;
-    let url = `${loc.origin}${loc.pathname}?topic=${encodeURIComponent(
-      topicList[topicIndex]
-    )}${loc.hash}`;
-
-    var state = { page: "about" };
-    var title = "about";
-    window.history.replaceState(state, title, url);
-
+    topicIndex = event.detail;    
   };
 </script>
 
@@ -64,7 +61,7 @@
       <ChatList header={topicList[topicIndex]} />
     </div>
     <div class="flex-none h-48 md:h-64">
-      <Editor header = {topicList[topicIndex]}/>
+      <Editor header={topicList[topicIndex]} />
     </div>
   </div>
 </div>
