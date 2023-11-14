@@ -1,7 +1,10 @@
 use std::{collections::HashMap, env};
 
 use config::SysConfig;
-use flexi_logger::{colored_detailed_format, Age, Cleanup, Criterion, Duplicate, Naming};
+use flexi_logger::{
+    colored_detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming,
+    WriteMode,
+};
 
 #[macro_use]
 extern crate lazy_static;
@@ -16,7 +19,6 @@ mod web_console;
 
 pub use clint::CLINT;
 pub use config::SYSCONIFG;
-use log::error;
 pub use message::{Message, MessageContent, MessageType, Topic};
 use tokio::signal;
 
@@ -35,26 +37,7 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use flexi_logger::{FileSpec, Logger, WriteMode};
-
-    let file_spec = FileSpec::default().directory(SYSCONIFG.lock().clone().log_location);
-
-    let _ = Logger::try_with_str("info")?
-        .write_mode(WriteMode::BufferAndFlush)
-        .log_to_file(file_spec)
-        .duplicate_to_stderr(Duplicate::All)
-        .format_for_stderr(colored_detailed_format)
-        .format_for_stdout(colored_detailed_format)
-        .rotate(
-            Criterion::Age(Age::Day),
-            Naming::Timestamps,
-            Cleanup::KeepLogFiles(7),
-        )
-        .start()?;
-
-
-    error!("fuck");
-
+    log_init()?;
     if env::args().nth(1) == Some("init".to_string()) {
         SysConfig::initial().unwrap();
     } else {
@@ -74,3 +57,23 @@ async fn main() -> anyhow::Result<()> {
     };
     Ok(())
 }
+
+fn log_init() -> anyhow::Result<()> {
+    let file_spec = FileSpec::default().directory(SYSCONIFG.lock().clone().log_location);
+
+    let _ = Logger::try_with_str("info, pago_mqtt=error,paho_mqtt_c=error")?
+        .write_mode(WriteMode::BufferAndFlush)
+        .log_to_file(file_spec)
+        .duplicate_to_stderr(Duplicate::All)
+        .format_for_stderr(colored_detailed_format)
+        .format_for_stdout(colored_detailed_format)
+        .rotate(
+            Criterion::Age(Age::Day),
+            Naming::Timestamps,
+            Cleanup::KeepLogFiles(7),
+        )
+        .start()?;
+    Ok(())
+}
+
+
