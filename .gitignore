@@ -2,3 +2,4 @@
 /ssl/emqxsl-ca.crt
 /assets/.idea
 /data
+/log
