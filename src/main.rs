@@ -61,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
 fn log_init() -> anyhow::Result<()> {
     let file_spec = FileSpec::default().directory(SYSCONIFG.lock().clone().log_location);
 
-    let _ = Logger::try_with_str("info, pago_mqtt=error,paho_mqtt_c=error")?
+    let _ = Logger::try_with_str("info,pago_mqtt=error,paho_mqtt_c=error")?
         .write_mode(WriteMode::BufferAndFlush)
         .log_to_file(file_spec)
         .duplicate_to_stderr(Duplicate::All)
@@ -75,5 +75,3 @@ fn log_init() -> anyhow::Result<()> {
         .start()?;
     Ok(())
 }
-
-
