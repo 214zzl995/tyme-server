@@ -67,6 +67,8 @@ fn log_init() -> anyhow::Result<()> {
         .duplicate_to_stderr(Duplicate::All)
         .format_for_stderr(colored_detailed_format)
         .format_for_stdout(colored_detailed_format)
+         //https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
+        .set_palette(String::from("b196;208;28;7;8"))
         .rotate(
             Criterion::Age(Age::Day),
             Naming::Timestamps,
