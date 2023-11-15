@@ -4,7 +4,6 @@ use serde::Deserialize;
 use serde_json::json;
 use tower_sessions::Session;
 
-
 /// route to handle log in
 #[allow(clippy::unused_async)]
 #[allow(clippy::missing_panics_doc)]
@@ -31,8 +30,10 @@ pub async fn logout(session: Session) -> impl IntoResponse {
 }
 
 // assume all passwords work
-const fn check_password(_username: &str, _password: &str) -> bool {
-    true
+fn check_password(username: &str, password: &str) -> bool {
+    let con_conf = crate::SYSCONIFG.lock().clone();
+    let con_conf = con_conf.web_console_config;
+    username.eq(&con_conf.user_name) && password.eq(&con_conf.password)
 }
 
 #[derive(Deserialize)]
