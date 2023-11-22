@@ -41,11 +41,18 @@ pub enum MessageType {
 impl Message {
     pub fn to_mqtt(&self) -> anyhow::Result<mqtt::Message> {
         let payload = serde_json::to_string(&self.content)?;
-        Ok(mqtt::Message::new(
-            self.topic.topic.clone(),
-            payload,
-            self.qos,
-        ))
+
+        let props = mqtt::properties::Properties::new();
+
+        let msg = mqtt::MessageBuilder::new()
+            .topic(self.topic.topic.clone())
+            .payload(payload)
+            .properties(props)
+            .qos(self.qos)
+            .retained(self.retain.unwrap_or(false))
+            .finalize();
+
+        Ok(msg)
     }
 
     pub fn to_html(&mut self) {
