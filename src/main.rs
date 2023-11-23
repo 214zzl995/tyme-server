@@ -8,6 +8,7 @@ use flexi_logger::{
 
 #[macro_use]
 extern crate lazy_static;
+extern crate mime;
 extern crate serde_json;
 
 mod clint;
@@ -19,7 +20,7 @@ mod web_console;
 
 pub use clint::CLINT;
 pub use config::SYSCONIFG;
-pub use message::{Message, MessageContent, MessageType, Topic};
+pub use message::{Message, MessageContent, Topic};
 use tokio::signal;
 
 lazy_static! {
@@ -67,7 +68,7 @@ fn log_init() -> anyhow::Result<()> {
         .duplicate_to_stderr(Duplicate::All)
         .format_for_stderr(colored_detailed_format)
         .format_for_stdout(colored_detailed_format)
-         //https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
+        //https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
         .set_palette(String::from("b196;208;28;7;8"))
         .rotate(
             Criterion::Age(Age::Day),

@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use anyhow::Context;
+use anyhow::{Context, Ok};
 use paho_mqtt::{self as mqtt};
 use serde::{Deserialize, Serialize};
 
@@ -13,40 +13,51 @@ pub struct Message {
     pub mine: Option<bool>,
     pub timestamp: Option<u128>,
     pub content: MessageContent,
+    pub publish: Option<String>,
+    pub receiver: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Topic {
     pub topic: String,
     pub header: Option<String>,
-    pub publish: Option<String>,
-    pub title: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct MessageContent {
     #[serde(rename = "type")]
-    pub message_type: MessageType,
+    pub message_type: String,
     pub raw: String,
     pub html: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Clone, PartialEq, Debug)]
-pub enum MessageType {
-    MarkDown,
-    Json,
-    Raw,
-}
-
 impl Message {
     pub fn to_mqtt(&self) -> anyhow::Result<mqtt::Message> {
-        let payload = serde_json::to_string(&self.content)?;
 
-        let props = mqtt::properties::Properties::new();
+        let mut props = mqtt::properties::Properties::new();
+
+        props.push_string_pair(
+            mqtt::PropertyCode::UserProperty,
+            "publish",
+            &crate::config::SYSCONIFG.lock().clone().get_clint_name(),
+        )?;
+
+        if let Some(receiver) = &self.receiver {
+            props.push_string_pair(
+                mqtt::PropertyCode::UserProperty,
+                "receiver",
+                receiver.as_str(),
+            )?;
+        }
+
+        props.push_string(
+            mqtt::PropertyCode::ContentType,
+            self.content.message_type.clone().as_str(),
+        )?;
 
         let msg = mqtt::MessageBuilder::new()
             .topic(self.topic.topic.clone())
-            .payload(payload)
+            .payload(self.content.raw.clone())
             .properties(props)
             .qos(self.qos)
             .retained(self.retain.unwrap_or(false))
@@ -55,13 +66,16 @@ impl Message {
         Ok(msg)
     }
 
-    pub fn to_html(&mut self) {
-        if self.content.message_type.eq(&MessageType::MarkDown) {
+    pub fn to_html(&mut self) -> anyhow::Result<()> {
+        let msg_type = self.content.message_type.clone();
+        let msg_type: mime::Mime = msg_type.parse().context("Unable to parse mime type")?;
+
+        if msg_type.essence_str().eq("text/markdown") {
             let html: String =
                 markdown::to_html_with_options(&self.content.raw, &markdown::Options::gfm())
                     .unwrap();
             self.content.html = Some(html);
-        } else if self.content.message_type.eq(&MessageType::Json) {
+        } else if msg_type.essence_str().eq("application/json") {
             let html: String = markdown::to_html_with_options(
                 &format!("```json \n{}\n```", &self.content.raw),
                 &markdown::Options::gfm(),
@@ -69,8 +83,9 @@ impl Message {
             .unwrap();
             self.content.html = Some(html);
         } else {
-            self.content.html = Some(self.content.raw.clone());
-        }
+            Err(anyhow::anyhow!("Unsupported message type"))?;
+        };
+        Ok(())
     }
 }
 
@@ -78,23 +93,29 @@ impl TryFrom<mqtt::Message> for Message {
     type Error = anyhow::Error;
 
     fn try_from(msg: mqtt::Message) -> Result<Self, Self::Error> {
-        let content = serde_json::from_str::<MessageContent>(&msg.payload_str()).unwrap();
-
-        let topic = msg.topic().to_owned();
-        let topic_node: Vec<&str> = topic.split('/').collect();
-
-        if topic_node.len() < 3 {
-            return Err(anyhow::anyhow!("topic error"));
-        }
-
         let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
 
         let topic = Topic::try_from(msg.topic())?;
-        let mine = topic
+
+        let publish = msg.properties().find_user_property("publish");
+
+        let mine = publish
             .clone()
-            .publish
-            .unwrap()
+            .context("Unable to find publish property")?
             .eq(&crate::config::SYSCONIFG.lock().clone().get_clint_name());
+
+        let receiver = msg.properties().find_user_property("receiver");
+
+        let message_type = msg
+            .properties()
+            .get_string(mqtt::PropertyCode::ContentType)
+            .context("Unable to find content type property")?;
+
+        let content = MessageContent {
+            message_type,
+            raw: msg.payload_str().to_string(),
+            html: None,
+        };
 
         Ok(Message {
             id: Some(nanoid::nanoid!()),
@@ -104,6 +125,8 @@ impl TryFrom<mqtt::Message> for Message {
             mine: Some(mine),
             content,
             retain: Some(msg.retained()),
+            publish,
+            receiver,
         })
     }
 }
@@ -111,21 +134,11 @@ impl TryFrom<mqtt::Message> for Message {
 impl TryFrom<&str> for Topic {
     type Error = anyhow::Error;
     fn try_from(topic_str: &str) -> Result<Self, Self::Error> {
-        let topic_node: Vec<&str> = topic_str.split('/').collect();
-
-        if topic_node.len() < 3 {
-            panic!("topic error");
-        }
-
         let header = get_pattern(&topic_str).context("Unable to find matching topic")?;
-        let publish = topic_node[1].to_string();
-        let title = topic_node[2].to_string();
 
         Ok(Topic {
             topic: topic_str.to_string(),
-            publish: Some(publish),
             header: Some(header),
-            title: Some(title),
         })
     }
 }
@@ -133,22 +146,11 @@ impl TryFrom<&str> for Topic {
 impl TryFrom<String> for Topic {
     type Error = anyhow::Error;
     fn try_from(topic_str: String) -> Result<Self, Self::Error> {
-        let topic_node: Vec<&str> = topic_str.split('/').collect();
-
-        if topic_node.len() < 3 {
-            panic!("topic error");
-        }
-
         let header = get_pattern(&topic_str).context("Unable to find matching topic")?;
-
-        let publish = topic_node[1].to_string();
-        let title = topic_node[2].to_string();
 
         Ok(Topic {
             topic: topic_str.to_string(),
-            publish: Some(publish),
             header: Some(header),
-            title: Some(title),
         })
     }
 }
@@ -193,4 +195,12 @@ fn mqtt_topic_matches(pattern: &str, topic: &str) -> bool {
     }
 
     true
+}
+
+#[test]
+fn mime_test() {
+    let msg_type = "text/markdown; charset=UTF-8";
+    let msg_tyme: mime::Mime = msg_type.parse().unwrap();
+
+    println!("{:?}", msg_tyme.essence_str());
 }

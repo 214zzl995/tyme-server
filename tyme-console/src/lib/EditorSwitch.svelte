@@ -2,14 +2,14 @@
   import { onMount } from "svelte";
   export let value;
 
-  $: checked = value === "MarkDown";
+  $: checked = value === "text/markdown";
 
   onMount(() => {
     const editorType = localStorage.getItem("editorType");
     if (editorType) {
       value = editorType;
     }else{
-      value = "MarkDown";
+      value = "text/markdown";
     }
   });
 
@@ -28,7 +28,7 @@
     name="favorite-checkbox"
     value="favorite-button"
     on:click={() => {
-      value = checked ? "Json" : "MarkDown";
+      value = checked ? "application/json" : "text/markdown";
     }}
   />
   <label for="favorite" class="container">

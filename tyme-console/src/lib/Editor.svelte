@@ -53,7 +53,7 @@
   };
 
   const autoTopic = () => {
-    inputTopic = `${header.replace(/[/#]/g, "")}\/${$mqttUser}/`;
+    inputTopic = `${header.replace(/[/#]/g, "")}\/`;
   };
 
   const handleSubmit = async () => {
