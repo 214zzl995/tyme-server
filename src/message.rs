@@ -13,7 +13,7 @@ pub struct Message {
     pub mine: Option<bool>,
     pub timestamp: Option<u128>,
     pub content: MessageContent,
-    pub publish: Option<String>,
+    pub sender: Option<String>,
     pub receiver: Option<String>,
 }
 
@@ -38,7 +38,7 @@ impl Message {
 
         props.push_string_pair(
             mqtt::PropertyCode::UserProperty,
-            "publish",
+            "sender",
             &crate::config::SYSCONIFG.lock().clone().get_clint_name(),
         )?;
 
@@ -97,9 +97,9 @@ impl TryFrom<mqtt::Message> for Message {
 
         let topic = Topic::try_from(msg.topic())?;
 
-        let publish = msg.properties().find_user_property("publish");
+        let sender = msg.properties().find_user_property("sender");
 
-        let mine = publish
+        let mine = sender
             .clone()
             .context("Unable to find publish property")?
             .eq(&crate::config::SYSCONIFG.lock().clone().get_clint_name());
@@ -125,7 +125,7 @@ impl TryFrom<mqtt::Message> for Message {
             mine: Some(mine),
             content,
             retain: Some(msg.retained()),
-            publish,
+            sender,
             receiver,
         })
     }

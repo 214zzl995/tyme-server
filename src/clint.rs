@@ -91,7 +91,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                     raw: lwt.clone(),
                     html: None,
                 },
-                publish: Some(config.get_clint_name()),
+                sender: Some(config.get_clint_name()),
                 receiver: None,
                 retain: Some(false),
             };
