@@ -37,10 +37,10 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    log_init()?;
     if env::args().nth(1) == Some("init".to_string()) {
         SysConfig::initial().unwrap();
     } else {
+        log_init()?;
         let ctrl_c = async {
             signal::ctrl_c()
                 .await

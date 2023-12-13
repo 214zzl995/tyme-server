@@ -148,7 +148,7 @@ impl Default for SysConfig {
         Self {
             mqtt_config: Default::default(),
             web_console_config: Default::default(),
-            log_location: Default::default(),
+            log_location: PathBuf::from("./log"),
         }
     }
 }
