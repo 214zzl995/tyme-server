@@ -1,4 +1,4 @@
-use log::{info, error};
+use log::{error, info};
 use paho_mqtt::{self as mqtt};
 use std::time::Duration;
 
@@ -23,14 +23,24 @@ pub async fn subscribe() {
                 msg.properties()
             );
 
-            if let Ok(mut msg) = Message::try_from(msg) {
-                msg.to_html();
-                tokio::spawn(async move {
-                    crate::web_console::ws_send_all(&msg).await;
-                    crate::r_db::insert_msg(&msg).unwrap();
-                });
-            } else {
-                error!("Error converting message");
+            for prop in msg.properties().clone().user_iter() {
+                info!("Property: {:?}", prop);
+            }
+
+            match Message::try_from(msg) {
+                Ok(mut msg) => {
+                    if let Err(err) = msg.to_html() {
+                        error!("Error converting message to html: {}", err);
+                    } else {
+                        tokio::spawn(async move {
+                            crate::web_console::ws_send_all(&msg).await;
+                            crate::r_db::insert_msg(&msg).unwrap();
+                        });
+                    };
+                }
+                Err(err) => {
+                    error!("Error converting message: {}", err);
+                }
             }
         } else {
             info!("Lost connection. Attempting reconnect.");

@@ -79,7 +79,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         }
 
         if let Some(lwt) = &config.mqtt_config.lwt {
-            let topic = Topic::try_from(format!("system/{}/lwt", config.get_clint_name()))?;
+            let topic = Topic::try_from("system/lwt")?;
             let lwt_msg = Message {
                 id: None,
                 topic,
@@ -87,10 +87,12 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                 timestamp: None,
                 mine: None,
                 content: MessageContent {
-                    message_type: crate::message::MessageType::Raw,
+                    message_type: String::from("text/markdown; charset=UTF-8"),
                     raw: lwt.clone(),
                     html: None,
                 },
+                publish: Some(config.get_clint_name()),
+                receiver: None,
                 retain: Some(false),
             };
             conn_opts.will_message(lwt_msg.to_mqtt()?);

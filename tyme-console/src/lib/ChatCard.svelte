@@ -8,9 +8,7 @@
   $: source = msg.content.html;
 
   const showMsgNewTab = () => {
-    let url = `\/c\/msg\/${encodeURIComponent(
-      msg.topic.header
-    )}?id=${msg.id}`;
+    let url = `\/c\/msg\/${encodeURIComponent(msg.topic.header)}?id=${msg.id}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 </script>
@@ -31,29 +29,29 @@
         {format(msg.timestamp, "yyyy-MM-dd HH:mm:ss")}
       </span>
       <span class="topic">
-        title: {msg.topic.title}
-      </span>
-      <span class="topic">
-        publish: {msg.topic.publish}
+        publish: {msg.publish}
       </span>
     </div>
     <div class="chat-card-md">
       {@html source}
     </div>
-    <div
-      class="flex flex-row gap-2.5 items-center justify-end text-slate-500 mb-1"
-    >
-      <iconify-icon
-        class="cursor-pointer"
-        icon="akar-icons:enlarge"
-        on:click={showMsgNewTab}
-        role="button"
-        on:keydown={(e) => {}}
-        tabindex="0"
-      />
+    <div class="flex flex-row text-slate-500 mb-1 justify-between text-sm">
+      <p class="topic">
+        {msg.topic.topic}
+      </p>
+      <div class="flex flex-row gap-2.5 items-center justify-end">
+        <iconify-icon
+          class="cursor-pointer"
+          icon="akar-icons:enlarge"
+          on:click={showMsgNewTab}
+          role="button"
+          on:keydown={(/** @type {any} */ e) => {}}
+          tabindex="0"
+        />
 
-      <div class="text-right font-semibold text-sm">
-        qos:{msg.qos}
+        <p class="text-right font-semibold">
+          qos:{msg.qos}
+        </p>
       </div>
     </div>
   </div>

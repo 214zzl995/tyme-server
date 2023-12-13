@@ -28,6 +28,7 @@ rocksdb = { version = "0.21.0", features = ["multi-threaded-cf"] }
 bincode = "1"
 askama = { version = "0.12", features = ["with-axum"] }
 askama_axum = "*"
+mime = "0.3.17"
 
 
 [dev-dependencies]
