@@ -164,7 +164,7 @@ fn get_pattern<T: AsRef<str>>(topic: &T) -> Option<String> {
     None
 }
 
-fn mqtt_topic_matches(pattern: &str, topic: &str) -> bool {
+pub fn mqtt_topic_matches(pattern: &str, topic: &str) -> bool {
     let mut pattern_parts = pattern.split('/').peekable();
     let mut topic_parts = topic.split('/').peekable();
 

@@ -1,4 +1,4 @@
-use crate::ARGS;
+use crate::{message::mqtt_topic_matches, ARGS};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -140,6 +140,30 @@ impl SysConfig {
 
     pub fn get_clint_name(&self) -> String {
         format!("tyme-server-{}", self.mqtt_config.client_id)
+    }
+}
+
+impl MQTTConfig {
+    pub fn check(&self) -> anyhow::Result<()> {
+        if self.ssl.enable && self.ssl.trust_store.is_none() {
+            return Err(anyhow::anyhow!(
+                "trust_store cannot be empty when opening ssl connection"
+            ));
+        }
+
+        if self.auth.enable && (self.auth.user_name.is_none() || self.auth.password.is_none()) {
+            return Err(anyhow::anyhow!(
+                "When the identity authentication is Yes, the username and password cannot be empty."
+            ));
+        }
+        if self
+            .topics
+            .iter()
+            .any(|topic| mqtt_topic_matches(topic, "system/#"))
+        {
+            return Err(anyhow::anyhow!("system/# is a reserved topic"));
+        }
+        Ok(())
     }
 }
 

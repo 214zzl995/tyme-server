@@ -338,7 +338,9 @@ checksum = "7f2c685bad3eb3d45a01354cedb7d5faa66194d1d58ba6e267a8de788f79db38"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
+ "wasm-bindgen",
  "windows-targets",
 ]
 
@@ -395,6 +397,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a17b76ff3a4162b0b27f354a0c87015ddad39d35f9c0c36607a3bdd175dde1f1"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "cron"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ff76b51e4c068c52bfd2866e1567bee7c567ae8f24ada09fd4307019e25eab7"
+dependencies = [
+ "chrono",
+ "nom",
+ "once_cell",
+]
+
+[[package]]
+name = "cron_task"
+version = "0.1.0"
+dependencies = [
+ "cron",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1781,6 +1803,9 @@ dependencies = [
  "axum",
  "axum-macros",
  "bincode",
+ "chrono",
+ "cron",
+ "cron_task",
  "flexi_logger",
  "futures",
  "futures-timer",

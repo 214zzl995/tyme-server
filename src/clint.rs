@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use cron_task::async_cron_task;
 use futures::executor::block_on;
 use log::info;
 use mqtt::ConnectOptionsBuilder;
@@ -58,7 +59,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
 
     let cli = mqtt::AsyncClient::new(create_opts)?;
 
-    if let Err(err) = block_on(async {
+    block_on(async {
         let mut conn_opts = ConnectOptionsBuilder::with_mqtt_version(config.mqtt_config.version);
         let conn_opts = conn_opts
             .ssl_options(ssl_opts)
@@ -113,25 +114,20 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                 // Will not resubscribe when kicked out by broker
             } else {
                 // Register subscriptions on the server, using Subscription ID's.
-                info!(
-                    r#"Subscribing to topics [{}]..."#,
-                    config.mqtt_config.topics.join(", ")
-                );
-                let sub_opts = vec![
-                    mqtt::SubscribeOptions::with_retain_as_published();
-                    config.mqtt_config.topics.len()
-                ];
+                let mut topics = config.mqtt_config.topics.clone();
+                topics.push("system/#".to_string());
+                info!(r#"Subscribing to topics [{}]..."#, topics.join(", "));
+                let sub_opts =
+                    vec![mqtt::SubscribeOptions::with_retain_as_published(); topics.len()];
 
                 let qos = vec![mqtt::QOS_1; config.mqtt_config.topics.len()];
-                cli.subscribe_many_with_options(&config.mqtt_config.topics, &qos, &sub_opts, None)
+                cli.subscribe_many_with_options(&topics, &qos, &sub_opts, None)
                     .await?;
             }
         }
 
         Ok::<(), anyhow::Error>(())
-    }) {
-        return Err(anyhow::anyhow!("Error connecting: {:?}", err));
-    }
+    })?;
 
     Ok(cli)
 }
@@ -168,4 +164,27 @@ pub async fn subscribe_topic(topics: Vec<String>) -> anyhow::Result<()> {
         .await?;
 
     Ok(())
+}
+
+#[async_cron_task("0/30 * * * * ?")]
+async fn deco(t: u64) {
+    let secs = Duration::from_secs(t);
+    tokio::time::sleep(secs).await;
+}
+
+#[async_cron_task("0/30 * * * * ?")]
+fn sync_deco(t: u64) {
+    let secs = Duration::from_secs(t);
+    std::thread::sleep(secs);
+}
+
+#[test]
+fn my_test() {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async {
+            deco(1).await;
+        });
 }
