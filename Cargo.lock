@@ -417,6 +417,7 @@ dependencies = [
  "cron",
  "quote",
  "syn",
+ "tokio",
 ]
 
 [[package]]

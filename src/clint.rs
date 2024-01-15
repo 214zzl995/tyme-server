@@ -185,6 +185,6 @@ fn my_test() {
         .build()
         .unwrap()
         .block_on(async {
-            deco(1).await;
+            sync_deco(1).await;
         });
 }
