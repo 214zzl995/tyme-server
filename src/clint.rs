@@ -217,7 +217,10 @@ fn scrcpy() {
     // let _ = script.exec().unwrap();
     // let _ = script.call::<_, mlua::Value>(()).unwrap();
     // let _ = script.eval::<mlua::Value>().unwrap();
-    let ss = serde_json::to_string_pretty(&script.eval::<mlua::Value>().unwrap()).unwrap();
 
-    println!("{:?}", ss);
+    let os_info = script.eval::<mlua::Value>().unwrap();
+
+    let os_info_json = serde_json::to_string_pretty(&os_info).unwrap();
+
+    println!("{}", os_info_json);
 }

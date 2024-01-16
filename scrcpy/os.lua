@@ -1,10 +1,9 @@
 -- package.path = package.path .. ';./scrcpy/?.lua' --搜索lua模块
 package.cpath = package.cpath .. ';./?.dll;'     --搜索dll模块
 
-local json = require("dkjson")
-
 local os_type = nil
 
+-- 获取 Windows 系统运行时间
 local function get_w_system_uptime()
     local command = 'wmic os get lastbootuptime /format:list'
     local handle = io.popen(command)
@@ -35,7 +34,8 @@ local function get_w_system_uptime()
     return nil
 end
 
-local function get_w_load_percentage()
+-- 获取 Windows CPU 负载百分比
+local function get_w_cpu_load_percentage()
     local command = 'wmic cpu get loadpercentage'
     local handle = io.popen(command)
     local output = handle and handle:read('*a') or ""
@@ -48,7 +48,8 @@ local function get_w_load_percentage()
     return load_percentage
 end
 
-local function get_w_current_clock_speed()
+-- 获取 Windows CPU 时钟速度
+local function get_w_cpu_clock_speed()
     local command = 'wmic cpu get currentclockspeed'
     local handle = io.popen(command)
     local output = handle and handle:read('*a') or ""
@@ -61,8 +62,9 @@ local function get_w_current_clock_speed()
     return current_clock_speed
 end
 
-local function get_w_mem_info()
-    local command = 'wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /Value'
+-- 获取 Windows 系统总内存大小
+local function get_w_total_memory_size()
+    local command = 'wmic OS get TotalVisibleMemorySize /Value'
     local handle = io.popen(command)
     local output = handle and handle:read('*a') or ""
 
@@ -70,71 +72,106 @@ local function get_w_mem_info()
         handle:close()
     end
 
-    local free_physical_memory = tonumber(string.match(output, 'FreePhysicalMemory=(%d+)'))
-    local total_visible_memory_size = tonumber(string.match(output, 'TotalVisibleMemorySize=(%d+)'))
+    local total_memory_size = tonumber(string.match(output, 'TotalVisibleMemorySize=(%d+)'))
 
-    return {
-        free_physical_memory = free_physical_memory,
-        total_visible_memory_size = total_visible_memory_size
-    }
+    return total_memory_size
 end
 
+-- 获取Windows 空闲物理内存
+local function get_w_free_memory_size()
+    local command = "wmic OS get FreePhysicalMemory /Value"
+    local handle = io.popen(command)
+    local output = handle and handle:read('*a') or ""
 
-
-if package.config:sub(1, 1) == '\\' then -- windows
-    -- 获取CPU利用率
-    local load_percentage = get_w_load_percentage()
-
-    -- 获取CPU速度
-    local current_clock_speed = get_w_current_clock_speed()
-
-    -- 获取系统正常运行时间
-    local uptime = get_w_system_uptime()
-
-    -- 获取内存信息
-    local mem_info = get_w_mem_info()
-
-    local ss = {
-        cpu_load_percentage = load_percentage,
-        cpu_clock_speed = current_clock_speed,
-        system_uptime = uptime,
-        free_physical_memory = mem_info.free_physical_memory,
-        total_visible_memory_size = mem_info.total_visible_memory_size
-    }
-    local jsonString = json.encode(ss)
-    print(jsonString)
-    return ss;
-elseif package.config:sub(1, 1) == '/' then -- unix linux
-    -- 调用 top 命令，获取输出
-    local f = io.popen("top -b -n 1")
-    local output = f and f:read("*all") or ""
-    if f then
-        f:close()
+    if handle then
+        handle:close()
     end
 
-    -- 从输出中提取 CPU 和内存的信息
-    local cpu_pattern =
-    "Cpu%(s%):%s+(%d+%.%d+) us,%s+(%d+%.%d+) sy,%s+(%d+%.%d+) ni,%s+(%d+%.%d+) id,%s+(%d+%.%d+) wa,%s+(%d+%.%d+) hi,%s+(%d+%.%d+) si,%s+(%d+%.%d+) st"
-    local mem_pattern = "KiB Mem :%s+(%d+) total,%s+(%d+) used,%s+(%d+) free,%s+(%d+) buffers"
-    local cpu_info = { output:match(cpu_pattern) }
-    local mem_info = { output:match(mem_pattern) }
+    local total_memory_size = tonumber(string.match(output, 'TotalVisibleMemorySize=(%d+)'))
 
-    -- 打印 CPU 和内存的信息
-    print("CPU usage:")
-    print(string.format("User: %s%%", cpu_info[1]))
-    print(string.format("System: %s%%", cpu_info[2]))
-    print(string.format("Idle: %s%%", cpu_info[4]))
-    print("Memory usage:")
-    print(string.format("Total: %s KiB", mem_info[1]))
-    print(string.format("Used: %s KiB", mem_info[2]))
-    print(string.format("Free: %s KiB", mem_info[3]))
-else
-    os_type = "macOS" -- macos
+    return total_memory_size
 end
 
 
 
+-- 获取 Linux CPU 负载百分比
+local function get_l_cpu_load_percentage()
+    local command = "top -bn1 | grep 'Cpu(s)' | awk '{print $2 + $4}'"
+    local handle = io.popen(command)
+    local result = handle and handle:read("*a") or ""
+    if handle then
+        handle:close()
+    end
+    return tonumber(result)
+end
+
+-- 获取 Linux CPU 时钟速度 (虚拟机好像没法正常获取到)
+local function get_l_cpu_clock_speed()
+    local command = "lscpu | grep 'CPU MHz' | awk '{print $3}'"
+    local handle = io.popen(command)
+    local result = handle and handle:read("*a") or ""
+    if handle then
+        handle:close()
+    end
+    return tonumber(result)
+end
+
+-- 获取 Linux 系统运行时间
+local function get_l_system_uptime()
+    local command = "awk '{print $1}' /proc/uptime"
+    local handle = io.popen(command)
+    local result = handle and handle:read("*a") or ""
+    if handle then
+        handle:close()
+    end
+    return tonumber(result)
+end
+
+-- 获取Linux 空闲物理内存
+local function get_l_free_memory_size()
+    local command = "grep -E '^MemFree:' /proc/meminfo | awk '{print $2}'"
+    local handle = io.popen(command)
+    local result = handle and handle:read("*a") or ""
+    if handle then
+        handle:close()
+    end
+    return tonumber(result)
+end
+
+-- 获取总可见内存大小
+local function get_l_total_memory_size()
+    local command = "grep -E '^MemTotal:' /proc/meminfo | awk '{print $2}'"
+    local handle = io.popen(command)
+    local result = handle and handle:read("*a") or ""
+    if handle then
+        handle:close()
+    end
+    return tonumber(result)
+end
+
+if package.config:sub(1, 1) == '\\' then -- windows
+    os_type = "windows" -- windows
+    local os_info = {
+        cpu_load_percentage = get_w_cpu_load_percentage(),
+        cpu_clock_speed = get_w_cpu_clock_speed(),
+        system_uptime = get_w_system_uptime(),
+        free_physical_memory = get_w_free_memory_size(),
+        total_memory_size = get_w_total_memory_size()
+    }
+    return os_info;
+elseif package.config:sub(1, 1) == '/' then -- unix linux
+    os_type = "linux" -- linux
+    local os_info = {
+        cpu_load_percentage = get_l_cpu_load_percentage(),
+        cpu_clock_speed = get_l_cpu_clock_speed(),
+        system_uptime = get_l_system_uptime(),
+        free_physical_memory = get_l_free_memory_size(),
+        total_memory_size = get_l_total_memory_size()
+    }
+    return os_info;
+else
+    os_type = "macOS" -- macos
+    return os_type;
+end
 
 
-
-return os_type
