@@ -167,15 +167,13 @@ pub async fn subscribe_topic(topics: Vec<String>) -> anyhow::Result<()> {
 }
 
 #[async_cron_task("0/30 * * * * ?")]
-async fn deco(t: u64) {
-    let secs = Duration::from_secs(t);
-    tokio::time::sleep(secs).await;
+async fn deco() {
+    tokio::time::sleep(Duration::from_secs(20)).await;
 }
 
 #[async_cron_task("0/30 * * * * ?")]
-fn sync_deco(t: u64) {
-    let secs = Duration::from_secs(t);
-    std::thread::sleep(secs);
+fn sync_deco() {
+    std::thread::sleep(Duration::from_secs(20));
 }
 
 #[test]
@@ -185,6 +183,41 @@ fn my_test() {
         .build()
         .unwrap()
         .block_on(async {
-            sync_deco(1).await;
+            sync_deco().await;
         });
+}
+
+#[test]
+fn scrcpy() {
+    let lua = mlua::Lua::new();
+
+    let globals = lua.globals();
+
+    let package_path = globals
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .get::<_, String>("path")
+        .unwrap();
+
+    let package_path = format!("{};./scrcpy/?.lua", package_path);
+
+    globals
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .set("path", package_path)
+        .unwrap();
+
+    // 加载一个 Lua 脚本文件
+    let script_path = "scrcpy/os.lua";
+    let script_content = std::fs::read_to_string(script_path).expect("Failed to read script file");
+
+    let script = lua.load(script_content);
+
+    // 执行脚本
+    // let _ = script.exec().unwrap();
+    // let _ = script.call::<_, mlua::Value>(()).unwrap();
+    // let _ = script.eval::<mlua::Value>().unwrap();
+    let ss = serde_json::to_string_pretty(&script.eval::<mlua::Value>().unwrap()).unwrap();
+
+    println!("{:?}", ss);
 }

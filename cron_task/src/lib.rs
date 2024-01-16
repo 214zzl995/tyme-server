@@ -21,6 +21,13 @@ pub fn async_cron_task(attr: TokenStream, func: TokenStream) -> TokenStream {
     let func_async = &func_decl.asyncness;
     let is_async_function = func_async.is_some().clone();
 
+    if func_output != &syn::ReturnType::Default {
+        panic!("async_cron_task function must return nothing");
+    }
+    if func_inputs != &syn::punctuated::Punctuated::new() {
+        panic!("async_cron_task function must have no arguments");
+    }
+
     let func_block = if is_async_function {
         quote! {
            #func_async {#func_block}.await;
@@ -48,8 +55,7 @@ pub fn async_cron_task(attr: TokenStream, func: TokenStream) -> TokenStream {
                  let next = schedule.upcoming(chrono::offset::Local).next().unwrap();
                  let duration = (next - now).to_std().unwrap();
                  let start = time::Instant::now();
-                 tokio::time::sleep(duration).await; // 等待下一个时间点
-                 println!("time cost {:?}", start.elapsed());
+                 tokio::time::sleep(duration).await; 
             }
 
         }
@@ -57,3 +63,5 @@ pub fn async_cron_task(attr: TokenStream, func: TokenStream) -> TokenStream {
 
     caller.into()
 }
+
+

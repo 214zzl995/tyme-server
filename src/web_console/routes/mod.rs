@@ -16,11 +16,9 @@ pub use chat::get_all_toppic;
 pub use chat::subscribe_topic;
 pub use chat::get_chat_msg;
 pub use chat::ws_handler;
-pub use chat::ws_send_all;
 pub use chat::get_mqtt_user;
 pub use chat::msg;
 
 pub use file::upload_crt;
-pub use sys::get_config;
 pub use sys::update_config;
 

@@ -11,5 +11,12 @@
   "typescript.disableAutomaticTypeAcquisition": false,
   "typescript.enablePromptUseWorkspaceTsdk": false,
   "typescript.format.enable": true,
-  "javascript.validate.enable": true
+  "javascript.validate.enable": true,
+  "Lua.diagnostics.globals": [
+    "getSystemUptime",
+    "get_system_uptime"
+  ],
+  "Lua.diagnostics.disable": [
+    "assign-type-mismatch"
+  ]
 }
