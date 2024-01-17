@@ -96,8 +96,3 @@ pub async fn shutdown_signal() {
     SD_CANNEL.lock().take();
 }
 
-pub fn stop() {
-    if let Some(tx) = SD_CANNEL.lock().take() {
-        let _ = tx.send(true);
-    }
-}
