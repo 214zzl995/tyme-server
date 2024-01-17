@@ -5,7 +5,7 @@ use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
 use tokio::sync::oneshot::Sender;
 
 lazy_static! {
-    static ref TASK_MANGER: Mutex<TaskManager> = Mutex::new(TaskManager::new());
+    static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
 }
 
 pub struct TaskManager {
@@ -13,9 +13,8 @@ pub struct TaskManager {
     tasks: HashMap<String, Mutex<TaskRunner>>,
 }
 
-#[derive(Clone)]
 struct TaskRunner {
-    tx: Option<Arc<Sender<()>>>,
+    tx: Option<Sender<()>>,
     task: Task,
 }
 
@@ -39,10 +38,10 @@ impl TaskManager {
         }
     }
 
-    pub fn start(mut self) {
+    pub fn start(&mut self) {
         let tasks = [Task::new(
             PathBuf::from("scrcpy/os.lua"),
-            "0 0 0 * * * *".to_string(),
+            "*/5 * * * * *".to_string(),
             "os".to_string(),
             None,
         )];
@@ -68,13 +67,20 @@ impl TaskManager {
     }
 
     pub fn stop_task(&self, id: &str) -> anyhow::Result<()> {
-        let runner = self
+        let mut runner = self
             .tasks
             .get(id)
             .ok_or(anyhow::anyhow!("Task Not Found"))?
-            .lock()
-            .clone();
+            .lock();
         runner.stop()?;
+        Ok(())
+    }
+
+    pub fn stop_all(&self) -> anyhow::Result<()> {
+        for (_, runner) in self.tasks.iter() {
+            let mut runner = runner.lock();
+            runner.stop()?;
+        }
         Ok(())
     }
 }
@@ -82,16 +88,15 @@ impl TaskManager {
 impl TaskRunner {
     fn new(task: Task, tx: Sender<()>) -> Self {
         Self {
-            tx: Some(Arc::new(tx)),
+            tx: Some(tx),
             task,
         }
     }
 
-    fn stop(&self) -> anyhow::Result<()> {
-        let mut sender = self.tx.clone();
-
-        if let Some(tx) = sender.take() {
-            Arc::try_unwrap(tx).unwrap().send(()).unwrap();
+    fn stop(&mut self) -> anyhow::Result<()> {
+        if let Some(tx) = self.tx.take() {
+            tx.send(()).unwrap();
+            // Arc::try_unwrap(tx).unwrap().send(()).unwrap();
         }
 
         Ok(())
@@ -157,4 +162,26 @@ impl Task {
 
         // 加载一个 Lua 脚本文件
     }
+}
+
+#[test]
+pub fn test() {
+    let rn = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    rn.spawn(async {
+        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        let task_manger = TASK_MANGER.lock();
+        let _ = task_manger.stop_all();
+    });
+
+    rn.block_on(async {
+        let mut task_manger = TASK_MANGER.lock();
+        task_manger.start();
+        //解锁task_manger
+        parking_lot::MutexGuard::unlock_fair(task_manger);
+        tokio::time::sleep(std::time::Duration::from_secs(35)).await;
+    });
 }
