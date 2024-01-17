@@ -10,7 +10,7 @@ lazy_static! {
 
 pub struct TaskManager {
     runtime: tokio::runtime::Runtime,
-    tasks: HashMap<String, Mutex<TaskRunner>>,
+    tasks: HashMap<String, TaskRunner>,
 }
 
 struct TaskRunner {
@@ -50,7 +50,7 @@ impl TaskManager {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
             let id = nanoid::nanoid!();
 
-            let runer = Mutex::new(TaskRunner::new(task.clone(), tx));
+            let runer = TaskRunner::new(task.clone(), tx);
 
             self.tasks.insert(id.clone(), runer);
             self.runtime.spawn(async move {
@@ -66,19 +66,17 @@ impl TaskManager {
         }
     }
 
-    pub fn stop_task(&self, id: &str) -> anyhow::Result<()> {
-        let mut runner = self
+    pub fn stop_task(&mut self, id: &str) -> anyhow::Result<()> {
+        let runner = self
             .tasks
-            .get(id)
-            .ok_or(anyhow::anyhow!("Task Not Found"))?
-            .lock();
+            .get_mut(id)
+            .ok_or(anyhow::anyhow!("Task Not Found"))?;
         runner.stop()?;
         Ok(())
     }
 
-    pub fn stop_all(&self) -> anyhow::Result<()> {
-        for (_, runner) in self.tasks.iter() {
-            let mut runner = runner.lock();
+    pub fn stop_all(&mut self) -> anyhow::Result<()> {
+        for (_, runner) in self.tasks.iter_mut() {
             runner.stop()?;
         }
         Ok(())
@@ -87,10 +85,7 @@ impl TaskManager {
 
 impl TaskRunner {
     fn new(task: Task, tx: Sender<()>) -> Self {
-        Self {
-            tx: Some(tx),
-            task,
-        }
+        Self { tx: Some(tx), task }
     }
 
     fn stop(&mut self) -> anyhow::Result<()> {
@@ -173,7 +168,7 @@ pub fn test() {
 
     rn.spawn(async {
         tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-        let task_manger = TASK_MANGER.lock();
+        let mut task_manger = TASK_MANGER.lock();
         let _ = task_manger.stop_all();
     });
 
