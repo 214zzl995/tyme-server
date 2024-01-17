@@ -22,7 +22,6 @@ lazy_static! {
     static ref SD_CANNEL: Mutex<Option<Sender<bool>>> = Mutex::new(None);
 }
 
-
 pub async fn run_web_console() -> anyhow::Result<()> {
     let config = SYSCONIFG.lock().clone();
     let host = if config.web_console_config.public {
@@ -95,4 +94,10 @@ pub async fn shutdown_signal() {
     }
 
     SD_CANNEL.lock().take();
+}
+
+pub fn stop() {
+    if let Some(tx) = SD_CANNEL.lock().take() {
+        let _ = tx.send(true);
+    }
 }

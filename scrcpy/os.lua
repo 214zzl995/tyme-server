@@ -1,5 +1,5 @@
 -- package.path = package.path .. ';./scrcpy/?.lua' --搜索lua模块
-package.cpath = package.cpath .. ';./?.dll;'     --搜索dll模块
+package.cpath = package.cpath .. ';./?.dll;' --搜索dll模块
 
 local os_type = nil
 
@@ -86,8 +86,12 @@ local function get_w_free_memory_size()
     if handle then
         handle:close()
     end
-
-    local total_memory_size = tonumber(string.match(output, 'TotalVisibleMemorySize=(%d+)'))
+    local total_memory_size
+    if output ~= "" then
+        total_memory_size = tonumber(string.match(output, 'FreePhysicalMemory=(%d+)'))
+    else
+        total_memory_size = 0
+    end
 
     return total_memory_size
 end
@@ -150,22 +154,22 @@ local function get_l_total_memory_size()
 end
 
 if package.config:sub(1, 1) == '\\' then -- windows
-    os_type = "windows" -- windows
+    os_type = "windows"                  -- windows
     local os_info = {
         cpu_load_percentage = get_w_cpu_load_percentage(),
         cpu_clock_speed = get_w_cpu_clock_speed(),
         system_uptime = get_w_system_uptime(),
-        free_physical_memory = get_w_free_memory_size(),
+        free_memory_size = get_w_free_memory_size(),
         total_memory_size = get_w_total_memory_size()
     }
     return os_info;
 elseif package.config:sub(1, 1) == '/' then -- unix linux
-    os_type = "linux" -- linux
+    os_type = "linux"                       -- linux
     local os_info = {
         cpu_load_percentage = get_l_cpu_load_percentage(),
         cpu_clock_speed = get_l_cpu_clock_speed(),
         system_uptime = get_l_system_uptime(),
-        free_physical_memory = get_l_free_memory_size(),
+        free_memory_size = get_l_free_memory_size(),
         total_memory_size = get_l_total_memory_size()
     }
     return os_info;
@@ -173,5 +177,3 @@ else
     os_type = "macOS" -- macos
     return os_type;
 end
-
-

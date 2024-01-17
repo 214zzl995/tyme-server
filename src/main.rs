@@ -17,6 +17,7 @@ mod message;
 mod r_db;
 mod subscribe;
 mod web_console;
+mod task;
 
 pub use clint::CLINT;
 pub use config::SYSCONIFG;

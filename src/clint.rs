@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use cron_task::async_cron_task;
 use futures::executor::block_on;
 use log::info;
 use mqtt::ConnectOptionsBuilder;
@@ -164,27 +163,6 @@ pub async fn subscribe_topic(topics: Vec<String>) -> anyhow::Result<()> {
         .await?;
 
     Ok(())
-}
-
-#[async_cron_task("0/30 * * * * ?")]
-async fn deco() {
-    tokio::time::sleep(Duration::from_secs(20)).await;
-}
-
-#[async_cron_task("0/30 * * * * ?")]
-fn sync_deco() {
-    std::thread::sleep(Duration::from_secs(20));
-}
-
-#[test]
-fn my_test() {
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(async {
-            sync_deco().await;
-        });
 }
 
 #[test]

@@ -421,16 +421,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cron_task"
-version = "0.1.0"
-dependencies = [
- "cron",
- "quote",
- "syn",
- "tokio",
-]
-
-[[package]]
 name = "crossbeam-channel"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1108,6 +1098,7 @@ dependencies = [
  "mlua-sys",
  "num-traits",
  "once_cell",
+ "parking_lot",
  "rustc-hash",
  "serde",
  "serde-value",
@@ -1908,7 +1899,6 @@ dependencies = [
  "bincode",
  "chrono",
  "cron",
- "cron_task",
  "flexi_logger",
  "futures",
  "futures-timer",
