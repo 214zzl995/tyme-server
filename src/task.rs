@@ -216,22 +216,32 @@ impl Task {
                     .set("path", package_path)
                     .unwrap();
 
-                let script_path = "scrcpy/os.lua";
-                let script_content =
-                    std::fs::read_to_string(script_path).expect("Failed to read script file");
-                let script = lua.load(script_content.clone());
-                let scrcpy_out = script.eval::<Option<mlua::Value>>().unwrap();
+                let print_person = lua
+                    .create_function(|_, (name, age): (String, u8)| {
+                        println!("{} is {} years old!", name, age);
+                        Ok(())
+                    })
+                    .unwrap();
+                globals.set("print_person", print_person).unwrap();
 
-                if let Some(scrcpy_out) = scrcpy_out {
-                    if scrcpy_out.is_table() {
-                        let scrcpy_json = serde_json::to_string(&scrcpy_out).unwrap();
-                        println!("{}", scrcpy_json);
-                    } else {
-                        println!("{:?}", scrcpy_out);
-                    }
-                } else {
-                    println!("None");
-                }
+                let script_content =
+                    std::fs::read_to_string(self.path.clone()).expect("Failed to read script file");
+                let script = lua.load(script_content.clone());
+
+                script.exec().unwrap();
+                
+                // let scrcpy_out = script.eval::<Option<mlua::Value>>().unwrap();
+
+                // if let Some(scrcpy_out) = scrcpy_out {
+                //     if scrcpy_out.is_table() {
+                //         let scrcpy_json = serde_json::to_string(&scrcpy_out).unwrap();
+                //         println!("{}", scrcpy_json);
+                //     } else {
+                //         println!("{:?}", scrcpy_out);
+                //     }
+                // } else {
+                //     println!("None");
+                // }
             }
             let now = chrono::offset::Local::now();
             let next = schedule.upcoming(chrono::offset::Local).next().unwrap();
@@ -269,7 +279,7 @@ pub fn test() {
 #[test]
 fn add_task() {
     let tasks = Task::new(
-        PathBuf::from("scrcpy/os.lua"),
+        PathBuf::from("scrcpy/test.lua"),
         "*/5 * * * * *".to_string(),
         "os".to_string(),
         None,
