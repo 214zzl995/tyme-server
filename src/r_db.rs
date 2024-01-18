@@ -43,7 +43,7 @@ pub fn get_msg_by_header_with_id(topic_name: &String, id: &String) -> Option<Mes
     match RDB.get_cf(&header, id).unwrap() {
         Some(msg) => {
             let msg = bincode::deserialize::<Message>(&msg).unwrap();
-            return Some(msg);
+            Some(msg)
         }
         None => None,
     }
@@ -66,12 +66,12 @@ pub fn get_msg_by_header_name(topic_name: &String) -> anyhow::Result<Vec<Message
         .full_iterator_cf(&header, IteratorMode::Start)
         .map(|x| {
             let (_, msg) = x.unwrap();
-            let msg = bincode::deserialize::<Message>(&msg).unwrap();
-            msg
+            
+            bincode::deserialize::<Message>(&msg).unwrap()
         })
         .collect::<Vec<Message>>();
 
-    let _ = msgs.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+    msgs.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
     Ok(msgs)
 }
@@ -95,7 +95,7 @@ pub fn insert_msg(msg: &Message) -> anyhow::Result<()> {
 
     let id = msg.id.clone().unwrap();
     let id = id.as_bytes();
-    let msg = bincode::serialize::<Message>(&msg)?;
+    let msg = bincode::serialize::<Message>(msg)?;
 
     RDB.put_cf(&header, id, msg)?;
 
@@ -139,7 +139,7 @@ pub fn add_task(task: &Task) -> anyhow::Result<String> {
 
     let id = nanoid::nanoid!();
     let id_b = id.as_bytes();
-    let task = bincode::serialize::<Task>(&task)?;
+    let task = bincode::serialize::<Task>(task)?;
 
     RDB.put_cf(&header, id_b, task)?;
 

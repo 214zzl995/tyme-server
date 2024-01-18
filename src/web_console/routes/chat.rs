@@ -79,13 +79,13 @@ pub async fn msg(Path(header): Path<String>, msg_params: Query<MsgParams>) -> im
             name: "丁真珍珠".to_string(),
             content: msg.content.html.unwrap(),
         };
-        return template.into_response();
+        template.into_response()
     } else {
-        return Response::builder()
+        Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body("Msg Not Found".to_string())
             .unwrap()
-            .into_response();
+            .into_response()
     }
 }
 
@@ -131,7 +131,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, session: Session)
 
     let mut send_task = tokio::spawn(async move {
         while let Some(message) = receiver.recv().await {
-            if sink.send(message.into()).await.is_err() {
+            if sink.send(message).await.is_err() {
                 break;
             }
         }
@@ -217,18 +217,12 @@ pub async fn _ws_send(session: Session, msg: &Message) {
 
     let clint = {
         let mut clints = CLINTS.lock();
-        if let Some(clint) = clints.get_mut(&user_id) {
-            Some(clint.clone())
-        } else {
-            None
-        }
+        clints.get_mut(&user_id).map(|clint| clint.clone())
     };
 
     if let Some(clint) = clint {
         clint.send(msg).await.unwrap();
-    } else {
-        return;
-    }
+    } 
 }
 
 pub async fn ws_send_all(msg: &Message) {

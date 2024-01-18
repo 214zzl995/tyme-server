@@ -22,6 +22,7 @@ pub struct SysConfig {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+#[derive(Default)]
 pub struct MQTTConfig {
     pub broker: String,
     pub port: i32,
@@ -35,6 +36,7 @@ pub struct MQTTConfig {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+#[derive(Default)]
 pub struct Auth {
     pub enable: bool,
     pub user_name: Option<String>,
@@ -43,6 +45,7 @@ pub struct Auth {
 
 /// can watch paho_mqtt::SslOptions
 #[derive(Deserialize, Serialize, Clone)]
+#[derive(Default)]
 pub struct Ssl {
     pub enable: bool,
     pub trust_store: Option<PathBuf>,
@@ -190,42 +193,8 @@ impl Default for WebConsoleConfig {
     }
 }
 
-impl Default for MQTTConfig {
-    fn default() -> Self {
-        Self {
-            broker: Default::default(),
-            port: Default::default(),
-            client_id: Default::default(),
-            version: Default::default(),
-            lwt: Default::default(),
-            auth: Default::default(),
-            ssl: Default::default(),
-            topics: Default::default(),
-            keep_alive_interval: Default::default(),
-        }
-    }
-}
 
-impl Default for Auth {
-    fn default() -> Self {
-        Self {
-            enable: Default::default(),
-            user_name: Default::default(),
-            password: Default::default(),
-        }
-    }
-}
 
-impl Default for Ssl {
-    fn default() -> Self {
-        Self {
-            enable: Default::default(),
-            trust_store: Default::default(),
-            key_store: Default::default(),
-            private_key: Default::default(),
-            private_key_password: Default::default(),
-            ca_path: Default::default(),
-            protos: Default::default(),
-        }
-    }
-}
+
+
+

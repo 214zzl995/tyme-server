@@ -30,6 +30,12 @@ pub struct Task {
     pub remark: Option<String>,
 }
 
+impl Default for TaskManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TaskManager {
     pub fn new() -> Self {
         let runtime = tokio::runtime::Builder::new_multi_thread()

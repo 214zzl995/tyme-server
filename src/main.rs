@@ -30,7 +30,7 @@ lazy_static! {
         let mut args = env::args();
         let mut arg_map = HashMap::new();
         while let Some(arg) = args.next() {
-            if arg.starts_with("-") {
+            if arg.starts_with('-') {
                 arg_map.insert(arg, args.next());
             }
         }
