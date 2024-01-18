@@ -48,7 +48,7 @@ pub async fn send(Json(msg): Json<Message>) -> impl IntoResponse {
 #[allow(clippy::unused_async)]
 pub async fn get_mqtt_user() -> impl IntoResponse {
     Json(
-        json!({"result": "ok", "message": "Get success", "user": crate::SYSCONIFG.lock().get_clint_name()}),
+        json!({"result": "ok", "message": "Get success", "user": crate::sys_config.lock().get_clint_name()}),
     )
 }
 

@@ -1,16 +1,20 @@
 use cron::Schedule;
+use linked_hash_map::LinkedHashMap;
+use log::info;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
+use std::{path::PathBuf, str::FromStr, sync::Arc};
 use tokio::sync::oneshot::Sender;
 
+use crate::r_db;
+
 lazy_static! {
-    static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
+    pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
 }
 
 pub struct TaskManager {
     runtime: tokio::runtime::Runtime,
-    tasks: HashMap<String, TaskRunner>,
+    tasks: LinkedHashMap<String, TaskRunner>,
 }
 
 struct TaskRunner {
@@ -34,23 +38,20 @@ impl TaskManager {
             .unwrap();
         Self {
             runtime,
-            tasks: HashMap::new(),
+            tasks: LinkedHashMap::new(),
         }
     }
 
     pub fn start(&mut self) {
-        let tasks = [Task::new(
-            PathBuf::from("scrcpy/os.lua"),
-            "*/5 * * * * *".to_string(),
-            "os".to_string(),
-            None,
-        )];
-
-        for task in tasks {
+        let tasks = crate::r_db::get_all_tasks().unwrap();
+        info!("TaskManger starting");
+        for (id, task) in tasks {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-            let id = nanoid::nanoid!();
 
             let runer = TaskRunner::new(task.clone(), tx);
+
+            let log_id = id.clone();
+            let log_task = task.clone();
 
             self.tasks.insert(id.clone(), runer);
             self.runtime.spawn(async move {
@@ -63,7 +64,14 @@ impl TaskManager {
                     },
                 }
             });
+            info!(
+                "Task {}-[{}]:{} ---- starting",
+                log_id,
+                log_task.path.as_os_str().to_str().unwrap(),
+                log_task.name
+            )
         }
+        info!("TaskManger started");
     }
 
     pub fn stop_task(&mut self, id: &str) -> anyhow::Result<()> {
@@ -78,6 +86,77 @@ impl TaskManager {
     pub fn stop_all(&mut self) -> anyhow::Result<()> {
         for (_, runner) in self.tasks.iter_mut() {
             runner.stop()?;
+        }
+        Ok(())
+    }
+
+    pub fn add_task(&mut self, task: Task) -> anyhow::Result<()> {
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+        let id = r_db::add_task(&task)?;
+
+        let runer = TaskRunner::new(task.clone(), tx);
+
+        self.tasks.insert(id.clone(), runer);
+        self.runtime.spawn(async move {
+            tokio::select! {
+                _ = task.run() => {
+                    info!("{} auto stop", id)
+                },
+                _ = rx => {
+                    info!("{} manual stop", id)
+                },
+            }
+        });
+        Ok(())
+    }
+
+    pub fn remove_task(&mut self, id: &str) -> anyhow::Result<()> {
+        self.stop_task(id)?;
+        self.tasks.remove(id);
+        crate::r_db::remove_task(&String::from(id))?;
+        Ok(())
+    }
+
+    pub fn get_task(&self, id: &str) -> anyhow::Result<Task> {
+        let runner = self
+            .tasks
+            .get(id)
+            .ok_or(anyhow::anyhow!("Task Not Found"))?;
+        Ok(runner.task.clone())
+    }
+
+    pub fn get_all_task(&self) -> anyhow::Result<Vec<Task>> {
+        let mut tasks = Vec::new();
+        for (_, runner) in self.tasks.iter() {
+            tasks.push(runner.task.clone());
+        }
+        Ok(tasks)
+    }
+
+    pub fn start_task(&mut self, id: &String) -> anyhow::Result<()> {
+        let runner = self
+            .tasks
+            .get_mut(id)
+            .ok_or(anyhow::anyhow!("Task Not Found"))?;
+
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+
+        if runner.tx.is_none() {
+            runner.tx = Some(tx);
+            let task = runner.task.clone();
+            let id = id.clone();
+            self.runtime.spawn(async move {
+                tokio::select! {
+                    _ = task.run() => {
+                        println!("{} auto stop", id);
+                    },
+                    _ = rx => {
+                        println!("{} manual stop", id);
+                    },
+                }
+            });
+        } else {
+            return Err(anyhow::anyhow!("Task is running, please stop it first"));
         }
         Ok(())
     }
@@ -179,4 +258,36 @@ pub fn test() {
         parking_lot::MutexGuard::unlock_fair(task_manger);
         tokio::time::sleep(std::time::Duration::from_secs(35)).await;
     });
+}
+
+#[test]
+fn add_task() {
+    let tasks = Task::new(
+        PathBuf::from("scrcpy/os.lua"),
+        "*/5 * * * * *".to_string(),
+        "os".to_string(),
+        None,
+    );
+
+    r_db::add_task(&tasks).unwrap();
+}
+
+#[test]
+fn fun() {
+    let lua = mlua::Lua::new();
+    let print_person = lua
+        .create_function(|_, (name, age): (String, u8)| {
+            println!("{} is {} years old!", name, age);
+            Ok(())
+        })
+        .unwrap();
+    lua.globals().set("print_person", print_person).unwrap();
+
+    let _ = lua
+        .load(
+            r#"
+                print_person("John", 25)
+        "#,
+        )
+        .exec();
 }

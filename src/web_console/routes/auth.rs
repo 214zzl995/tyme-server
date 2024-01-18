@@ -31,7 +31,7 @@ pub async fn logout(session: Session) -> impl IntoResponse {
 
 // assume all passwords work
 fn check_password(username: &str, password: &str) -> bool {
-    let con_conf = crate::SYSCONIFG.lock().clone();
+    let con_conf = crate::sys_config.lock().clone();
     let con_conf = con_conf.web_console_config;
     username.eq(&con_conf.user_name) && password.eq(&con_conf.password)
 }

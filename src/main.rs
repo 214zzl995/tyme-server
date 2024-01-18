@@ -16,11 +16,12 @@ mod config;
 mod message;
 mod r_db;
 mod subscribe;
-mod web_console;
 mod task;
+mod web_console;
 
-pub use clint::CLINT;
-pub use config::SYSCONIFG;
+pub use task::TASK_MANGER as task_manger;
+pub use clint::CLINT as mqtt_clint;
+pub use config::SYSCONIFG as sys_config;
 pub use message::{Message, MessageContent, Topic};
 use tokio::signal;
 
@@ -61,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn log_init() -> anyhow::Result<()> {
-    let file_spec = FileSpec::default().directory(SYSCONIFG.lock().clone().log_location);
+    let file_spec = FileSpec::default().directory(sys_config.lock().clone().log_location);
 
     let _ = Logger::try_with_str("info,pago_mqtt=error,paho_mqtt_c=error")?
         .write_mode(WriteMode::BufferAndFlush)

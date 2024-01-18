@@ -19,7 +19,7 @@ mod store;
 pub use routes::chat::ws_send_all;
 
 lazy_static! {
-    static ref SD_CANNEL: Mutex<Option<Sender<bool>>> = Mutex::new(None);
+    static ref SD_CANNEL: Mutex<Option<Sender<bool>>> = Mutex::new(None); 
 }
 
 pub async fn run_web_console() -> anyhow::Result<()> {

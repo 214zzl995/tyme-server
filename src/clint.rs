@@ -10,6 +10,7 @@ use parking_lot::Mutex;
 
 use crate::config::SYSCONIFG;
 use crate::message::{Message, MessageContent, Topic};
+use crate::task_manger;
 
 const QOS: &[i32] = &[1, 1];
 
@@ -128,6 +129,9 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         Ok::<(), anyhow::Error>(())
     })?;
 
+
+    task_manger.lock().start();
+    
     Ok(cli)
 }
 
