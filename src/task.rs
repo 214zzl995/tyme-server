@@ -196,6 +196,8 @@ impl Task {
     pub async fn run(&self) {
         let schedule = Schedule::from_str(self.cron.as_str()).unwrap();
 
+        //lua复用
+        //script_content复用
         loop {
             {
                 let lua = mlua::Lua::new();
@@ -229,7 +231,7 @@ impl Task {
                 let script = lua.load(script_content.clone());
 
                 script.exec().unwrap();
-                
+
                 // let scrcpy_out = script.eval::<Option<mlua::Value>>().unwrap();
 
                 // if let Some(scrcpy_out) = scrcpy_out {
