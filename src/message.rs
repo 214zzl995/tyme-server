@@ -158,12 +158,7 @@ impl TryFrom<String> for Topic {
 }
 
 fn get_pattern<T: AsRef<str>>(topic: &T) -> Option<String> {
-    for pattern in crate::clint::TOPICS.lock().clone() {
-        if mqtt_topic_matches(&pattern, topic.as_ref()) {
-            return Some(pattern);
-        }
-    }
-    None
+    crate::clint::TOPICS.lock().clone().into_iter().find(|pattern| mqtt_topic_matches(&pattern, topic.as_ref()))
 }
 
 pub fn mqtt_topic_matches(pattern: &str, topic: &str) -> bool {
