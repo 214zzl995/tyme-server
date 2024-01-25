@@ -21,8 +21,7 @@ pub struct SysConfig {
     pub log_location: PathBuf,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
-#[derive(Default)]
+#[derive(Deserialize, Serialize, Clone, Default)]
 pub struct MQTTConfig {
     pub broker: String,
     pub port: i32,
@@ -35,8 +34,7 @@ pub struct MQTTConfig {
     pub ssl: Ssl,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
-#[derive(Default)]
+#[derive(Deserialize, Serialize, Clone, Default)]
 pub struct Auth {
     pub enable: bool,
     pub user_name: Option<String>,
@@ -44,8 +42,7 @@ pub struct Auth {
 }
 
 /// can watch paho_mqtt::SslOptions
-#[derive(Deserialize, Serialize, Clone)]
-#[derive(Default)]
+#[derive(Deserialize, Serialize, Clone, Default)]
 pub struct Ssl {
     pub enable: bool,
     pub trust_store: Option<PathBuf>,
@@ -80,7 +77,7 @@ impl SysConfig {
             }
         } else {
             let current_dir = env::current_dir().unwrap();
-            current_dir.join("SysConig.toml")
+            current_dir.join("SysConfig.toml")
         };
 
         //check exist
@@ -124,7 +121,7 @@ impl SysConfig {
     ///Generate initial config file
     pub fn initial() -> anyhow::Result<()> {
         let current_dir = env::current_dir()?;
-        let conf = current_dir.join("SysConig.toml");
+        let conf = current_dir.join("../SysConfig.toml");
 
         if !conf.exists() {
             match File::create(&conf) {
@@ -192,9 +189,3 @@ impl Default for WebConsoleConfig {
         }
     }
 }
-
-
-
-
-
-

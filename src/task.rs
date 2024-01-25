@@ -10,6 +10,7 @@ use crate::r_db;
 
 lazy_static! {
     pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
+    static ref LUA: Mutex<mlua::Lua> = Mutex::new(get_lua());
 }
 
 pub struct TaskManager {
@@ -50,24 +51,24 @@ impl TaskManager {
 
     pub fn start(&mut self) {
         let tasks = crate::r_db::get_all_tasks().unwrap();
-        info!("TaskManger starting");
+        println!("我进来了噢！");
         for (id, task) in tasks {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
-            let runer = TaskRunner::new(task.clone(), tx);
+            let runner = TaskRunner::new(task.clone(), tx);
 
             let log_id = id.clone();
             let log_task = task.clone();
 
-            self.tasks.insert(id.clone(), runer);
+            self.tasks.insert(id.clone(), runner);
             self.runtime.spawn(async move {
                 tokio::select! {
                     _ = task.run() => {
-                        println!("{} auto stop", id);
-                    },
-                    _ = rx => {
-                        println!("{} manual stop", id);
-                    },
+                    info!("{} auto stop", id)
+                },
+                _ = rx => {
+                    info!("{} manual stop", id)
+                },
                 }
             });
             info!(
@@ -100,9 +101,9 @@ impl TaskManager {
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
         let id = r_db::add_task(&task)?;
 
-        let runer = TaskRunner::new(task.clone(), tx);
+        let runner = TaskRunner::new(task.clone(), tx);
 
-        self.tasks.insert(id.clone(), runer);
+        self.tasks.insert(id.clone(), runner);
         self.runtime.spawn(async move {
             tokio::select! {
                 _ = task.run() => {
@@ -119,7 +120,7 @@ impl TaskManager {
     pub fn remove_task(&mut self, id: &str) -> anyhow::Result<()> {
         self.stop_task(id)?;
         self.tasks.remove(id);
-        crate::r_db::remove_task(&String::from(id))?;
+        r_db::remove_task(&String::from(id))?;
         Ok(())
     }
 
@@ -153,12 +154,12 @@ impl TaskManager {
             let id = id.clone();
             self.runtime.spawn(async move {
                 tokio::select! {
-                    _ = task.run() => {
-                        println!("{} auto stop", id);
-                    },
-                    _ = rx => {
-                        println!("{} manual stop", id);
-                    },
+                   _ = task.run() => {
+                    info!("{} auto stop", id)
+                },
+                _ = rx => {
+                    info!("{} manual stop", id)
+                },
                 }
             });
         } else {
@@ -176,7 +177,6 @@ impl TaskRunner {
     fn stop(&mut self) -> anyhow::Result<()> {
         if let Some(tx) = self.tx.take() {
             tx.send(()).unwrap();
-            // Arc::try_unwrap(tx).unwrap().send(()).unwrap();
         }
 
         Ok(())
@@ -196,64 +196,133 @@ impl Task {
     pub async fn run(&self) {
         let schedule = Schedule::from_str(self.cron.as_str()).unwrap();
 
-        //lua复用
-        //script_content复用
+        let lua = get_lua();
+
+        let script_content = tokio::fs::read_to_string(self.path.clone())
+            .await
+            .expect("Failed to read script file");
+
         loop {
-            {
-                let lua = mlua::Lua::new();
+            let script = lua.load(script_content.clone());
+            script.exec().unwrap();
 
-                let globals = lua.globals();
-
-                let package_path = globals
-                    .get::<_, mlua::Table>("package")
-                    .unwrap()
-                    .get::<_, String>("path")
-                    .unwrap();
-
-                let package_path = format!("{};./scrcpy/?.lua", package_path);
-
-                globals
-                    .get::<_, mlua::Table>("package")
-                    .unwrap()
-                    .set("path", package_path)
-                    .unwrap();
-
-                let print_person = lua
-                    .create_function(|_, (name, age): (String, u8)| {
-                        println!("{} is {} years old!", name, age);
-                        Ok(())
-                    })
-                    .unwrap();
-                globals.set("print_person", print_person).unwrap();
-
-                let script_content =
-                    std::fs::read_to_string(self.path.clone()).expect("Failed to read script file");
-                let script = lua.load(script_content.clone());
-
-                script.exec().unwrap();
-
-                // let scrcpy_out = script.eval::<Option<mlua::Value>>().unwrap();
-
-                // if let Some(scrcpy_out) = scrcpy_out {
-                //     if scrcpy_out.is_table() {
-                //         let scrcpy_json = serde_json::to_string(&scrcpy_out).unwrap();
-                //         println!("{}", scrcpy_json);
-                //     } else {
-                //         println!("{:?}", scrcpy_out);
-                //     }
-                // } else {
-                //     println!("None");
-                // }
-            }
             let now = chrono::offset::Local::now();
             let next = schedule.upcoming(chrono::offset::Local).next().unwrap();
             let duration = (next - now).to_std().unwrap();
 
             tokio::time::sleep(duration).await;
         }
-
-        // 加载一个 Lua 脚本文件
     }
+}
+
+struct TymeUserData;
+
+impl mlua::UserData for TymeUserData {
+    fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_field_method_get("sys_config", |_, _| Ok("".to_string()));
+    }
+
+    fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
+        methods.add_async_method("send_json", lua_send_json);
+        methods.add_async_method("send_markdown", lua_send_markdown);
+    }
+}
+
+async fn lua_send_json(
+    _: &mlua::Lua,
+    _: &TymeUserData,
+    (topic, json): (String, mlua::Value<'_>),
+) -> mlua::Result<()> {
+    let json_string = serde_json::to_string(&json).unwrap();
+    let topic = crate::message::Topic {
+        topic,
+        header: None,
+    };
+    let msg = crate::message::Message {
+        id: None,
+        topic,
+        retain: None,
+        qos: 1,
+        mine: None,
+        timestamp: None,
+        content: crate::message::MessageContent {
+            message_type: "application/json".to_string(),
+            raw: json_string,
+            html: None,
+        },
+        sender: Some(crate::sys_config.lock().get_clint_name()),
+        receiver: None,
+    };
+
+    crate::clint::publish(msg).await.unwrap();
+    Ok(())
+}
+
+async fn lua_send_markdown(
+    _: &mlua::Lua,
+    _: &TymeUserData,
+    (topic, markdown): (String, mlua::Value<'_>),
+) -> mlua::Result<()> {
+    let markdown_string = markdown.to_string().unwrap();
+    let topic = crate::message::Topic {
+        topic,
+        header: None,
+    };
+    let msg = crate::message::Message {
+        id: None,
+        topic,
+        retain: None,
+        qos: 1,
+        mine: None,
+        timestamp: None,
+        content: crate::message::MessageContent {
+            message_type: "text/markdown".to_string(),
+            raw: markdown_string,
+            html: None,
+        },
+        sender: Some(crate::sys_config.lock().get_clint_name()),
+        receiver: None,
+    };
+
+    crate::clint::publish(msg).await.unwrap();
+
+    Ok(())
+}
+
+fn get_lua() -> mlua::Lua {
+    let lua = mlua::Lua::new();
+    let package_path = lua
+        .globals()
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .get::<_, String>("path")
+        .unwrap();
+
+    let package_cpath = lua
+        .globals()
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .get::<_, String>("cpath")
+        .unwrap();
+
+    let package_path = format!("{};./script/?.lua", package_path);
+    let package_cpath = format!("{};./script/?.so;./script/?.dll", package_cpath);
+
+    lua.globals()
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .set("path", package_path)
+        .unwrap();
+
+    lua.globals()
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .set("cpath", package_cpath)
+        .unwrap();
+
+    lua.globals().set("tyme_sys", TymeUserData).unwrap();
+
+    lua
 }
 
 #[test]
@@ -281,7 +350,7 @@ pub fn test() {
 #[test]
 fn add_task() {
     let tasks = Task::new(
-        PathBuf::from("scrcpy/test.lua"),
+        PathBuf::from("../script/test.lua"),
         "*/5 * * * * *".to_string(),
         "os".to_string(),
         None,
@@ -308,4 +377,42 @@ fn fun() {
         "#,
         )
         .exec();
+}
+
+#[test]
+fn scrcpy() {
+    let lua = mlua::Lua::new();
+
+    let globals = lua.globals();
+
+    let package_path = globals
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .get::<_, String>("path")
+        .unwrap();
+
+    let package_path = format!("{};./script/?.lua", package_path);
+
+    globals
+        .get::<_, mlua::Table>("package")
+        .unwrap()
+        .set("path", package_path)
+        .unwrap();
+
+    // 加载一个 Lua 脚本文件
+    let script_path = "script/os.lua";
+    let script_content = std::fs::read_to_string(script_path).expect("Failed to read script file");
+
+    let script = lua.load(script_content);
+
+    // 执行脚本
+    // let _ = script.exec().unwrap();
+    // let _ = script.call::<_, mlua::Value>(()).unwrap();
+    // let _ = script.eval::<mlua::Value>().unwrap();
+
+    let os_info = script.eval::<mlua::Value>().unwrap();
+
+    let os_info_json = serde_json::to_string_pretty(&os_info).unwrap();
+
+    println!("{}", os_info_json);
 }

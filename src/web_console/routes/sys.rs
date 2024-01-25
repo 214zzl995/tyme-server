@@ -14,7 +14,7 @@ pub async fn get_config() -> impl IntoResponse {
 #[allow(clippy::unused_async)]
 pub async fn update_config(Json(config): Json<SysConfig>) -> impl IntoResponse {
     let current_dir = env::current_dir().unwrap();
-    let conf = current_dir.join("SysConig.toml");
+    let conf = current_dir.join("../../../SysConfig.toml");
 
     let config_str = toml_edit::ser::to_string_pretty(&config).unwrap();
     {
