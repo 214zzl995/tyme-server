@@ -1,12 +1,13 @@
+use anyhow::Context;
 use cron::Schedule;
 use linked_hash_map::LinkedHashMap;
-use log::info;
+use log::{error, info};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 use tokio::sync::oneshot::Sender;
 
-use crate::r_db;
+use crate::{config::SysConfig, r_db};
 
 lazy_static! {
     pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
@@ -51,7 +52,6 @@ impl TaskManager {
 
     pub fn start(&mut self) {
         let tasks = crate::r_db::get_all_tasks().unwrap();
-        println!("我进来了噢！");
         for (id, task) in tasks {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -63,8 +63,16 @@ impl TaskManager {
             self.tasks.insert(id.clone(), runner);
             self.runtime.spawn(async move {
                 tokio::select! {
-                    _ = task.run() => {
-                    info!("{} auto stop", id)
+                result = task.run() => {
+                    match result {
+                        Ok(_) => {
+                            info!("{} auto stop", id)
+                        },
+                        Err(e) => {
+                            println!("{}", e);
+                            error!("{} auto stop, error: {}", id, e)
+                        }
+                    }
                 },
                 _ = rx => {
                     info!("{} manual stop", id)
@@ -106,8 +114,16 @@ impl TaskManager {
         self.tasks.insert(id.clone(), runner);
         self.runtime.spawn(async move {
             tokio::select! {
-                _ = task.run() => {
-                    info!("{} auto stop", id)
+                result = task.run() => {
+                    match result {
+                        Ok(_) => {
+                            info!("{} auto stop", id)
+                        },
+                        Err(e) => {
+                            println!("{}", e);
+                            error!("{} auto stop, error: {}", id, e)
+                        }
+                    }
                 },
                 _ = rx => {
                     info!("{} manual stop", id)
@@ -154,8 +170,16 @@ impl TaskManager {
             let id = id.clone();
             self.runtime.spawn(async move {
                 tokio::select! {
-                   _ = task.run() => {
-                    info!("{} auto stop", id)
+                result = task.run() => {
+                    match result {
+                        Ok(_) => {
+                            info!("{} auto stop", id)
+                        },
+                        Err(e) => {
+                            println!("{}", e);
+                            error!("{} auto stop, error: {}", id, e)
+                        }
+                    }
                 },
                 _ = rx => {
                     info!("{} manual stop", id)
@@ -193,22 +217,27 @@ impl Task {
         }
     }
 
-    pub async fn run(&self) {
+    /// 执行脚本
+    /// let _ = script.exec().unwrap();
+    /// let _ = script.call::<_, mlua::Value>(()).unwrap();
+    /// let _ = script.eval::<mlua::Value>().unwrap();
+    pub async fn run(&self) -> anyhow::Result<()> {
         let schedule = Schedule::from_str(self.cron.as_str()).unwrap();
 
         let lua = get_lua();
 
-        let script_content = tokio::fs::read_to_string(self.path.clone())
-            .await
-            .expect("Failed to read script file");
+        let script_content = tokio::fs::read_to_string(self.path.clone()).await?;
 
         loop {
             let script = lua.load(script_content.clone());
-            script.exec().unwrap();
+            script.exec()?;
 
             let now = chrono::offset::Local::now();
-            let next = schedule.upcoming(chrono::offset::Local).next().unwrap();
-            let duration = (next - now).to_std().unwrap();
+            let next = schedule
+                .upcoming(chrono::offset::Local)
+                .next()
+                .context("No upcoming dates")?;
+            let duration = (next - now).to_std()?;
 
             tokio::time::sleep(duration).await;
         }
@@ -219,13 +248,18 @@ struct TymeUserData;
 
 impl mlua::UserData for TymeUserData {
     fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
-        fields.add_field_method_get("sys_config", |_, _| Ok("".to_string()));
+        fields.add_field_method_get("sys_config", get_sys_config);
     }
 
     fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_async_method("send_json", lua_send_json);
         methods.add_async_method("send_markdown", lua_send_markdown);
     }
+}
+
+fn get_sys_config<'a>(_: &mlua::Lua, _: &'a TymeUserData) -> mlua::Result<SysConfig> {
+    let sys_config = crate::sys_config.lock().clone();
+    Ok(sys_config)
 }
 
 async fn lua_send_json(
@@ -350,7 +384,7 @@ pub fn test() {
 #[test]
 fn add_task() {
     let tasks = Task::new(
-        PathBuf::from("../script/test.lua"),
+        PathBuf::from("./script/test.lua"),
         "*/5 * * * * *".to_string(),
         "os".to_string(),
         None,
@@ -360,59 +394,12 @@ fn add_task() {
 }
 
 #[test]
-fn fun() {
-    let lua = mlua::Lua::new();
-    let print_person = lua
-        .create_function(|_, (name, age): (String, u8)| {
-            println!("{} is {} years old!", name, age);
-            Ok(())
-        })
-        .unwrap();
-    lua.globals().set("print_person", print_person).unwrap();
-
-    let _ = lua
-        .load(
-            r#"
-                print_person("John", 25)
-        "#,
-        )
-        .exec();
+fn delete_all_task() {
+    r_db::_delete_all_tasks().unwrap();
 }
 
 #[test]
-fn scrcpy() {
-    let lua = mlua::Lua::new();
-
-    let globals = lua.globals();
-
-    let package_path = globals
-        .get::<_, mlua::Table>("package")
-        .unwrap()
-        .get::<_, String>("path")
-        .unwrap();
-
-    let package_path = format!("{};./script/?.lua", package_path);
-
-    globals
-        .get::<_, mlua::Table>("package")
-        .unwrap()
-        .set("path", package_path)
-        .unwrap();
-
-    // 加载一个 Lua 脚本文件
-    let script_path = "script/os.lua";
-    let script_content = std::fs::read_to_string(script_path).expect("Failed to read script file");
-
-    let script = lua.load(script_content);
-
-    // 执行脚本
-    // let _ = script.exec().unwrap();
-    // let _ = script.call::<_, mlua::Value>(()).unwrap();
-    // let _ = script.eval::<mlua::Value>().unwrap();
-
-    let os_info = script.eval::<mlua::Value>().unwrap();
-
-    let os_info_json = serde_json::to_string_pretty(&os_info).unwrap();
-
-    println!("{}", os_info_json);
+fn get_all_task() {
+    let tasks = r_db::get_all_tasks().unwrap();
+    println!("{:?}", tasks);
 }

@@ -29,7 +29,7 @@
         {format(msg.timestamp, "yyyy-MM-dd HH:mm:ss")}
       </span>
       <span class="topic">
-        publish: {msg.publish}
+        sender: {msg.sender}
       </span>
     </div>
     <div class="chat-card-md">

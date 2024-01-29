@@ -19,9 +19,10 @@ mod subscribe;
 mod task;
 mod web_console;
 
-pub use task::TASK_MANGER as task_manger;
+pub use clint::TOPICS as topics;
 pub use config::SYSCONIFG as sys_config;
-pub use message::{Message};
+pub use message::Message;
+pub use task::TASK_MANGER as task_manger;
 use tokio::signal;
 
 lazy_static! {
@@ -50,8 +51,18 @@ async fn main() -> anyhow::Result<()> {
         };
 
         tokio::select! {
-           _= subscribe::subscribe() => {},
-           _= web_console::run_web_console() => {},
+           _= subscribe::subscribe() => {
+
+           },
+           res = web_console::run_web_console() => {
+            match res {
+                Ok(_) => {}
+                Err(err) => {
+                    log::error!("WebConsole Error:{}", err);
+                    std::process::exit(1);
+                }
+            }
+           },
            _= ctrl_c => {}
         }
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use futures::executor::block_on;
-use log::info;
+use log::{error, info};
 use mqtt::ConnectOptionsBuilder;
 use paho_mqtt::AsyncClient;
 use paho_mqtt::{self as mqtt};
@@ -15,11 +15,20 @@ use crate::task_manger;
 const QOS: &[i32] = &[1, 1];
 
 lazy_static! {
-    pub static ref CLINT: Arc<Mutex<AsyncClient>> =
-        Arc::new(Mutex::new(get_clint().expect("Clint Error")));
-    pub static ref TOPICS: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(
-        SYSCONIFG.lock().clone().mqtt_config.topics.clone()
-    ));
+    pub static ref CLINT: Arc<Mutex<AsyncClient>> = Arc::new(Mutex::new({
+        match get_clint() {
+            Ok(clint) => clint,
+            Err(err) => {
+                error!("Error creating the client: {}", err);
+                std::process::exit(1);
+            }
+        }
+    }));
+    pub static ref TOPICS: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new({
+        let mut nor_topics = SYSCONIFG.lock().clone().mqtt_config.topics.clone();
+        nor_topics.push("system/#".to_string());
+        nor_topics
+    }));
 }
 
 fn get_clint() -> anyhow::Result<AsyncClient> {
@@ -114,13 +123,12 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                 // Will not resubscribe when kicked out by broker
             } else {
                 // Register subscriptions on the server, using Subscription ID's.
-                let mut topics = config.mqtt_config.topics.clone();
-                topics.push("system/#".to_string());
+                let topics = TOPICS.lock().clone();
                 info!(r#"Subscribing to topics [{}]..."#, topics.join(", "));
                 let sub_opts =
                     vec![mqtt::SubscribeOptions::with_retain_as_published(); topics.len()];
 
-                let qos = vec![mqtt::QOS_1; config.mqtt_config.topics.len()];
+                let qos = vec![mqtt::QOS_1; topics.len()];
                 cli.subscribe_many_with_options(&topics, &qos, &sub_opts, None)
                     .await?;
             }
@@ -129,9 +137,8 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         Ok::<(), anyhow::Error>(())
     })?;
 
-
     task_manger.lock().start();
-    
+
     Ok(cli)
 }
 
@@ -168,4 +175,3 @@ pub async fn subscribe_topic(topics: Vec<String>) -> anyhow::Result<()> {
 
     Ok(())
 }
-

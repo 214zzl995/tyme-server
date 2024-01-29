@@ -10,6 +10,7 @@
   import Chat from "./pages/Chat.svelte";
   import Settings from "./pages/Settings.svelte";
   import Toasts from "./lib/Toasts.svelte";
+  import Task from "./pages/Task.svelte";
 
   let menu = 98;
 
@@ -22,7 +23,8 @@
         { label: "Secure", id: 2 },
         { label: "CheckApi", id: 3 },
         { label: "Chat", id: 4 },
-        { label: "Setting", id: 5 },
+        { label: "Task", id: 5 },
+        { label: "Setting", id: 6 },
         {
           label: "Logout",
           id: 99,
@@ -80,6 +82,8 @@
       {:else if menu === 4}
         <Chat />
       {:else if menu === 5}
+        <Task />
+      {:else if menu === 6}
         <Settings />
       {:else if menu === 98}
         <LogIn />

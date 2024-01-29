@@ -19,7 +19,7 @@ lazy_static! {
         db_opts.set_keep_log_file_num(5);
         db_opts.set_log_level(LogLevel::Warn);
 
-        let mut cfs = crate::sys_config.lock().clone().mqtt_config.topics;
+        let mut cfs = crate::topics.lock().clone();
 
         cfs.push(TASK_CF_NAME.to_string());
 
@@ -66,7 +66,7 @@ pub fn get_msg_by_header_name(topic_name: &String) -> anyhow::Result<Vec<Message
         .full_iterator_cf(&header, IteratorMode::Start)
         .map(|x| {
             let (_, msg) = x.unwrap();
-            
+
             bincode::deserialize::<Message>(&msg).unwrap()
         })
         .collect::<Vec<Message>>();
@@ -101,8 +101,6 @@ pub fn insert_msg(msg: &Message) -> anyhow::Result<()> {
 
     Ok(())
 }
-
-
 
 fn get_task_header() -> anyhow::Result<Arc<BoundColumnFamily<'static>>> {
     let cf_options = Options::default();
@@ -152,6 +150,19 @@ pub fn remove_task(id: &String) -> anyhow::Result<()> {
     let id_b = id.as_bytes();
 
     RDB.delete_cf(&header, id_b)?;
+
+    Ok(())
+}
+
+pub fn _delete_all_tasks() -> anyhow::Result<()> {
+    let tasks = get_all_tasks()?;
+
+    let header = get_task_header()?;
+
+    for (id, _) in tasks {
+        let id_b = id.as_bytes();
+        RDB.delete_cf(&header, id_b)?;
+    }
 
     Ok(())
 }

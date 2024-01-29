@@ -1,4 +1,5 @@
 use crate::{message::mqtt_topic_matches, ARGS};
+use mlua::IntoLua;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -187,5 +188,107 @@ impl Default for WebConsoleConfig {
             front_end_path: Default::default(),
             api_token: Default::default(),
         }
+    }
+}
+
+impl<'a> IntoLua<'a> for SysConfig {
+    fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
+        let table = lua.create_table()?;
+        table.set("mqtt_config", self.mqtt_config.into_lua(lua)?)?;
+        table.set("web_console_config", self.web_console_config.into_lua(lua)?)?;
+        table.set(
+            "log_location",
+            self.log_location.as_os_str().to_str().into_lua(lua)?,
+        )?;
+        table.into_lua(lua)
+    }
+}
+
+impl<'a> IntoLua<'a> for MQTTConfig {
+    fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
+        let table = lua.create_table()?;
+        table.set("broker", self.broker.into_lua(lua)?)?;
+        table.set("port", self.port.into_lua(lua)?)?;
+        table.set("client_id", self.client_id.into_lua(lua)?)?;
+        table.set(
+            "keep_alive_interval",
+            self.keep_alive_interval.into_lua(lua)?,
+        )?;
+        table.set("topics", self.topics.into_lua(lua)?)?;
+        table.set("version", self.version.into_lua(lua)?)?;
+        table.set("lwt", self.lwt.into_lua(lua)?)?;
+        table.set("auth", self.auth.into_lua(lua)?)?;
+        table.set("ssl", self.ssl.into_lua(lua)?)?;
+        table.into_lua(lua)
+    }
+}
+
+impl<'a> IntoLua<'a> for WebConsoleConfig {
+    fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
+        let table = lua.create_table()?;
+        table.set("public", self.public.into_lua(lua)?)?;
+        table.set("user_name", self.user_name.into_lua(lua)?)?;
+        table.set("password", self.password.into_lua(lua)?)?;
+        table.set("port", self.port.into_lua(lua)?)?;
+        table.set(
+            "front_end_path",
+            self.front_end_path
+                .as_ref()
+                .map(|p| p.as_os_str().to_str().into_lua(lua))
+                .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
+        )?;
+        table.set("api_token", self.api_token.into_lua(lua)?)?;
+        table.into_lua(lua)
+    }
+}
+
+impl<'a> IntoLua<'a> for Auth {
+    fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
+        let table = lua.create_table()?;
+        table.set("enable", self.enable.into_lua(lua)?)?;
+        table.set("user_name", self.user_name.into_lua(lua)?)?;
+        table.set("password", self.password.into_lua(lua)?)?;
+        table.into_lua(lua)
+    }
+}
+
+impl<'a> IntoLua<'a> for Ssl {
+    fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
+        let table = lua.create_table()?;
+        table.set("enable", self.enable.into_lua(lua)?)?;
+        table.set(
+            "trust_store",
+            self.trust_store
+                .as_ref()
+                .map(|p| p.as_os_str().to_str().into_lua(lua))
+                .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
+        )?;
+        table.set(
+            "key_store",
+            self.key_store
+                .as_ref()
+                .map(|p| p.as_os_str().to_str().into_lua(lua))
+                .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
+        )?;
+        table.set(
+            "private_key",
+            self.private_key
+                .as_ref()
+                .map(|p| p.as_os_str().to_str().into_lua(lua))
+                .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
+        )?;
+        table.set(
+            "private_key_password",
+            self.private_key_password.into_lua(lua)?,
+        )?;
+        table.set(
+            "ca_path",
+            self.ca_path
+                .as_ref()
+                .map(|p| p.as_os_str().to_str().into_lua(lua))
+                .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
+        )?;
+        table.set("protos", self.protos.into_lua(lua)?)?;
+        table.into_lua(lua)
     }
 }
