@@ -34,7 +34,10 @@ pub async fn subscribe() {
                     } else {
                         tokio::spawn(async move {
                             crate::web_console::ws_send_all(&msg).await;
-                            crate::r_db::insert_msg(&msg).unwrap();
+                            //当 ephemeral 为 None 或 Some(false) 时 保存消息
+                            if !msg.ephemeral {
+                                crate::r_db::insert_msg(&msg).unwrap();
+                            }
                         });
                     };
                 }

@@ -1,8 +1,8 @@
 ---@diagnostic disable: unused-function, undefined-global
-local function send_markdown(topic, content, callback)
+local function send_markdown(topic, qos, content, callback)
     local co = coroutine.create(
         function()
-            tyme_sys:send_markdown(topic, content)
+            tyme_sys:send_markdown(topic, qos, content)
             if callback then
                 callback()
             end
@@ -11,10 +11,10 @@ local function send_markdown(topic, content, callback)
     coroutine.resume(co)
 end
 
-local function send_json(topic, content, callback)
+local function send_json(topic, qos, content, callback)
     local co = coroutine.create(
         function()
-            tyme_sys:send_json(topic, content)
+            tyme_sys:send_json(topic, qos, content)
             if callback then
                 callback()
             end

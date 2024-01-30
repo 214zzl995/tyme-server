@@ -8,9 +8,9 @@ use paho_mqtt::AsyncClient;
 use paho_mqtt::{self as mqtt};
 use parking_lot::Mutex;
 
-use crate::config::SYSCONIFG;
+use crate::config::Header;
 use crate::message::{Message, MessageContent, Topic};
-use crate::task_manger;
+use crate::{sys_config, task_manger};
 
 const QOS: &[i32] = &[1, 1];
 
@@ -24,15 +24,10 @@ lazy_static! {
             }
         }
     }));
-    pub static ref TOPICS: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new({
-        let mut nor_topics = SYSCONIFG.lock().clone().mqtt_config.topics.clone();
-        nor_topics.push("system/#".to_string());
-        nor_topics
-    }));
 }
 
 fn get_clint() -> anyhow::Result<AsyncClient> {
-    let config = SYSCONIFG.lock().clone();
+    let config = sys_config.lock().clone();
     let protocol = if config.mqtt_config.ssl.enable {
         "mqtts://"
     } else {
@@ -89,11 +84,16 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         }
 
         if let Some(lwt) = &config.mqtt_config.lwt {
-            let topic = Topic::try_from("system/lwt")?;
+            let topic = Topic {
+                topic: "system/lwt".to_string(),
+                header: Header {
+                    topic: None,
+                    qos: 1,
+                },
+            };
             let lwt_msg = Message {
                 id: None,
                 topic,
-                qos: mqtt::QOS_1,
                 timestamp: None,
                 mine: None,
                 content: MessageContent {
@@ -104,6 +104,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                 sender: Some(config.get_clint_name()),
                 receiver: None,
                 retain: Some(false),
+                ephemeral: true,
             };
             conn_opts.will_message(lwt_msg.to_mqtt()?);
         };
@@ -123,12 +124,30 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                 // Will not resubscribe when kicked out by broker
             } else {
                 // Register subscriptions on the server, using Subscription ID's.
-                let topics = TOPICS.lock().clone();
-                info!(r#"Subscribing to topics [{}]..."#, topics.join(", "));
+                let topics = crate::sys_config.lock().mqtt_config.get_topics();
+                info!(
+                    r#"Subscribing to topics [{}]..."#,
+                    topics
+                        .clone()
+                        .into_iter()
+                        .map(|x| format!("{{topic:{:?},qos:{}}}", x.topic, x.qos))
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                );
                 let sub_opts =
                     vec![mqtt::SubscribeOptions::with_retain_as_published(); topics.len()];
 
-                let qos = vec![mqtt::QOS_1; topics.len()];
+                let qos = topics
+                    .clone()
+                    .into_iter()
+                    .map(|x| x.qos)
+                    .collect::<Vec<i32>>();
+
+                let topics = topics
+                    .into_iter()
+                    .map(|x| x.topic.unwrap())
+                    .collect::<Vec<String>>();
+
                 cli.subscribe_many_with_options(&topics, &qos, &sub_opts, None)
                     .await?;
             }
@@ -160,13 +179,19 @@ pub async fn publish(msg: Message) -> anyhow::Result<()> {
 }
 
 /// Subscribe to a topic Temporary not stored
-pub async fn subscribe_topic(topics: Vec<String>) -> anyhow::Result<()> {
+pub async fn subscribe_topic(topics: Vec<Header>) -> anyhow::Result<()> {
     {
-        let mut loc_topics = TOPICS.lock();
+        let mut loc_topics = crate::sys_config.lock().mqtt_config.get_topics();
         loc_topics.extend(topics.clone());
     };
 
     let sub_opts = vec![mqtt::SubscribeOptions::with_retain_as_published(); topics.len()];
+
+    let topics = topics
+        .clone()
+        .into_iter()
+        .map(|x| x.topic.unwrap())
+        .collect::<Vec<String>>();
 
     let clint = CLINT.lock().clone();
     clint

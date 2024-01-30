@@ -5,24 +5,34 @@
   import Editor from "../lib/Editor.svelte";
   import ChatList from "../lib/ChatList.svelte";
 
-  /** @type {string[]} */
+  /**
+   * @typedef {Object} Topic
+   * @property {string} topic - The topic string.
+   * @property {number} qos - The QoS value.
+   */
+
+  /**
+   * @type {Array<Topic>}
+   */
   let topicList = [];
   let topicIndex = -1;
 
   $: {
     if (topicIndex != -1) {
-      sessionStorage.setItem("topicPage", topicList[topicIndex]);
+      sessionStorage.setItem("topicPage", topicList[topicIndex].topic);
     }
   }
 
   onMount(() => {
+    console.log(topicList);
     getAllTopic().then((res) => {
       topicList = res.topics;
+      console.log(topicList);
 
       const url = new URL(window.location.href);
       const topic = sessionStorage.getItem("topicPage");
       if (topic != "null") {
-        topicIndex = topicList.indexOf(topic);
+        topicIndex = topicList.findIndex((item) => item.topic == topic);
 
         if (topicIndex == -1) {
           topicIndex = 0;
@@ -35,7 +45,7 @@
   });
 
   const changeTopic = (/** @type {{ detail: number; }} */ event) => {
-    topicIndex = event.detail;    
+    topicIndex = event.detail;
   };
 </script>
 
@@ -46,9 +56,14 @@
   <div
     class="bg-white md:rounded md:shadow-md h-14 mb:mb-3 md:mr-3 md:mb-0 flex-none md:h-full md:w-40 border-b md:border-b-0 border-gray-200"
   >
-    <div class="flex flex-row md:flex-col p-2 h-full">
+    <div class="flex flex-row md:flex-col px-2 py-0.5 h-full topics">
       {#each topicList as topic, index}
-        <Topic text={topic} {index} {topicIndex} on:changeTopic={changeTopic} />
+        <Topic
+          text={topic.topic}
+          {index}
+          {topicIndex}
+          on:changeTopic={changeTopic}
+        />
       {/each}
     </div>
   </div>
@@ -65,3 +80,9 @@
     </div>
   </div>
 </div>
+
+<style>
+  .topics {
+    overflow-y: overlay;
+  }
+</style>

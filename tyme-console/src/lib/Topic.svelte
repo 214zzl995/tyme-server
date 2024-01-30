@@ -14,79 +14,79 @@
   };
 </script>
 
-<div class="md:w-full md:h-14 h-full md:mb-2 mr-2 ">
-  <button class:active={checked} class="w-full h-full px-2" on:click={changeTopic}>
-    <span class="circle1" />
-    <span class="circle2" />
-    <span class="circle3" />
-    <span class="circle4" />
-    <span class="circle5" />
-    <span class="text">{text}</span>
-  </button>
+<div class="md:w-full md:h-14 h-full md:mb-2 mr-2">
+  <button
+    class:active={checked}
+    class="w-full h-full px-2"
+    on:click={changeTopic}>{text}</button
+  >
 </div>
 
 <style>
   button {
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight: bold;
-    color: white;
-    background-color: #5e5e5e;
-    border: none;
-    border-radius: 0.3rem;
+    display: inline-block;
+    transition: all 0.2s ease-in;
     position: relative;
-    cursor: pointer;
     overflow: hidden;
+    z-index: 1;
+    color: #090909;
+    padding: 0em 1.7em;
+    cursor: pointer;
+    font-size: 18px;
+    border-radius: 0.3em;
+    background: #e8e8e8;
   }
 
-  button span:not(:nth-child(6)) {
+  button:active {
+    color: #666;
+  }
+
+  button:before {
+    content: "";
     position: absolute;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    height: 50px;
-    width: 50px;
-    background-color: #7faef5;
-
+    transform: translateX(-50%) scaleY(1) scaleX(1.25);
+    top: 100%;
+    width: 140%;
+    height: 180%;
+    background-color: rgba(0, 0, 0, 0.05);
     border-radius: 50%;
-    transition: 0.6s ease;
+    display: block;
+    transition: all 0.5s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
+    z-index: -1;
   }
 
-  button span:nth-child(6) {
-    position: relative;
+  button:after {
+    content: "";
+    position: absolute;
+    left: 55%;
+    transform: translateX(-50%) scaleY(1) scaleX(1.45);
+    top: 180%;
+    width: 160%;
+    height: 190%;
+    background-color: #009087;
+    border-radius: 50%;
+    display: block;
+    transition: all 0.5s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
+    z-index: -1;
   }
 
-  button span:nth-child(1) {
-    transform: translate(-6rem, -5rem);
+  button:hover {
+    color: #ffffff;
   }
 
-  button span:nth-child(2) {
-    transform: translate(-6rem, 1.8rem);
+  button:hover:before {
+    top: -35%;
+    background-color: #009087;
+    transform: translateX(-50%) scaleY(1.3) scaleX(0.8);
   }
 
-  button span:nth-child(3) {
-    transform: translate(-0.8rem, 1.8rem);
+  button:hover:after {
+    top: -45%;
+    background-color: #009087;
+    transform: translateX(-50%) scaleY(1.3) scaleX(0.8);
   }
-
-  button span:nth-child(4) {
-    transform: translate(3.5rem, 2rem);
-  }
-
-  button span:nth-child(5) {
-    transform: translate(3.5rem, -5rem);
-  }
-
-  button:hover span:not(:nth-child(6)) {
-    transform: translate(-50%, -50%) scale(4);
-    transition: 1.5s ease;
-  }
-
-  button:active span:not(:nth-child(6)) {
-    transform: translate(-50%, -50%) scale(4);
-    transition: 1.5s ease;
-  }
-
-  button.active span:not(:nth-child(6)) {
-    transform: translate(-50%, -50%) scale(4);
-    background-color: #0c66ed;
+  .active {
+    background-color: #009087;
   }
 </style>

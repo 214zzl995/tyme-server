@@ -8,7 +8,7 @@
   $: source = msg.content.html;
 
   const showMsgNewTab = () => {
-    let url = `\/c\/msg\/${encodeURIComponent(msg.topic.header)}?id=${msg.id}`;
+    let url = `\/c\/msg\/${encodeURIComponent(msg.topic.header.topic)}?id=${msg.id}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 </script>
@@ -50,7 +50,7 @@
         />
 
         <p class="text-right font-semibold">
-          qos:{msg.qos}
+          qos:{msg.topic.header.qos}
         </p>
       </div>
     </div>

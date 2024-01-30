@@ -19,7 +19,8 @@ lazy_static! {
         db_opts.set_keep_log_file_num(5);
         db_opts.set_log_level(LogLevel::Warn);
 
-        let mut cfs = crate::topics.lock().clone();
+        //可以直接使用 topic存储 当加入同名topic时  直接修改同名topic的值
+        let mut cfs = crate::sys_config.lock().mqtt_config.get_topics_string();
 
         cfs.push(TASK_CF_NAME.to_string());
 
@@ -81,7 +82,7 @@ pub fn insert_msg(msg: &Message) -> anyhow::Result<()> {
         .topic
         .header
         .clone()
-        .context("Message not found header")?;
+        .topic.unwrap();
     let cf_options = Options::default();
 
     let header = match RDB.cf_handle(cf_name.clone().as_str()) {

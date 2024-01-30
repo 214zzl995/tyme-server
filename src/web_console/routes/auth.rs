@@ -14,7 +14,7 @@ pub async fn login(session: Session, Json(login): Json<Login>) -> impl IntoRespo
         session.insert("user_id", login.username).unwrap();
         Json(json!({"result": "ok"}))
     } else {
-        Json(json!({"result": "error"}))
+        Json(json!({"result": "error", "message": "Invalid username or password"}))
     }
 }
 

@@ -13,6 +13,10 @@ use std::{
 lazy_static! {
     pub static ref SYSCONIFG: Arc<Mutex<SysConfig>> =
         Arc::new(Mutex::new(SysConfig::obtain().expect("Config Error")));
+    static ref SYS_TOPIC: Vec<Header> = vec![Header {
+        topic: Some("system/#".to_string()),
+        qos: 1
+    }];
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -28,11 +32,17 @@ pub struct MQTTConfig {
     pub port: i32,
     pub client_id: String,
     pub keep_alive_interval: Option<u64>,
-    pub topics: Vec<String>,
+    pub topics: Vec<Header>,
     pub version: u32,
     pub lwt: Option<String>,
     pub auth: Auth,
     pub ssl: Ssl,
+}
+
+#[derive(Deserialize, Serialize, Clone, Default, Debug)]
+pub struct Header {
+    pub topic: Option<String>,
+    pub qos: i32,
 }
 
 #[derive(Deserialize, Serialize, Clone, Default)]
@@ -142,6 +152,20 @@ impl SysConfig {
     pub fn get_clint_name(&self) -> String {
         format!("tyme-server-{}", self.mqtt_config.client_id)
     }
+
+    pub async fn update(&self) -> anyhow::Result<()> {
+        let current_dir = env::current_dir()?;
+        let conf = current_dir.join("../../../SysConfig.toml");
+
+        let config_str = toml_edit::ser::to_string_pretty(&self)?;
+        {
+            let mut loc_config = SYSCONIFG.lock();
+            *loc_config = self.clone();
+        }
+
+        tokio::fs::write(&conf, config_str).await?;
+        Ok(())
+    }
 }
 
 impl MQTTConfig {
@@ -165,6 +189,24 @@ impl MQTTConfig {
             return Err(anyhow::anyhow!("system/# is a reserved topic"));
         }
         Ok(())
+    }
+
+    pub fn get_topics_with_sys(&self) -> Vec<Header> {
+        let mut topics = self.topics.clone();
+        topics.extend(SYS_TOPIC.clone());
+        topics
+    }
+
+    pub fn get_topics(&self) -> Vec<Header> {
+        self.topics.clone()
+    }
+
+    pub fn get_topics_string(&self) -> Vec<String> {
+        self.topics
+            .clone()
+            .into_iter()
+            .map(|x| x.topic.unwrap())
+            .collect()
     }
 }
 
@@ -289,6 +331,15 @@ impl<'a> IntoLua<'a> for Ssl {
                 .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
         )?;
         table.set("protos", self.protos.into_lua(lua)?)?;
+        table.into_lua(lua)
+    }
+}
+
+impl<'a> IntoLua<'a> for Header {
+    fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
+        let table = lua.create_table()?;
+        table.set("topic", self.topic.into_lua(lua)?)?;
+        table.set("qos", self.qos.into_lua(lua)?)?;
         table.into_lua(lua)
     }
 }

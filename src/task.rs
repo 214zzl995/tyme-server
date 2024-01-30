@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 use tokio::sync::oneshot::Sender;
 
-use crate::{config::SysConfig, r_db};
+use crate::{config::{Header, SysConfig}, r_db};
 
 lazy_static! {
     pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
@@ -265,18 +265,18 @@ fn get_sys_config<'a>(_: &mlua::Lua, _: &'a TymeUserData) -> mlua::Result<SysCon
 async fn lua_send_json(
     _: &mlua::Lua,
     _: &TymeUserData,
-    (topic, json): (String, mlua::Value<'_>),
+    (topic, qos, ephemeral, json): (String, i32, bool, mlua::Value<'_>),
 ) -> mlua::Result<()> {
     let json_string = serde_json::to_string(&json).unwrap();
-    let topic = crate::message::Topic {
-        topic,
-        header: None,
+    let header = Header {
+        topic: None,
+        qos,
     };
+    let topic = crate::message::Topic { topic, header };
     let msg = crate::message::Message {
         id: None,
         topic,
         retain: None,
-        qos: 1,
         mine: None,
         timestamp: None,
         content: crate::message::MessageContent {
@@ -286,6 +286,7 @@ async fn lua_send_json(
         },
         sender: Some(crate::sys_config.lock().get_clint_name()),
         receiver: None,
+        ephemeral,
     };
 
     crate::clint::publish(msg).await.unwrap();
@@ -295,18 +296,20 @@ async fn lua_send_json(
 async fn lua_send_markdown(
     _: &mlua::Lua,
     _: &TymeUserData,
-    (topic, markdown): (String, mlua::Value<'_>),
+    (topic, qos, ephemeral, markdown): (String, i32, bool, mlua::Value<'_>),
 ) -> mlua::Result<()> {
     let markdown_string = markdown.to_string().unwrap();
-    let topic = crate::message::Topic {
-        topic,
-        header: None,
+
+    let header = Header {
+        topic: None,
+        qos,
     };
+
+    let topic = crate::message::Topic { topic, header };
     let msg = crate::message::Message {
         id: None,
         topic,
         retain: None,
-        qos: 1,
         mine: None,
         timestamp: None,
         content: crate::message::MessageContent {
@@ -316,6 +319,7 @@ async fn lua_send_markdown(
         },
         sender: Some(crate::sys_config.lock().get_clint_name()),
         receiver: None,
+        ephemeral,
     };
 
     crate::clint::publish(msg).await.unwrap();

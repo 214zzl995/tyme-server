@@ -1,5 +1,3 @@
-use std::env;
-
 use axum::{response::IntoResponse, Json};
 use serde_json::json;
 
@@ -13,16 +11,8 @@ pub async fn get_config() -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn update_config(Json(config): Json<SysConfig>) -> impl IntoResponse {
-    let current_dir = env::current_dir().unwrap();
-    let conf = current_dir.join("../../../SysConfig.toml");
 
-    let config_str = toml_edit::ser::to_string_pretty(&config).unwrap();
-    {
-        let mut loc_config = SYSCONIFG.lock();
-        *loc_config = config.clone();
-    }
-
-    match tokio::fs::write(&conf, config_str).await {
+    match config.update().await {
         Ok(_) => Json(json!({"result": "ok"})),
         Err(err) => Json(json!({"result": "error","message" : format!("Update Config{}",err)})),
     }

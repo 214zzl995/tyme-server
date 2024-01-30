@@ -36,7 +36,6 @@ struct MsgTemplate {
     content: String,
 }
 
-
 #[allow(clippy::unused_async)]
 pub async fn send(Json(msg): Json<Message>) -> impl IntoResponse {
     match crate::clint::publish(msg.clone()).await {
@@ -54,11 +53,11 @@ pub async fn get_mqtt_user() -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn get_all_toppic() -> impl IntoResponse {
-    Json(json!({"result": "ok", "topics": crate::clint::TOPICS.clone()}))
+    Json(json!({"result": "ok", "topics": crate::sys_config.lock().mqtt_config.topics.clone()}))
 }
 
 #[allow(clippy::unused_async)]
-pub async fn subscribe_topic(Json(topics): Json<Vec<String>>) -> impl IntoResponse {
+pub async fn subscribe_topic(Json(topics): Json<Vec<crate::config::Header>>) -> impl IntoResponse {
     match crate::clint::subscribe_topic(topics).await {
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
@@ -222,7 +221,7 @@ pub async fn _ws_send(session: Session, msg: &Message) {
 
     if let Some(clint) = clint {
         clint.send(msg).await.unwrap();
-    } 
+    }
 }
 
 pub async fn ws_send_all(msg: &Message) {

@@ -4,7 +4,19 @@
   import { getChatMsg } from "../js/fetch";
   import { socket } from "../js/store.js";
 
-  export let header = "";
+  /**
+   * @typedef {Object} Topic
+   * @property {string} topic - The topic string.
+   * @property {number} qos - The QoS value.
+   */
+
+  /**
+   * @type {Topic}
+   */
+  export let header = {
+    topic: "",
+    qos: 0,
+  };
 
   let pageNumber = 0;
 
@@ -13,9 +25,9 @@
   $: msgs = [];
 
   $: {
-    if (header !== "") {
+    if (header.topic !== undefined && header.topic !== "") {
       msgs = [];
-      getChatMsg(header).then((res) => {
+      getChatMsg(header.topic).then((res) => {
         pushMsgs(res.data);
         scrollToBottom(false);
       });
@@ -24,7 +36,10 @@
 
   const socketMessageListener = (/** @type {{ data: any; }} */ event) => {
     const data = JSON.parse(event.data);
-    if(data.topic.header !== header){
+    if (
+      data.topic.header.topic !== header.topic ||
+      data.topic.header.qos !== header.qos
+    ) {
       return;
     }
     pushMsgs([data]);
@@ -36,7 +51,7 @@
       requestAnimationFrame(() =>
         divRef.scrollBy({
           top: divRef.scrollHeight,
-          behavior: isAnimation ? "smooth" : "auto" ,
+          behavior: isAnimation ? "smooth" : "auto",
         })
       );
     }

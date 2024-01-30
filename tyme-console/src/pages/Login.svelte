@@ -7,10 +7,10 @@
 
   let username, password;
   let errorMessage = "";
+  let passwordShow = false;
 
   async function handleLogin() {
     let loginResponse = await postLogin(username, password);
-    errorMessage = loginResponse.message;
     if (loginResponse.result == "error") {
       errorMessage = loginResponse.message;
     } else {
@@ -23,11 +23,14 @@
   <div
     class="w-11/12 sm:w-2/4 md:w-2/5 lg:w-1/4 p-8 bg-white rounded shadow-md mt-3"
   >
-    {#if errorMessage}
-      <div>
-        {errorMessage}
-      </div>
-    {/if}
+    <div class="h-8 overflow-hidden">
+      {#if errorMessage}
+        <p class="text-rose-700 text-sm">
+          {errorMessage}
+        </p>
+      {/if}
+    </div>
+
     <container>
       <form class="grid gap-x-1 gap-y-3 mb-6 md:grid-cols-1">
         <div>
@@ -43,12 +46,28 @@
         <div>
           <Label for="PassWord" class="mb-2">PassWord</Label>
           <Input
-            type="password"
+            type={passwordShow ? "text" : "password"}
             placeholder="PassWord"
             required
             autocomplete
             bind:value={password}
-          />
+          >
+            <button
+              class="outline-none border-none bg-transparent flex items-center justify-center"
+              on:click={() => (passwordShow = !passwordShow)}
+              slot="right"
+            >
+              <iconify-icon
+                icon="ant-design:eye-invisible-twotone"
+                class:hidden={passwordShow}
+              />
+
+              <iconify-icon
+                icon="ant-design:eye-twotone"
+                class:hidden={!passwordShow}
+              />
+            </button>
+          </Input>
         </div>
 
         <Button on:click={handleLogin}>Login</Button>
@@ -73,6 +92,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-</style>

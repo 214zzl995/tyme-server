@@ -6,9 +6,20 @@
   import { sendMsg } from "./../js/fetch.js";
   import Spinner from "flowbite-svelte/Spinner.svelte";
   import { onMount } from "svelte";
-  import { mqttUser } from "./../js/store.js";
 
-  export let header = "";
+  /**
+   * @typedef {Object} Topic
+   * @property {string} topic - The topic string.
+   * @property {number} qos - The QoS value.
+   */
+
+  /**
+   * @type {Topic}
+   */
+  export let header = {
+    topic: "",
+    qos: 0,
+  };
 
   let text = "";
   let type;
@@ -53,7 +64,7 @@
   };
 
   const autoTopic = () => {
-    inputTopic = `${header.replace(/[/#]/g, "")}\/`;
+    inputTopic = `${header.topic.replace(/[/#]/g, "")}\/`;
   };
 
   const handleSubmit = async () => {
@@ -113,8 +124,7 @@
     }
 
     const msg = {
-      topic: { topic: inputTopic },
-      qos: 1,
+      topic: { topic: inputTopic, header: { qos: 1 } },
       mine: true,
       content: {
         type: type,
@@ -164,7 +174,7 @@
         on:click={autoTopic}
         role="button"
         tabindex="0"
-        class:hidden={!pattern.test(header)}
+        class:hidden={!pattern.test(header.topic)}
         on:keydown={(e) => {}}
       >
         <iconify-icon icon="streamline:auto-flash" />
