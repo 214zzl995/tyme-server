@@ -6,8 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::Header;
 
-// Message 是否可以做两个 当前的Header 完全可以在用完直接扔掉 没有必要 反而增加了代码的冗余 年前改掉
+// Message 是否可以做两个 当前的Header 完全可以在用完直接扔掉 没有必要 反而增加了代码的冗余 年前改掉,
 // 一个是接收过程中的Message 需要实现 mqtt消息转换为Message
+// 移除Topic 将Config里的Header改名为 Topic
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct RecMessage {
     pub id: String,
@@ -26,10 +27,11 @@ pub struct PushMessage {
     pub topic: String,
     pub qos: i32,
     pub retain: Option<bool>,
-    pub content: MessageContent,
-    pub sender: Option<String>,
     pub receiver: Option<String>,
     pub ephemeral: bool,
+    #[serde(rename = "type")]
+    pub message_type: String,
+    pub raw: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
