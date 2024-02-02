@@ -1,6 +1,7 @@
 <script>
   import "iconify-icon";
   import { format } from "date-fns";
+  import { addToast } from "../js/store";
 
   export let msg;
   export let header;
@@ -11,6 +12,25 @@
   const showMsgNewTab = () => {
     let url = `\/c\/msg\/${encodeURIComponent(header)}?id=${msg.id}`;
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(msg.content.raw);
+      addToast({
+        type: "green",
+        message: "复制成功",
+        dismissible: true,
+        timeout: 3000,
+      });
+    } catch (error) {
+      addToast({
+        type: "red",
+        message: "复制失败,错误原因：" + error,
+        dismissible: true,
+        timeout: 3000,
+      });
+    }
   };
 </script>
 
@@ -43,7 +63,15 @@
       <div class="flex flex-row gap-2.5 items-center justify-end">
         <iconify-icon
           class="cursor-pointer"
-          icon="akar-icons:enlarge"
+          icon="line-md:text-box-to-text-box-multiple-transition"
+          role="button"
+          on:click={copyToClipboard}
+          on:keydown={(/** @type {any} */ e) => {}}
+          tabindex="0"
+        />
+        <iconify-icon
+          class="cursor-pointer"
+          icon="line-md:arrows-diagonal"
           on:click={showMsgNewTab}
           role="button"
           on:keydown={(/** @type {any} */ e) => {}}

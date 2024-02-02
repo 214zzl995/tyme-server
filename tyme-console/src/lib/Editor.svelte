@@ -27,6 +27,7 @@
   let inputTopic = "";
   let submitSussess = false;
   let submitLoading = false;
+  let editHasFocus = false;
 
   const pattern = /^[a-zA-Z]+\/#$/;
 
@@ -65,6 +66,15 @@
 
   const autoTopic = () => {
     inputTopic = `${header.topic.replace(/[#+]/g, "$")}`;
+  };
+
+  const shortcutKeyHandleKeyDown = (
+    /** @type {{ key: string; preventDefault: () => void; ctrlKey:boolean}} */ event
+  ) => {
+    if (event.key === "Enter" && event.ctrlKey) {
+      handleSubmit();
+      event.preventDefault();
+    }
   };
 
   const handleSubmit = async () => {
@@ -179,6 +189,7 @@
         <iconify-icon icon="streamline:auto-flash" />
         <span class="text-sm">Auto Topic</span>
       </div>
+      <div class="hidden md:block text-xs ml-2">Ctrl + Enter 发送</div>
     </div>
 
     <!-- Json MarkDown -->
@@ -201,20 +212,19 @@
   <div class="w-full pl-6 pr-24 flex-1 py-2 relative">
     <textarea
       class="px-3 resize-none overflow-y-auto border-0 outline-none text rounded-lg w-full h-full"
+      on:focus={() => {
+        editHasFocus = true;
+        console.log(editHasFocus);
+      }}
+      on:blur={() => {
+        editHasFocus = false;
+        console.log(editHasFocus);
+      }}
       bind:value={text}
+      on:keydown={shortcutKeyHandleKeyDown}
     />
     <div class="absolute bottom-2 right-4 h-full py-2">
-      <Button
-        class="w-16 m-2 h-full"
-        on:click={handleSubmit}
-        on:keydown={(e) => {
-          e.preventDefault();
-          if (e.key === "Enter" && e.ctrlKey) {
-            console.log("submit");
-            handleSubmit();
-          }
-        }}
-      >
+      <Button class="w-16 m-2 h-full" on:click={handleSubmit}>
         {#if submitLoading && !submitSussess}
           <Spinner size="4" />
         {:else if submitSussess && !submitLoading}

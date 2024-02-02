@@ -14,7 +14,7 @@
   };
 </script>
 
-<div class="md:w-full md:h-14 h-full md:mb-2 mr-2">
+<div class="md:w-full md:h-14 h-full md:mb-2 mr-2 md:mr-0 md:mt-1">
   <button
     class:active={checked}
     class="w-full h-full px-2"

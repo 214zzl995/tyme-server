@@ -83,6 +83,6 @@
 
 <style>
   .topics {
-    overflow-y: overlay;
+    overflow: overlay;
   }
 </style>
