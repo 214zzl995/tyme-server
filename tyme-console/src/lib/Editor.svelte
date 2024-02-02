@@ -64,7 +64,7 @@
   };
 
   const autoTopic = () => {
-    inputTopic = `${header.topic.replace(/[/#]/g, "")}\/`;
+    inputTopic = `${header.topic.replace(/[#+]/g, "$")}`;
   };
 
   const handleSubmit = async () => {
@@ -124,12 +124,11 @@
     }
 
     const msg = {
-      topic: { topic: inputTopic, header: { qos: 1 } },
-      mine: true,
-      content: {
-        type: type,
-        raw: text,
-      },
+      topic: inputTopic,
+      qos: 1,
+      ephemeral: false,
+      type: type,
+      raw: text,
     };
 
     sendMsg(msg).then(

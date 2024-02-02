@@ -17,10 +17,8 @@ use serde_json::json;
 use tokio::sync::mpsc::{self, Sender};
 use tower_sessions::Session;
 
-use crate::message::Message;
-
 lazy_static! {
-    static ref CLINTS: Arc<Mutex<HashMap<String, Sender<wsMessage>>>> =
+    static ref WSCLINTS: Arc<Mutex<HashMap<String, Sender<wsMessage>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 }
 
@@ -37,7 +35,7 @@ struct MsgTemplate {
 }
 
 #[allow(clippy::unused_async)]
-pub async fn send(Json(msg): Json<Message>) -> impl IntoResponse {
+pub async fn send(Json(msg): Json<crate::message::SendMessage>) -> impl IntoResponse {
     match crate::clint::publish(msg.clone()).await {
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
@@ -66,7 +64,8 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<crate::config::Header>>) -> 
 
 #[allow(clippy::unused_async)]
 pub async fn get_chat_msg(Path(header): Path<String>) -> impl IntoResponse {
-    let msgs: Vec<Message> = crate::r_db::get_msg_by_header_name(&header).unwrap();
+    let msgs: Vec<crate::message::RecMessage> =
+        crate::r_db::get_msg_by_header_name(&header).unwrap();
 
     Json(json!({"result": "ok", "data": msgs}))
 }
@@ -136,7 +135,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, session: Session)
         }
     });
 
-    CLINTS.lock().insert(session.id().0.to_string(), sender);
+    WSCLINTS.lock().insert(session.id().0.to_string(), sender);
 
     let mut recv_task = tokio::spawn(async move {
         let mut cnt = 0;
@@ -205,17 +204,22 @@ fn process_message(msg: wsMessage, who: SocketAddr, session: Session) -> Control
 pub fn remove_clint(session: &Session) {
     let user_id = session.id().0.to_string();
 
-    CLINTS.lock().remove(&user_id);
+    WSCLINTS.lock().remove(&user_id);
 }
 
-pub async fn _ws_send(session: Session, msg: &Message) {
+pub async fn _ws_send(
+    session: Session,
+    header: crate::config::Header,
+    msg: &crate::message::RecMessage,
+) {
     let user_id = session.id().0.to_string();
 
-    let msg = serde_json::to_string(msg).unwrap();
+    let msg = json!({"header": header, "msg": msg});
+    let msg = serde_json::to_string(&msg).unwrap();
     let msg = wsMessage::Text(msg);
 
     let clint = {
-        let mut clints = CLINTS.lock();
+        let mut clints = WSCLINTS.lock();
         clints.get_mut(&user_id).map(|clint| clint.clone())
     };
 
@@ -224,12 +228,13 @@ pub async fn _ws_send(session: Session, msg: &Message) {
     }
 }
 
-pub async fn ws_send_all(msg: &Message) {
-    let msg = serde_json::to_string(msg).unwrap();
+pub async fn ws_send_all(header: &crate::config::Header, msg: &crate::message::RecMessage) {
+    let msg = json!({"header": header, "msg": msg});
+    let msg = serde_json::to_string(&msg).unwrap();
     let msg = wsMessage::Text(msg);
 
     let clints = {
-        let clints = CLINTS.lock();
+        let clints = WSCLINTS.lock();
         clints.clone()
     };
 

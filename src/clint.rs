@@ -9,7 +9,7 @@ use paho_mqtt::{self as mqtt};
 use parking_lot::Mutex;
 
 use crate::config::Header;
-use crate::message::{Message, MessageContent, Topic};
+use crate::message::SendMessage;
 use crate::{sys_config, task_manger};
 
 const QOS: &[i32] = &[1, 1];
@@ -84,28 +84,16 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         }
 
         if let Some(lwt) = &config.mqtt_config.lwt {
-            let topic = Topic {
+            let lwt_msg = SendMessage {
                 topic: "system/lwt".to_string(),
-                header: Header {
-                    topic: None,
-                    qos: 1,
-                },
-            };
-            let lwt_msg = Message {
-                id: None,
-                topic,
-                timestamp: None,
-                mine: None,
-                content: MessageContent {
-                    message_type: String::from("text/markdown; charset=UTF-8"),
-                    raw: lwt.clone(),
-                    html: None,
-                },
-                sender: Some(config.get_clint_name()),
-                receiver: None,
+                qos: 1,
                 retain: Some(false),
+                receiver: None,
                 ephemeral: true,
+                message_type: String::from("text/markdown; charset=UTF-8"),
+                raw: lwt.clone(),
             };
+
             conn_opts.will_message(lwt_msg.to_mqtt()?);
         };
 
@@ -143,10 +131,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                     .map(|x| x.qos)
                     .collect::<Vec<i32>>();
 
-                let topics = topics
-                    .into_iter()
-                    .map(|x| x.topic.unwrap())
-                    .collect::<Vec<String>>();
+                let topics = topics.into_iter().map(|x| x.topic).collect::<Vec<String>>();
 
                 cli.subscribe_many_with_options(&topics, &qos, &sub_opts, None)
                     .await?;
@@ -171,7 +156,7 @@ pub fn diable_connect() {
     }
 }
 
-pub async fn publish(msg: Message) -> anyhow::Result<()> {
+pub async fn publish(msg: SendMessage) -> anyhow::Result<()> {
     let clint = CLINT.lock().clone();
     let msg = msg.to_mqtt()?;
     clint.publish(msg).await?;
@@ -190,7 +175,7 @@ pub async fn subscribe_topic(topics: Vec<Header>) -> anyhow::Result<()> {
     let topics = topics
         .clone()
         .into_iter()
-        .map(|x| x.topic.unwrap())
+        .map(|x| x.topic)
         .collect::<Vec<String>>();
 
     let clint = CLINT.lock().clone();

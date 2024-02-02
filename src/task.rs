@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 use tokio::sync::oneshot::Sender;
 
-use crate::{config::{Header, SysConfig}, r_db};
+use crate::{config::SysConfig, r_db};
 
 lazy_static! {
     pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
@@ -268,25 +268,15 @@ async fn lua_send_json(
     (topic, qos, ephemeral, json): (String, i32, bool, mlua::Value<'_>),
 ) -> mlua::Result<()> {
     let json_string = serde_json::to_string(&json).unwrap();
-    let header = Header {
-        topic: None,
-        qos,
-    };
-    let topic = crate::message::Topic { topic, header };
-    let msg = crate::message::Message {
-        id: None,
+
+    let msg = crate::message::SendMessage {
         topic,
+        qos,
         retain: None,
-        mine: None,
-        timestamp: None,
-        content: crate::message::MessageContent {
-            message_type: "application/json".to_string(),
-            raw: json_string,
-            html: None,
-        },
-        sender: Some(crate::sys_config.lock().get_clint_name()),
         receiver: None,
         ephemeral,
+        message_type: "application/json".to_string(),
+        raw: json_string,
     };
 
     crate::clint::publish(msg).await.unwrap();
@@ -300,26 +290,14 @@ async fn lua_send_markdown(
 ) -> mlua::Result<()> {
     let markdown_string = markdown.to_string().unwrap();
 
-    let header = Header {
-        topic: None,
-        qos,
-    };
-
-    let topic = crate::message::Topic { topic, header };
-    let msg = crate::message::Message {
-        id: None,
+    let msg = crate::message::SendMessage {
         topic,
+        qos,
         retain: None,
-        mine: None,
-        timestamp: None,
-        content: crate::message::MessageContent {
-            message_type: "text/markdown".to_string(),
-            raw: markdown_string,
-            html: None,
-        },
-        sender: Some(crate::sys_config.lock().get_clint_name()),
         receiver: None,
         ephemeral,
+        message_type: "text/markdown".to_string(),
+        raw: markdown_string,
     };
 
     crate::clint::publish(msg).await.unwrap();

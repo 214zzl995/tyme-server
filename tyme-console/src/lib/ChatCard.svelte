@@ -3,12 +3,13 @@
   import { format } from "date-fns";
 
   export let msg;
+  export let header;
 
   $: mine = msg.mine;
   $: source = msg.content.html;
 
   const showMsgNewTab = () => {
-    let url = `\/c\/msg\/${encodeURIComponent(msg.topic.header.topic)}?id=${msg.id}`;
+    let url = `\/c\/msg\/${encodeURIComponent(header)}?id=${msg.id}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 </script>
@@ -37,7 +38,7 @@
     </div>
     <div class="flex flex-row text-slate-500 mb-1 justify-between text-sm">
       <p class="topic">
-        {msg.topic.topic}
+        {msg.topic}
       </p>
       <div class="flex flex-row gap-2.5 items-center justify-end">
         <iconify-icon
@@ -50,7 +51,7 @@
         />
 
         <p class="text-right font-semibold">
-          qos:{msg.topic.header.qos}
+          qos:{msg.qos}
         </p>
       </div>
     </div>

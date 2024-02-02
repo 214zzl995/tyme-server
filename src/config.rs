@@ -1,4 +1,3 @@
-use crate::{message::mqtt_topic_matches, ARGS};
 use mlua::IntoLua;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
@@ -10,11 +9,13 @@ use std::{
     sync::Arc,
 };
 
+use crate::ARGS;
+
 lazy_static! {
     pub static ref SYSCONIFG: Arc<Mutex<SysConfig>> =
         Arc::new(Mutex::new(SysConfig::obtain().expect("Config Error")));
     static ref SYS_TOPIC: Vec<Header> = vec![Header {
-        topic: Some("system/#".to_string()),
+        topic: "system/#".to_string(),
         qos: 1
     }];
 }
@@ -41,7 +42,7 @@ pub struct MQTTConfig {
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug)]
 pub struct Header {
-    pub topic: Option<String>,
+    pub topic: String,
     pub qos: i32,
 }
 
@@ -184,7 +185,7 @@ impl MQTTConfig {
         if self
             .topics
             .iter()
-            .any(|topic| mqtt_topic_matches(topic, "system/#"))
+            .any(|topic| topic.mqtt_topic_matches("system/#"))
         {
             return Err(anyhow::anyhow!("system/# is a reserved topic"));
         }
@@ -205,8 +206,44 @@ impl MQTTConfig {
         self.topics
             .clone()
             .into_iter()
-            .map(|x| x.topic.unwrap())
+            .map(|x| x.topic)
             .collect()
+    }
+}
+
+impl Header {
+    pub fn mqtt_topic_matches(&self, topic: &str) -> bool {
+        let pattern = self.topic.as_str();
+        let mut pattern_parts = pattern.split('/').peekable();
+        let mut topic_parts = topic.split('/').peekable();
+
+        while pattern_parts.peek().is_some() || topic_parts.peek().is_some() {
+            match (pattern_parts.next(), topic_parts.next()) {
+                (Some("#"), _) => {
+                    // # 匹配该级别及其所有子级
+                    return true;
+                }
+                (Some("+"), None) | (None, Some(_)) => {
+                    // + 需要匹配一个级别，如果没有额外的级别，则不匹配
+                    return false;
+                }
+                (Some("+"), Some(_)) => {
+                    // + 匹配任何单个级别
+                }
+                (Some(pattern), Some(topic)) => {
+                    // 如果两者不相等，则不匹配
+                    if pattern != topic {
+                        return false;
+                    }
+                }
+                _ => {
+                    // 其他情况，不匹配
+                    return false;
+                }
+            }
+        }
+
+        true
     }
 }
 

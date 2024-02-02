@@ -5,7 +5,7 @@ use rocksdb::{
     BoundColumnFamily, DBWithThreadMode, IteratorMode, LogLevel, MultiThreaded, Options,
 };
 
-use crate::{task::Task, Message};
+use crate::{config::Header, message::RecMessage, task::Task};
 const TASK_CF_NAME: &str = "tasks";
 
 lazy_static! {
@@ -27,7 +27,7 @@ lazy_static! {
         rocksdb::DB::open_cf(&db_opts, path, cfs).unwrap()
     };
 }
-pub fn get_msg_by_header_with_id(topic_name: &String, id: &String) -> Option<Message> {
+pub fn get_msg_by_header_with_id(topic_name: &String, id: &String) -> Option<RecMessage> {
     let cf_name = topic_name.clone();
     let cf_options = Options::default();
 
@@ -43,14 +43,14 @@ pub fn get_msg_by_header_with_id(topic_name: &String, id: &String) -> Option<Mes
 
     match RDB.get_cf(&header, id).unwrap() {
         Some(msg) => {
-            let msg = bincode::deserialize::<Message>(&msg).unwrap();
+            let msg = bincode::deserialize::<RecMessage>(&msg).unwrap();
             Some(msg)
         }
         None => None,
     }
 }
 
-pub fn get_msg_by_header_name(topic_name: &String) -> anyhow::Result<Vec<Message>> {
+pub fn get_msg_by_header_name(topic_name: &String) -> anyhow::Result<Vec<RecMessage>> {
     let cf_name = topic_name.clone();
     let cf_options = Options::default();
 
@@ -68,39 +68,37 @@ pub fn get_msg_by_header_name(topic_name: &String) -> anyhow::Result<Vec<Message
         .map(|x| {
             let (_, msg) = x.unwrap();
 
-            bincode::deserialize::<Message>(&msg).unwrap()
+            bincode::deserialize::<RecMessage>(&msg).unwrap()
         })
-        .collect::<Vec<Message>>();
+        .collect::<Vec<RecMessage>>();
 
     msgs.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
     Ok(msgs)
 }
 
-pub fn insert_msg(msg: &Message) -> anyhow::Result<()> {
-    let cf_name = msg
-        .topic
-        .header
-        .clone()
-        .topic.unwrap();
-    let cf_options = Options::default();
+impl RecMessage {
+    pub fn insert(&self, header: &Header) -> anyhow::Result<()> {
+        let cf_name = header.topic.clone();
+        let cf_options = Options::default();
 
-    let header = match RDB.cf_handle(cf_name.clone().as_str()) {
-        Some(h) => h,
-        None => {
-            RDB.create_cf(cf_name.clone(), &cf_options)?;
-            RDB.cf_handle(cf_name.clone().as_str())
-                .context("Message not found header")?
-        }
-    };
+        let header = match RDB.cf_handle(cf_name.clone().as_str()) {
+            Some(h) => h,
+            None => {
+                RDB.create_cf(cf_name.clone(), &cf_options)?;
+                RDB.cf_handle(cf_name.clone().as_str())
+                    .context("Message not found header")?
+            }
+        };
 
-    let id = msg.id.clone().unwrap();
-    let id = id.as_bytes();
-    let msg = bincode::serialize::<Message>(msg)?;
+        let id = self.id.clone();
+        let id = id.as_bytes();
+        let msg = bincode::serialize::<RecMessage>(self)?;
 
-    RDB.put_cf(&header, id, msg)?;
+        RDB.put_cf(&header, id, msg)?;
 
-    Ok(())
+        Ok(())
+    }
 }
 
 fn get_task_header() -> anyhow::Result<Arc<BoundColumnFamily<'static>>> {

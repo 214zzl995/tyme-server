@@ -36,13 +36,10 @@
 
   const socketMessageListener = (/** @type {{ data: any; }} */ event) => {
     const data = JSON.parse(event.data);
-    if (
-      data.topic.header.topic !== header.topic ||
-      data.topic.header.qos !== header.qos
-    ) {
+    if (data.header.topic !== header.topic || data.header.qos !== header.qos) {
       return;
     }
-    pushMsgs([data]);
+    pushMsgs([data.msg]);
     scrollToBottom(true);
   };
 
@@ -87,7 +84,7 @@
 
 <div class="w-full h-full overflow-y-scroll" bind:this={divRef}>
   {#each msgs as msg}
-    <ChatCard {msg} />
+    <ChatCard header={header.topic} {msg} />
   {/each}
 </div>
 

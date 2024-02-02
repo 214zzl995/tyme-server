@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use futures::StreamExt;
 
-use crate::{clint::CLINT, message::Message};
+use crate::{clint::CLINT, message::RecMessage};
 
 pub async fn subscribe() {
     let mut clint = CLINT.lock().clone();
@@ -26,19 +26,27 @@ pub async fn subscribe() {
             for prop in msg.properties().clone().user_iter() {
                 info!("Property: {:?}", prop);
             }
+            let ephemeral =
+                msg.properties().find_user_property("ephemeral") == Some("true".to_string());
 
-            match Message::try_from(msg) {
-                Ok(mut msg) => {
-                    if let Err(err) = msg.to_html() {
+            match RecMessage::try_from(&msg) {
+                Ok(mut rec_msg) => {
+                    if let Err(err) = rec_msg.to_html() {
                         error!("Error converting message to html: {}", err);
                     } else {
-                        tokio::spawn(async move {
-                            crate::web_console::ws_send_all(&msg).await;
-                            //当 ephemeral 为 None 或 Some(false) 时 保存消息
-                            if !msg.ephemeral {
-                                crate::r_db::insert_msg(&msg).unwrap();
+                        match rec_msg.get_header() {
+                            Some(header) => {
+                                tokio::spawn(async move {
+                                    crate::web_console::ws_send_all(&header, &rec_msg).await;
+                                    if !ephemeral {
+                                        rec_msg.insert(&header).unwrap();
+                                    }
+                                });
                             }
-                        });
+                            None => {
+                                error!("No header found for message: {:?}", rec_msg);
+                            }
+                        };
                     };
                 }
                 Err(err) => {

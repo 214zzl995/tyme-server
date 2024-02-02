@@ -20,7 +20,6 @@ mod task;
 mod web_console;
 
 pub use config::SYSCONIFG as sys_config;
-pub use message::Message;
 pub use task::TASK_MANGER as task_manger;
 use tokio::signal;
 
