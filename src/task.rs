@@ -357,7 +357,6 @@ pub fn test() {
     rn.block_on(async {
         let mut task_manger = TASK_MANGER.lock();
         task_manger.start();
-        //解锁task_manger
         parking_lot::MutexGuard::unlock_fair(task_manger);
         tokio::time::sleep(std::time::Duration::from_secs(35)).await;
     });
