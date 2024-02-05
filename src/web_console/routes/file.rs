@@ -1,6 +1,7 @@
 use axum::{
-    body::Bytes,
+    body::{Body, Bytes},
     extract::{BodyStream, Path},
+    http::Response,
     response::IntoResponse,
     BoxError, Json,
 };
@@ -17,6 +18,14 @@ pub async fn upload_crt(Path(file_name): Path<String>, body: BodyStream) -> impl
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
+}
+
+pub async fn get_lua_sys_sdk() -> impl IntoResponse {
+    let lua_sys = Body::from(include_bytes!("../../../script/sys.lua").to_vec());
+    Response::builder()
+        .header("Content-Type", "application/octet-stream")
+        .body(lua_sys)
+        .unwrap()
 }
 
 pub async fn stream_to_file<S, E>(path: &str, stream: S) -> anyhow::Result<()>

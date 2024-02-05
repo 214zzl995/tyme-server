@@ -115,7 +115,7 @@ fn get_task_header() -> anyhow::Result<Arc<BoundColumnFamily<'static>>> {
     Ok(header)
 }
 
-pub fn get_all_tasks() -> anyhow::Result<Vec<(String, Task)>> {
+pub fn get_all_task() -> anyhow::Result<Vec<(String, Task)>> {
     let header = get_task_header()?;
 
     let tasks = RDB
@@ -154,7 +154,7 @@ pub fn remove_task(id: &String) -> anyhow::Result<()> {
 }
 
 pub fn _delete_all_tasks() -> anyhow::Result<()> {
-    let tasks = get_all_tasks()?;
+    let tasks = get_all_task()?;
 
     let header = get_task_header()?;
 

@@ -26,7 +26,7 @@
   };
 </script>
 
-<div class="w-full z-[999] h-16 md:h-20">
+<div class="w-full z-[888] h-16 md:h-20">
   <Navbar class="px-2 sm:px-4 py-2.5 z-20 border-b h-full">
     <NavBrand href="/">
       <span

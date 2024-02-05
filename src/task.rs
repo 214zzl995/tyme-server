@@ -51,7 +51,7 @@ impl TaskManager {
     }
 
     pub fn start(&mut self) {
-        let tasks = crate::r_db::get_all_tasks().unwrap();
+        let tasks = crate::r_db::get_all_task().unwrap();
         for (id, task) in tasks {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -381,6 +381,6 @@ fn delete_all_task() {
 
 #[test]
 fn get_all_task() {
-    let tasks = r_db::get_all_tasks().unwrap();
+    let tasks = r_db::get_all_task().unwrap();
     println!("{:?}", tasks);
 }

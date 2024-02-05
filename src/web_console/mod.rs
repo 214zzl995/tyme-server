@@ -16,7 +16,7 @@ mod routes;
 mod services;
 mod store;
 
-pub use routes::chat::ws_send_all;
+pub use routes::ws_send_all;
 
 lazy_static! {
     static ref SD_CANNEL: Mutex<Option<Sender<bool>>> = Mutex::new(None); 

@@ -1,11 +1,13 @@
-pub mod api;
+mod api;
 mod auth;
 mod notimplemented;
-pub mod session;
-pub mod chat;
-pub mod file;
-pub mod sys;
+mod session;
+mod chat;
+mod file;
+mod sys;
+mod task;
 
+pub use api::handler as api_handler;
 
 pub use auth::login;
 pub use auth::logout;
@@ -18,7 +20,16 @@ pub use chat::get_chat_msg;
 pub use chat::ws_handler;
 pub use chat::get_mqtt_user;
 pub use chat::msg;
+pub use chat::ws_send_all;
 
 pub use file::upload_crt;
+pub use file::get_lua_sys_sdk;
+
+pub use sys::get_config;
 pub use sys::update_config;
+
+pub use session::data_handler;
+pub use session::handler as session_handler;
+
+pub use task::get_all_task;
 

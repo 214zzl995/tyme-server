@@ -10,7 +10,7 @@
   import Chat from "./pages/Chat.svelte";
   import Settings from "./pages/Settings.svelte";
   import Toasts from "./lib/Toasts.svelte";
-  import Task from "./pages/Task.svelte";
+  import Tasks from "./pages/Tasks.svelte";
 
   let menu = 98;
 
@@ -82,7 +82,7 @@
       {:else if menu === 4}
         <Chat />
       {:else if menu === 5}
-        <Task />
+        <Tasks />
       {:else if menu === 6}
         <Settings />
       {:else if menu === 98}

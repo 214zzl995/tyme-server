@@ -77,7 +77,7 @@ pub fn backend<Store: SessionStore>(
 //
 pub fn back_public_route() -> Router {
     Router::new()
-        .route("/auth/session", get(routes::session::data_handler)) // gets session data
+        .route("/auth/session", get(routes::data_handler)) // gets session data
         .route("/auth/login", post(routes::login)) // sets username in session
         .route("/auth/logout", get(routes::logout)) // deletes username in session
         .route("/test", get(routes::not_implemented_route))
@@ -89,7 +89,7 @@ pub fn back_public_route() -> Router {
 //
 pub fn back_auth_route() -> Router<()> {
     Router::new()
-        .route("/secure", get(routes::session::handler))
+        .route("/secure", get(routes::session_handler))
         .nest("/c", back_chat_route_c())
         .route_layer(middleware::from_fn(middlewares::user_secure))
 }
@@ -101,7 +101,7 @@ pub fn back_auth_route() -> Router<()> {
 // invoked with State that stores API that is checked by the `middleware::auth`
 pub fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
     Router::new()
-        .route("/check", get(routes::api::handler))
+        .route("/check", get(routes::api_handler))
         .nest("/a", back_chat_route_a(state.clone()))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
@@ -109,7 +109,6 @@ pub fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
         ))
         .with_state(state)
 }
-
 
 pub fn back_chat_route<S>(state: S) -> Router<S>
 where
@@ -128,12 +127,14 @@ pub fn back_chat_route_c() -> Router<()> {
         .route("/upload/:file_name", post(routes::upload_crt))
         .route(
             "/config",
-            get(routes::sys::get_config).post(routes::update_config),
+            get(routes::get_config).post(routes::update_config),
         )
         .route("/get-chat-msg/:header", get(routes::get_chat_msg))
         .route("/msg/:header", get(routes::msg))
         .route("/ws", get(routes::ws_handler))
         .route("/get-mqtt-user", get(routes::get_mqtt_user))
+        .route("/sys.lua", get(routes::get_lua_sys_sdk))
+        .route("/task", get(routes::get_all_task))
 }
 
 pub fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {
