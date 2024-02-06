@@ -4,13 +4,23 @@
   import "iconify-icon";
   import Modal from "flowbite-svelte/Modal.svelte";
   import { getAllTask } from "../js/fetch.js";
-  import { addToast } from "../js/store";
+  import Label from "flowbite-svelte/Label.svelte";
+  import Input from "flowbite-svelte/Input.svelte";
+  import Select from "flowbite-svelte/Select.svelte";
 
   let addModal = false;
 
   let tasks = [];
 
   let error = "";
+
+  let selected;
+
+  let countries = [
+    { value: 'us', name: 'United States' },
+    { value: 'ca', name: 'Canada' },
+    { value: 'fr', name: 'France' }
+  ];
 
   onMount(async () => {
     getAllTask().then((res) => {
@@ -55,11 +65,33 @@
     autoclose
     outsideclose
   >
-    <p>任务名称</p>
-    <p>cron表达式</p>
-    <p>任务描述</p>
-    <p>选择lua脚本 右侧有上载按钮</p>
-    <p>文件预上传 直接显示个是否存在 存在会覆盖提醒 确认 直接加任务</p>
+    <div class="mb-6">
+      <Label for="default-input" class="block mb-2"
+        ><span class="text-red-700">* </span>Task Name</Label
+      >
+      <Input id="default-input" placeholder="Task Name" />
+    </div>
+    <div class="mb-6">
+      <Label for="default-input" class="block mb-2"
+        ><span class="text-red-700">* </span>Cron</Label
+      >
+      <Input id="default-input" placeholder="Cron" />
+    </div>
+    <div class="mb-6">
+      <Label for="default-input" class="block mb-2"
+        ><span class="text-red-700"> </span>Remark</Label
+      >
+      <Input id="default-input" placeholder="Remark" />
+    </div>
+
+    <div class="mb-6">
+      <Label for="default-input" class="block mb-2"
+        ><span class="text-red-700"> </span>Script</Label
+      >
+      <Select class="mt-2" items={countries} bind:value={selected} />
+      <!-- <Input id="default-input" placeholder="Remark" /> -->
+    </div>
+
     <svelte:fragment slot="footer">
       <Button on:click={() => alert('Handle "success"')}>OK</Button>
       <Button color="alternative">Cancel</Button>
