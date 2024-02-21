@@ -131,27 +131,30 @@ pub fn get_all_task() -> anyhow::Result<Vec<(String, Task)>> {
     Ok(tasks)
 }
 
-pub fn add_task(task: &Task) -> anyhow::Result<String> {
-    let header = get_task_header()?;
+impl Task {
+    pub fn insert(&self) -> anyhow::Result<String> {
+        let header = get_task_header()?;
 
-    let id = nanoid::nanoid!();
-    let id_b = id.as_bytes();
-    let task = bincode::serialize::<Task>(task)?;
+        let id = nanoid::nanoid!();
+        let id_b = id.as_bytes();
+        let task = bincode::serialize::<Task>(self)?;
 
-    RDB.put_cf(&header, id_b, task)?;
+        RDB.put_cf(&header, id_b, task)?;
 
-    Ok(id)
-}
+        Ok(id)
+    }
 
-pub fn remove_task(id: &String) -> anyhow::Result<()> {
-    let header = get_task_header()?;
+    pub fn remove(id: &String) -> anyhow::Result<()> {
+        let header = get_task_header()?;
 
     let id_b = id.as_bytes();
 
     RDB.delete_cf(&header, id_b)?;
 
     Ok(())
+    }
 }
+
 
 pub fn _delete_all_tasks() -> anyhow::Result<()> {
     let tasks = get_all_task()?;

@@ -23,7 +23,7 @@ pub use chat::msg;
 pub use chat::ws_send_all;
 
 pub use file::upload_crt;
-pub use file::get_lua_sys_sdk;
+pub use file::upload_script;
 
 pub use sys::get_config;
 pub use sys::update_config;
@@ -32,4 +32,6 @@ pub use session::data_handler;
 pub use session::handler as session_handler;
 
 pub use task::get_all_task;
+pub use task::add_task;
+pub use task::get_all_script_file_name;
 

@@ -4,10 +4,10 @@ use linked_hash_map::LinkedHashMap;
 use log::{error, info};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, str::FromStr, sync::Arc};
+use std::{str::FromStr, sync::Arc};
 use tokio::sync::oneshot::Sender;
 
-use crate::{config::SysConfig, r_db};
+use crate::config::SysConfig;
 
 lazy_static! {
     pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
@@ -26,10 +26,12 @@ struct TaskRunner {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Task {
-    pub path: PathBuf,
+    pub script: String,
     pub cron: String,
     pub name: String,
     pub remark: Option<String>,
+    pub max_executions: Option<u32>,
+    pub auto_start: bool,
 }
 
 impl Default for TaskManager {
@@ -52,10 +54,10 @@ impl TaskManager {
 
     pub fn start(&mut self) {
         let tasks = crate::r_db::get_all_task().unwrap();
-        for (id, task) in tasks {
+        for (id, task) in tasks.into_iter().filter(|(_, task)| task.auto_start) {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
-            let runner = TaskRunner::new(task.clone(), tx);
+            let runner = TaskRunner::new(task.clone(), Some(tx));
 
             let log_id = id.clone();
             let log_task = task.clone();
@@ -81,9 +83,7 @@ impl TaskManager {
             });
             info!(
                 "Task {}-[{}]:{} ---- starting",
-                log_id,
-                log_task.path.as_os_str().to_str().unwrap(),
-                log_task.name
+                log_id, log_task.script, log_task.name
             )
         }
         info!("TaskManger started");
@@ -106,37 +106,46 @@ impl TaskManager {
     }
 
     pub fn add_task(&mut self, task: Task) -> anyhow::Result<()> {
-        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-        let id = r_db::add_task(&task)?;
+        let id = task.insert()?;
 
-        let runner = TaskRunner::new(task.clone(), tx);
+        let id_c = id.clone();
 
-        self.tasks.insert(id.clone(), runner);
-        self.runtime.spawn(async move {
-            tokio::select! {
-                result = task.run() => {
-                    match result {
-                        Ok(_) => {
-                            info!("{} auto stop", id)
-                        },
-                        Err(e) => {
-                            println!("{}", e);
-                            error!("{} auto stop, error: {}", id, e)
+        let mut runner = TaskRunner::new(task.clone(), None);
+
+        if task.clone().auto_start {
+            let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+            self.runtime.spawn(async move {
+                tokio::select! {
+                    result = task.run() => {
+                        match result {
+                            Ok(_) => {
+                                info!("{} auto stop", id)
+                            },
+                            Err(e) => {
+                                println!("{}", e);
+                                error!("{} auto stop, error: {}", id, e)
+                            }
                         }
-                    }
-                },
-                _ = rx => {
-                    info!("{} manual stop", id)
-                },
-            }
-        });
+                    },
+                    _ = rx => {
+                        info!("{} manual stop", id)
+                    },
+                }
+            });
+            runner.tx = Some(tx);
+        } else {
+            runner.tx = None;
+        }
+
+        self.tasks.insert(id_c, runner);
+
         Ok(())
     }
 
     pub fn remove_task(&mut self, id: &str) -> anyhow::Result<()> {
         self.stop_task(id)?;
         self.tasks.remove(id);
-        r_db::remove_task(&String::from(id))?;
+        Task::remove(&String::from(id))?;
         Ok(())
     }
 
@@ -194,8 +203,8 @@ impl TaskManager {
 }
 
 impl TaskRunner {
-    fn new(task: Task, tx: Sender<()>) -> Self {
-        Self { tx: Some(tx), task }
+    fn new(task: Task, tx: Option<Sender<()>>) -> Self {
+        Self { tx, task }
     }
 
     fn stop(&mut self) -> anyhow::Result<()> {
@@ -208,12 +217,21 @@ impl TaskRunner {
 }
 
 impl Task {
-    pub fn new(path: PathBuf, cron: String, name: String, remark: Option<String>) -> Self {
+    pub fn new(
+        script: String,
+        cron: String,
+        name: String,
+        remark: Option<String>,
+        max_executions: Option<u32>,
+        auto_start: bool,
+    ) -> Self {
         Self {
-            path,
+            script,
             cron,
             name,
             remark,
+            max_executions,
+            auto_start,
         }
     }
 
@@ -226,21 +244,34 @@ impl Task {
 
         let lua = get_lua();
 
-        let script_content = tokio::fs::read_to_string(self.path.clone()).await?;
+        let script_content = tokio::fs::read_to_string(format!("./script/{}", self.script)).await?;
 
-        loop {
-            let script = lua.load(script_content.clone());
-            script.exec()?;
-
-            let now = chrono::offset::Local::now();
-            let next = schedule
-                .upcoming(chrono::offset::Local)
-                .next()
-                .context("No upcoming dates")?;
-            let duration = (next - now).to_std()?;
-
-            tokio::time::sleep(duration).await;
+        if let Some(max_executions) = self.max_executions {
+            for _ in 0..max_executions {
+                let script = lua.load(script_content.clone());
+                script.exec()?;
+                let now = chrono::offset::Local::now();
+                let next = schedule
+                    .upcoming(chrono::offset::Local)
+                    .next()
+                    .context("No upcoming dates")?;
+                let duration = (next - now).to_std()?;
+                tokio::time::sleep(duration).await;
+            }
+        } else {
+            loop {
+                let script = lua.load(script_content.clone());
+                script.exec()?;
+                let now = chrono::offset::Local::now();
+                let next = schedule
+                    .upcoming(chrono::offset::Local)
+                    .next()
+                    .context("No upcoming dates")?;
+                let duration = (next - now).to_std()?;
+                tokio::time::sleep(duration).await;
+            }
         }
+        Ok(())
     }
 }
 
@@ -365,22 +396,24 @@ pub fn test() {
 #[test]
 fn add_task() {
     let tasks = Task::new(
-        PathBuf::from("./script/test.lua"),
-        "*/5 * * * * *".to_string(),
+        "test.lua".to_string(),
+        "*/60 * * * * *".to_string(),
         "os".to_string(),
         None,
+        None,
+        true,
     );
 
-    r_db::add_task(&tasks).unwrap();
+    tasks.insert().unwrap();
 }
 
 #[test]
 fn delete_all_task() {
-    r_db::_delete_all_tasks().unwrap();
+    crate::r_db::_delete_all_tasks().unwrap();
 }
 
 #[test]
 fn get_all_task() {
-    let tasks = r_db::get_all_task().unwrap();
+    let tasks = crate::r_db::get_all_task().unwrap();
     println!("{:?}", tasks);
 }

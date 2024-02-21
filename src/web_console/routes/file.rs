@@ -1,7 +1,6 @@
 use axum::{
-    body::{Body, Bytes},
+    body::Bytes,
     extract::{BodyStream, Path},
-    http::Response,
     response::IntoResponse,
     BoxError, Json,
 };
@@ -12,23 +11,23 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 
 const UPLOADS_DIRECTORY: &str = "ssl";
+const SCRIPT_DIRECTORY: &str = "script";
 
 pub async fn upload_crt(Path(file_name): Path<String>, body: BodyStream) -> impl IntoResponse {
-    match stream_to_file(&file_name, body).await {
+    match stream_to_file(&file_name, body, UPLOADS_DIRECTORY).await {
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
 }
 
-pub async fn get_lua_sys_sdk() -> impl IntoResponse {
-    let lua_sys = Body::from(include_bytes!("../../../script/sys.lua").to_vec());
-    Response::builder()
-        .header("Content-Type", "application/octet-stream")
-        .body(lua_sys)
-        .unwrap()
+pub async fn upload_script(Path(file_name): Path<String>, body: BodyStream) -> impl IntoResponse {
+    match stream_to_file(&file_name, body, SCRIPT_DIRECTORY).await {
+        Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
 }
 
-pub async fn stream_to_file<S, E>(path: &str, stream: S) -> anyhow::Result<()>
+pub async fn stream_to_file<S, E>(path: &str, stream: S, folder: &str) -> anyhow::Result<()>
 where
     S: Stream<Item = Result<Bytes, E>>,
     E: Into<BoxError>,
@@ -44,7 +43,7 @@ where
         futures::pin_mut!(body_reader);
 
         // Create the file. `File` implements `AsyncWrite`.
-        let path = std::path::Path::new(UPLOADS_DIRECTORY).join(path);
+        let path = std::path::Path::new(folder).join(path);
         if path.exists() {
             tokio::fs::remove_file(&path).await.unwrap();
         }

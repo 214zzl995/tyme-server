@@ -42,10 +42,7 @@ pub fn front_public_route() -> Router {
 
 #[allow(clippy::unused_async)]
 async fn handle_error() -> (StatusCode, &'static str) {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Something went wrong accessing static files...",
-    )
+    (StatusCode::INTERNAL_SERVER_ERROR, "Page not found...")
 }
 
 // ********
@@ -124,7 +121,9 @@ where
 pub fn back_chat_route_c() -> Router<()> {
     Router::new()
         .merge(back_chat_route(()))
-        .route("/upload/:file_name", post(routes::upload_crt))
+        .merge(script_file())
+        .route("/upload-crt/:file_name", post(routes::upload_crt))
+        .route("/upload-script/:file_name", post(routes::upload_script))
         .route(
             "/config",
             get(routes::get_config).post(routes::update_config),
@@ -133,8 +132,21 @@ pub fn back_chat_route_c() -> Router<()> {
         .route("/msg/:header", get(routes::msg))
         .route("/ws", get(routes::ws_handler))
         .route("/get-mqtt-user", get(routes::get_mqtt_user))
-        .route("/sys.lua", get(routes::get_lua_sys_sdk))
         .route("/task", get(routes::get_all_task))
+        .route("/task", post(routes::add_task))
+        .route("/script-file-name", get(routes::get_all_script_file_name))
+}
+
+pub fn script_file() -> Router {
+    let script_file_path = PathBuf::from("./script");
+    Router::new()
+        .nest_service(
+            "/script-file",
+            ServeDir::new(script_file_path)
+                .not_found_service(handle_error.into_service())
+                .precompressed_gzip(),
+        )
+        .layer(TraceLayer::new_for_http())
 }
 
 pub fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {
