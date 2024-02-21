@@ -1,9 +1,9 @@
-<script lang="ts">
+<script>
     import Toast from "flowbite-svelte/Toast.svelte";
     import "iconify-icon";
     import { dismissToast, toasts } from "./../js/store.js";
 
-    const getIcon = (type) => {
+    const getIcon = (/** @type {string} */ type) => {
         switch (type) {
             case "red":
                 return "ic:round-error";

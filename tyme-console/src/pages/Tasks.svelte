@@ -12,8 +12,14 @@
   import Label from "flowbite-svelte/Label.svelte";
   import Input from "flowbite-svelte/Input.svelte";
   import Select from "flowbite-svelte/Select.svelte";
-  import Checkbox from "flowbite-svelte/Checkbox.svelte";
   import { addToast } from "../js/store.js";
+  import Table from "flowbite-svelte/Table.svelte";
+  import TableHead from "flowbite-svelte/TableHead.svelte";
+  import TableHeadCell from "flowbite-svelte/TableHeadCell.svelte";
+  import TableBody from "flowbite-svelte/TableBody.svelte";
+  import TableBodyRow from "flowbite-svelte/TableBodyRow.svelte";
+  import TableBodyCell from "flowbite-svelte/TableBodyCell.svelte";
+  import { slide } from "svelte/transition";
 
   let addModal = false;
 
@@ -148,29 +154,101 @@
 
     closeModel();
   };
+
+  let openRow;
+
+  const toggleRow = (/** @type {any} */ i) => {
+    openRow = openRow === i ? null : i;
+  };
 </script>
 
 <div
-  class="w-11/12 sm:w-2/4 md:w-2/5 lg:w-2/4 bg-white rounded shadow-md mt-3 h-[calc(100vh-7rem)] relative"
+  class="w-11/12 xl:w-2/4 bg-white rounded shadow-md mt-3 h-[calc(100vh-7rem)] relative"
 >
-  <div>
-    <div
-      class="h-16 absolute top-0 left-0 w-full border-b flex flex-row-reverse items-center px-3 gap-3"
-    >
-      <Button pill on:click={() => (addModal = true)}>
-        <iconify-icon icon="mingcute:add-fill" class="mr-2"></iconify-icon>
-        Add
-      </Button>
+  <div
+    class="h-16 absolute top-0 left-0 w-full border-b flex flex-row-reverse items-center px-3 gap-3"
+  >
+    <Button pill on:click={() => (addModal = true)}>
+      <iconify-icon icon="mingcute:add-fill" class="mr-2"></iconify-icon>
+      Add
+    </Button>
 
-      <Button pill href="/c/script-file/sys.lua" download={"sys.lua"}>
-        <iconify-icon icon="pajamas:download" class="mr-2"></iconify-icon>
-        SDK
-      </Button>
-    </div>
+    <Button pill href="/c/script-file/sys.lua" download={"sys.lua"}>
+      <iconify-icon icon="pajamas:download" class="mr-2"></iconify-icon>
+      SDK
+    </Button>
+  </div>
 
-    <div>
-      <!-- 所有任务 -->
-    </div>
+  <div class="mt-16 w-full h-[calc(100vh-11rem)] absolute">
+    <Table divClass="h-full w-full overscroll-contain overflow-auto">
+      <TableHead>
+        <TableHeadCell class="border-0">Id</TableHeadCell>
+        <TableHeadCell class="border-0">Task name</TableHeadCell>
+        <TableHeadCell class="border-0 hidden md:table-cell">Cron</TableHeadCell>
+        <TableHeadCell class="border-0 hidden md:table-cell"
+          >Script</TableHeadCell
+        >
+        <TableHeadCell class="border-0 hidden md:table-cell"
+          >Auto Start</TableHeadCell
+        >
+      </TableHead>
+      <TableBody tableBodyClass="divide-y">
+        {#each tasks as taskWithId, i}
+          <TableBodyRow on:click={() => toggleRow(i)}>
+            <TableBodyCell>{taskWithId.id}</TableBodyCell>
+            <TableBodyCell>{taskWithId.task.name}</TableBodyCell>
+            <TableBodyCell tdClass="hidden md:table-cell">{taskWithId.task.cron}</TableBodyCell>
+            <TableBodyCell tdClass="hidden md:table-cell"
+              >{taskWithId.task.script}</TableBodyCell
+            >
+            <TableBodyCell tdClass="hidden md:table-cell"
+              >{taskWithId.task.auto_start}</TableBodyCell
+            >
+          </TableBodyRow>
+          {#if openRow === i}
+            <TableBodyRow>
+              <TableBodyCell colspan="5" class="p-0">
+                <div
+                  class="px-7 py-3"
+                  transition:slide={{ duration: 300, axis: "y" }}
+                >
+                  <iconify-icon
+                    class="text-6xl"
+                    icon="vscode-icons:file-type-taskfile"
+                  ></iconify-icon>
+                  <div class="font-medium flex flex-wrap gap-x-12 gap-y-4">
+                    <p>
+                      <span class="font-semibold">ID: </span>
+                      {taskWithId.id}
+                    </p>
+                    <p>
+                      <span class="font-semibold">Name: </span>
+                      {taskWithId.task.name}
+                    </p>
+                    <p>
+                      <span class="font-semibold">Cron: </span>
+                      {taskWithId.task.cron}
+                    </p>
+                    <p>
+                      <span class="font-semibold">Remark: </span>
+                      {taskWithId.task.remark}
+                    </p>
+                    <p>
+                      <span class="font-semibold">Script: </span>
+                      {taskWithId.task.script}
+                    </p>
+                    <p>
+                      <span class="font-semibold">Auto Start: </span>
+                      {taskWithId.task.auto_start}
+                    </p>
+                  </div>
+                </div></TableBodyCell
+              >
+            </TableBodyRow>
+          {/if}
+        {/each}
+      </TableBody>
+    </Table>
   </div>
 
   <Modal
