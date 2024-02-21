@@ -6,7 +6,7 @@ use crate::{r_db, task::Task};
 pub async fn get_all_task() -> impl IntoResponse {
     match r_db::get_all_task() {
         Ok(tasks) => Json(
-            json!({"result": "ok", "tasks": tasks.into_iter().map(|(id,task)| json!({"value":id,"script":task.script ,"cron":task.cron,"name":task.name,"remark":task.remark})).collect::<Vec<_>>()}),
+            json!({"result": "ok", "tasks": tasks.into_iter().map(|(id,task)| json!({"id":id,"task":task})).collect::<Vec<_>>()}),
         ),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }

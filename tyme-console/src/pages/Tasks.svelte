@@ -3,10 +3,16 @@
   import Button from "flowbite-svelte/Button.svelte";
   import "iconify-icon";
   import Modal from "flowbite-svelte/Modal.svelte";
-  import { getAllScriptFile, uploadScript, addTask, getAllTask } from "../js/fetch.js";
+  import {
+    getAllScriptFile,
+    uploadScript,
+    addTask,
+    getAllTask,
+  } from "../js/fetch.js";
   import Label from "flowbite-svelte/Label.svelte";
   import Input from "flowbite-svelte/Input.svelte";
   import Select from "flowbite-svelte/Select.svelte";
+  import Checkbox from "flowbite-svelte/Checkbox.svelte";
   import { addToast } from "../js/store.js";
 
   let addModal = false;
@@ -31,6 +37,7 @@
     getAllTask().then((res) => {
       if (res.result === "ok") {
         tasks = res.tasks;
+        console.log(tasks);
       } else {
         error = res.message;
       }
@@ -203,6 +210,23 @@
       <div class="flex flex-row">
         <Select class="mt-2" items={scriptFiles} bind:value={task.script} />
       </div>
+    </div>
+
+    <div class="mb-6 flex flex-row items-center">
+      <Label for="default-input" class="block"
+        ><span class="text-red-700">* </span>Auto Start</Label
+      >
+      <label class="relative inline-flex items-center cursor-pointer h-7">
+        <input
+          class="sr-only peer"
+          value=""
+          type="checkbox"
+          bind:checked={task.auto_start}
+        />
+        <div
+          class="scale-50 peer rounded-full outline-none duration-100 after:duration-500 w-28 h-14 bg-blue-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500 after:content-['No'] after:absolute after:outline-none after:rounded-full after:h-12 after:w-12 after:bg-white after:top-1 after:left-1 after:flex after:justify-center after:items-center after:text-sky-800 after:font-bold peer-checked:after:translate-x-14 peer-checked:after:content-['Yes'] peer-checked:after:border-white"
+        ></div>
+      </label>
     </div>
 
     <svelte:fragment slot="footer">
