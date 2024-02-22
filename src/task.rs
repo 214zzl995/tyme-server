@@ -149,6 +149,12 @@ impl TaskManager {
         Ok(())
     }
 
+    pub fn restart_task(&mut self, id: &str) -> anyhow::Result<()> {
+        self.stop_task(id)?;
+        self.start_task(&String::from(id))?;
+        Ok(())
+    }
+
     pub fn get_task(&self, id: &str) -> anyhow::Result<Task> {
         let runner = self
             .tasks
@@ -199,6 +205,10 @@ impl TaskManager {
             return Err(anyhow::anyhow!("Task is running, please stop it first"));
         }
         Ok(())
+    }
+
+    pub fn get_running_status(&self, id: &String) -> bool {
+        self.tasks.get(id).is_some_and(|f| f.tx.is_some())
     }
 }
 

@@ -56,7 +56,7 @@ pub async fn subscribe() {
         } else {
             info!("Lost connection. Attempting reconnect.");
             while let Err(err) = clint.reconnect().await {
-                info!("Error reconnecting: {}", err);
+                error!("Error reconnecting: {}", err);
                 tokio::time::sleep(Duration::from_millis(1000)).await;
             }
             info!("Reconnected.");
