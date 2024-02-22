@@ -181,32 +181,74 @@
 
   <div class="mt-16 w-full h-[calc(100vh-11rem)] absolute">
     <Table divClass="h-full w-full overscroll-contain overflow-auto">
-      <TableHead>
-        <TableHeadCell class="border-0">Id</TableHeadCell>
-        <TableHeadCell class="border-0">Task name</TableHeadCell>
-        <TableHeadCell class="border-0 hidden md:table-cell">Cron</TableHeadCell>
-        <TableHeadCell class="border-0 hidden md:table-cell"
-          >Script</TableHeadCell
-        >
-        <TableHeadCell class="border-0 hidden md:table-cell"
-          >Auto Start</TableHeadCell
-        >
+      <TableHead defaultRow={false}>
+        <tr class="table-row md:hidden">
+          <TableHeadCell colspan="2" class="border-0">ID</TableHeadCell>
+          <TableHeadCell colspan="1" class="border-0">Edit</TableHeadCell>
+        </tr>
+        <tr>
+          <TableHeadCell class="border-0 w-2/12 md:w-3/12 hidden md:table-cell"
+            >Id</TableHeadCell
+          >
+          <TableHeadCell class="border-0 w-5/12 md:w-2/12">Name</TableHeadCell>
+          <TableHeadCell class="border-0 w-2/12 md:w-2/12">Cron</TableHeadCell>
+          <TableHeadCell class="border-0 w-5/12 md:w-2/12">Script</TableHeadCell>
+          <TableHeadCell class="border-0 hidden md:table-cell w-2/12"
+            >Auto</TableHeadCell
+          >
+          <TableHeadCell class="border-0 hidden md:table-cell w-1/12">
+            Edit
+          </TableHeadCell>
+        </tr>
       </TableHead>
-      <TableBody tableBodyClass="divide-y">
+      <TableBody tableBodyClass="divide-y-0">
         {#each tasks as taskWithId, i}
-          <TableBodyRow on:click={() => toggleRow(i)}>
-            <TableBodyCell>{taskWithId.id}</TableBodyCell>
-            <TableBodyCell>{taskWithId.task.name}</TableBodyCell>
-            <TableBodyCell tdClass="hidden md:table-cell">{taskWithId.task.cron}</TableBodyCell>
-            <TableBodyCell tdClass="hidden md:table-cell"
+          <TableBodyRow on:click={() => toggleRow(i)} class="border-0">
+            <TableBodyCell colspan="2" tdClass="py-1 px-6 md:hidden"
+              >{taskWithId.id}</TableBodyCell
+            >
+            <TableBodyCell
+              tdClass="w-full md:w-auto py-1 px-6 md:py-4 hidden md:table-cell"
+              >{taskWithId.id}</TableBodyCell
+            >
+            <TableBodyCell tdClass="hidden md:table-cell py-4 px-6"
+              >{taskWithId.task.name}</TableBodyCell
+            >
+            <TableBodyCell
+              tdClass="hidden px-6 py-4 whitespace-nowrap md:table-cell"
+              >{taskWithId.task.cron}</TableBodyCell
+            >
+            <TableBodyCell
+              tdClass="hidden px-6 py-4 whitespace-nowrap md:table-cell"
               >{taskWithId.task.script}</TableBodyCell
             >
-            <TableBodyCell tdClass="hidden md:table-cell"
+            <TableBodyCell tdClass="hidden px-6 py-4 md:table-cell"
+              >{taskWithId.task.auto_start}</TableBodyCell
+            >
+            <TableBodyCell>
+              <a
+                href="/tables"
+                class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                >Edit</a
+              >
+            </TableBodyCell>
+          </TableBodyRow>
+          <TableBodyRow on:click={() => toggleRow(i)} class="md:hidden">
+            <TableBodyCell tdClass="px-6 py-4 whitespace-nowrap"
+              >{taskWithId.task.name}</TableBodyCell
+            >
+            <TableBodyCell tdClass="px-6 py-4 whitespace-nowrap"
+              >{taskWithId.task.cron}</TableBodyCell
+            >
+            <TableBodyCell tdClass="px-6 py-4 whitespace-nowrap"
+              >{taskWithId.task.script}</TableBodyCell
+            >
+            <TableBodyCell tdClass="hidden px-6 py-4 md:table-cell"
               >{taskWithId.task.auto_start}</TableBodyCell
             >
           </TableBodyRow>
           {#if openRow === i}
-            <TableBodyRow>
+            <TableBodyRow color="custom">
               <TableBodyCell colspan="5" class="p-0">
                 <div
                   class="px-7 py-3"
