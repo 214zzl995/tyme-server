@@ -25,6 +25,10 @@ export const getAllTask = () => api.get(`/c/task`)
 
 export const addTask = (/** @type {any} */ body) => api.post(`/c/task`, body)
 
+export const removeTask = (/** @type {string} */ id) => api.delete(`/c/task/${id}`)
+
+export const restartTask = (/** @type {string} */ id) => api.get(`/c/restart-task/${id}`)
+
 export const getAllScriptFile = () => api.get(`/c/script-file-name`)
 
 export const uploadScript = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post(`/c/upload-script/${filename}`, body, "", "multipart/form-data")

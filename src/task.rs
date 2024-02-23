@@ -105,7 +105,7 @@ impl TaskManager {
         Ok(())
     }
 
-    pub fn add_task(&mut self, task: Task) -> anyhow::Result<()> {
+    pub fn add_task(&mut self, task: Task) -> anyhow::Result<String> {
         let id = task.insert()?;
 
         let id_c = id.clone();
@@ -137,9 +137,9 @@ impl TaskManager {
             runner.tx = None;
         }
 
-        self.tasks.insert(id_c, runner);
+        self.tasks.insert(id_c.clone(), runner);
 
-        Ok(())
+        Ok(id_c)
     }
 
     pub fn remove_task(&mut self, id: &str) -> anyhow::Result<()> {
@@ -258,8 +258,6 @@ impl Task {
 
         if let Some(max_executions) = self.max_executions {
             for _ in 0..max_executions {
-                let script = lua.load(script_content.clone());
-                script.exec()?;
                 let now = chrono::offset::Local::now();
                 let next = schedule
                     .upcoming(chrono::offset::Local)
@@ -267,11 +265,11 @@ impl Task {
                     .context("No upcoming dates")?;
                 let duration = (next - now).to_std()?;
                 tokio::time::sleep(duration).await;
+                let script = lua.load(script_content.clone());
+                script.exec()?;
             }
         } else {
             loop {
-                let script = lua.load(script_content.clone());
-                script.exec()?;
                 let now = chrono::offset::Local::now();
                 let next = schedule
                     .upcoming(chrono::offset::Local)
@@ -279,6 +277,8 @@ impl Task {
                     .context("No upcoming dates")?;
                 let duration = (next - now).to_std()?;
                 tokio::time::sleep(duration).await;
+                let script = lua.load(script_content.clone());
+                script.exec()?;
             }
         }
         Ok(())

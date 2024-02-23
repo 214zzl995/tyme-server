@@ -33,6 +33,7 @@ pub use session::handler as session_handler;
 
 pub use task::get_all_task;
 pub use task::add_task;
+pub use task::remove_task;
 pub use task::restart_task;
 pub use task::get_all_script_file_name;
 

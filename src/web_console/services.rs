@@ -3,7 +3,7 @@ use axum::{
     handler::HandlerWithoutStateExt,
     http::StatusCode,
     middleware,
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use std::{path::PathBuf, sync::Arc};
@@ -134,6 +134,7 @@ pub fn back_chat_route_c() -> Router<()> {
         .route("/get-mqtt-user", get(routes::get_mqtt_user))
         .route("/task", get(routes::get_all_task))
         .route("/task", post(routes::add_task))
+        .route("/task/:id", delete(routes::remove_task))
         .route("/restart-task/:id", get(routes::restart_task))
         .route("/script-file-name", get(routes::get_all_script_file_name))
 }

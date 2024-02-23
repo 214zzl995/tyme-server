@@ -15,13 +15,20 @@ pub async fn get_all_task() -> impl IntoResponse {
 
 pub async fn add_task(Json(task): Json<Task>) -> impl IntoResponse {
     match crate::task_manger.lock().add_task(task) {
-        Ok(_) => Json(json!({"result": "ok"})),
+        Ok(id) => Json(json!({"result": "ok","id":id})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
 }
 
 pub async fn restart_task(Path(id): Path<String>) -> impl IntoResponse {
     match crate::task_manger.lock().restart_task(id.as_str()) {
+        Ok(_) => Json(json!({"result": "ok"})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
+}
+
+pub async fn remove_task(Path(id): Path<String>) -> impl IntoResponse {
+    match crate::task_manger.lock().remove_task(id.as_str()) {
         Ok(_) => Json(json!({"result": "ok"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }

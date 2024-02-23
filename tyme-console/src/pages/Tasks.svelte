@@ -8,6 +8,8 @@
     uploadScript,
     addTask,
     getAllTask,
+    removeTask,
+    restartTask,
   } from "../js/fetch.js";
   import Label from "flowbite-svelte/Label.svelte";
   import Input from "flowbite-svelte/Input.svelte";
@@ -20,6 +22,7 @@
   import TableBodyRow from "flowbite-svelte/TableBodyRow.svelte";
   import TableBodyCell from "flowbite-svelte/TableBodyCell.svelte";
   import { slide } from "svelte/transition";
+  import Indicator from "flowbite-svelte/Indicator.svelte";
 
   let addModal = false;
 
@@ -134,14 +137,58 @@
       return;
     }
 
-    addTask(task).then((res) => {
+    addTask(task)
+      .then((res) => {
+        if (res.result === "ok") {
+          addToast({
+            type: "green",
+            message: "Add Task Success.",
+            dismissible: true,
+            timeout: 3000,
+          });
+          let id = res.id;
+          console.log(tasks);
+          console.log(task);
+          tasks = [
+            {
+              id: id,
+              task: task,
+              running: task.auto_start,
+            },
+            ...tasks,
+          ];
+          console.log(tasks);
+        } else {
+          addToast({
+            type: "red",
+            message: res.message,
+            dismissible: true,
+            timeout: 3000,
+          });
+        }
+      })
+      .finally(() => {
+        closeModel();
+      });
+  };
+
+  let openRowId;
+
+  const toggleRow = (/** @type {any} */ id) => {
+    openRowId = openRowId === id ? null : id;
+    console.log(openRowId);
+  };
+
+  const removeTaskF = (/** @type {any} */ id) => {
+    removeTask(id).then((res) => {
       if (res.result === "ok") {
         addToast({
           type: "green",
-          message: "Add Task Success.",
+          message: "Remove Task Success.",
           dismissible: true,
           timeout: 3000,
         });
+        tasks = tasks.filter((item) => item.id !== id);
       } else {
         addToast({
           type: "red",
@@ -151,14 +198,33 @@
         });
       }
     });
-
-    closeModel();
   };
 
-  let openRow;
+  let restartLoading;
 
-  const toggleRow = (/** @type {any} */ i) => {
-    openRow = openRow === i ? null : i;
+  const restartTaskF = (/** @type {any} */ id) => {
+    restartLoading = id;
+    restartTask(id)
+      .then((res) => {
+        if (res.result === "ok") {
+          addToast({
+            type: "green",
+            message: "Restart Task Success.",
+            dismissible: true,
+            timeout: 3000,
+          });
+        } else {
+          addToast({
+            type: "red",
+            message: res.message,
+            dismissible: true,
+            timeout: 3000,
+          });
+        }
+      })
+      .finally(() => {
+        restartLoading = null;
+      });
   };
 </script>
 
@@ -192,25 +258,50 @@
           >
           <TableHeadCell class="border-0 w-5/12 md:w-2/12">Name</TableHeadCell>
           <TableHeadCell class="border-0 w-2/12 md:w-2/12">Cron</TableHeadCell>
-          <TableHeadCell class="border-0 w-5/12 md:w-2/12">Script</TableHeadCell>
-          <TableHeadCell class="border-0 hidden md:table-cell w-2/12"
+          <TableHeadCell class="border-0 w-5/12 md:w-2/12">Script</TableHeadCell
+          >
+          <TableHeadCell class="border-0 hidden md:table-cell w-1/12"
             >Auto</TableHeadCell
           >
-          <TableHeadCell class="border-0 hidden md:table-cell w-1/12">
+          <TableHeadCell class="border-0 hidden md:table-cell w-2/12">
             Edit
           </TableHeadCell>
         </tr>
       </TableHead>
       <TableBody tableBodyClass="divide-y-0">
-        {#each tasks as taskWithId, i}
-          <TableBodyRow on:click={() => toggleRow(i)} class="border-0">
-            <TableBodyCell colspan="2" tdClass="py-1 px-6 md:hidden"
-              >{taskWithId.id}</TableBodyCell
-            >
+        {#each tasks as taskWithId}
+          <TableBodyRow
+            on:click={() => toggleRow(taskWithId.id)}
+            class="border-0"
+          >
+            <TableBodyCell colspan="2" tdClass="py-1 px-6 md:hidden">
+              <div class="flex flex-row items-center gap-1">
+                {#if restartLoading === taskWithId.id}
+                  <Indicator color="blue" />
+                {:else if restartLoading !== taskWithId.id && taskWithId.running}
+                  <Indicator color="green" />
+                {:else}
+                  <Indicator color="red" />
+                {/if}
+
+                {taskWithId.id}
+              </div>
+            </TableBodyCell>
             <TableBodyCell
               tdClass="w-full md:w-auto py-1 px-6 md:py-4 hidden md:table-cell"
-              >{taskWithId.id}</TableBodyCell
             >
+              <div class="flex flex-row items-center gap-1">
+                {#if restartLoading === taskWithId.id}
+                  <Indicator color="blue" />
+                {:else if restartLoading !== taskWithId.id && taskWithId.running}
+                  <Indicator color="green" />
+                {:else}
+                  <Indicator color="red" />
+                {/if}
+
+                {taskWithId.id}
+              </div>
+            </TableBodyCell>
             <TableBodyCell tdClass="hidden md:table-cell py-4 px-6"
               >{taskWithId.task.name}</TableBodyCell
             >
@@ -226,14 +317,26 @@
               >{taskWithId.task.auto_start}</TableBodyCell
             >
             <TableBodyCell>
-              <a
-                href="/tables"
+              <button
+                on:click={() => {
+                  removeTaskF(taskWithId.id);
+                }}
                 class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                >Edit</a
+                >Delete</button
+              >
+              <button
+                on:click={() => {
+                  restartTaskF(taskWithId.id);
+                }}
+                class="font-medium text-fuchsia-600 hover:underline dark:text-primary-500"
+                >Restart</button
               >
             </TableBodyCell>
           </TableBodyRow>
-          <TableBodyRow on:click={() => toggleRow(i)} class="md:hidden">
+          <TableBodyRow
+            on:click={() => toggleRow(taskWithId.id)}
+            class="md:hidden"
+          >
             <TableBodyCell tdClass="px-6 py-4 whitespace-nowrap"
               >{taskWithId.task.name}</TableBodyCell
             >
@@ -247,9 +350,9 @@
               >{taskWithId.task.auto_start}</TableBodyCell
             >
           </TableBodyRow>
-          {#if openRow === i}
+          {#if openRowId === taskWithId.id}
             <TableBodyRow color="custom">
-              <TableBodyCell colspan="5" class="p-0">
+              <TableBodyCell colspan="6" class="p-0">
                 <div
                   class="px-7 py-3"
                   transition:slide={{ duration: 300, axis: "y" }}
@@ -284,8 +387,8 @@
                       {taskWithId.task.auto_start}
                     </p>
                   </div>
-                </div></TableBodyCell
-              >
+                </div>
+              </TableBodyCell>
             </TableBodyRow>
           {/if}
         {/each}
