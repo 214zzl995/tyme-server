@@ -84,8 +84,6 @@ impl SysConfig {
 
             if arg_path.is_dir() {
                 return Err(anyhow::anyhow!("Illegal command parameter -c"));
-            } else {
-                arg_path
             }
         } else {
             let current_dir = env::current_dir().unwrap();
