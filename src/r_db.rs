@@ -16,7 +16,7 @@ lazy_static! {
         db_opts.create_if_missing(true);
         db_opts.set_max_write_buffer_number(16);
         db_opts.set_disable_auto_compactions(true);
-        db_opts.set_keep_log_file_num(5);
+        db_opts.set_keep_log_file_num(0);
         db_opts.set_log_level(LogLevel::Warn);
 
         //可以直接使用 topic存储 当加入同名topic时  直接修改同名topic的值
