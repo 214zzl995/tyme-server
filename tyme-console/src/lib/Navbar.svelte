@@ -4,6 +4,7 @@
   import NavUl from "flowbite-svelte/NavUl.svelte";
   import NavHamburger from "flowbite-svelte/NavHamburger.svelte";
   import Navbar from "flowbite-svelte/Navbar.svelte";
+  import appIco from "../assets/icons/app_ico.svg";
   import "iconify-icon";
 
   export let navItems = [{ label: "logo", id: 0 }];
@@ -29,8 +30,9 @@
 <div class="w-full z-[888] h-16 md:h-20">
   <Navbar class="px-2 sm:px-4 py-2.5 z-20 border-b h-full">
     <NavBrand href="/">
+      <img src={appIco} alt="appIco" class="h-12 w-12 lg:h-16 lg:w-16" />
       <span
-        class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
+        class="self-center whitespace-nowrap text-2xl font-semibold dark:text-white"
         >TYME</span
       >
     </NavBrand>
@@ -43,13 +45,13 @@
         <NavLi
           href="#{item.label}"
           on:click={() => handleMenuSelection(item.id, item.label)}
-          class="{item.background || ""} {item.color || ""}"
+          class="{item.background || ''} {item.color || ''}"
         >
           <div class="flex flex-row justify-center items-center">
             {#if item.icon}
               <iconify-icon icon={item.icon} class="mr-2 font-medium" />
             {/if}
-            {item.label}
+            <span class="font-semibold">{item.label}</span>
           </div>
         </NavLi>
       {/each}
