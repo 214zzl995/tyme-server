@@ -1,7 +1,6 @@
 <script>
   import Input from "flowbite-svelte/Input.svelte";
   import Label from "flowbite-svelte/Label.svelte";
-  import Select from "flowbite-svelte/Select.svelte";
   import Textarea from "flowbite-svelte/Textarea.svelte";
   import Checkbox from "flowbite-svelte/Checkbox.svelte";
   import Fileupload from "flowbite-svelte/Fileupload.svelte";
@@ -106,10 +105,13 @@
   });
 </script>
 
-<div class="fixed bottom-5 right-5 z-[999] ">
+<div
+  class="fixed bottom-0 right-0 md:bottom-5 md:right-5 lg:right-10 lg:bottom-10
+   z-[999] backdrop-blur-sm w-full md:w-auto h-30 md:h-auto p-5 md:p-0 flex flex-row-reverse"
+>
   <GradientButton
     shadow
-    class="w-none"
+    class="w-none md:w-36 md:h-12"
     color="purpleToBlue"
     on:click={saveConfig}
   >
@@ -125,7 +127,7 @@
   </GradientButton>
 </div>
 
-<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-3 mt-3">
+<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-32 md:mb-3 mt-3">
   <div class="bg-white rounded shadow-md p-8 w-full mb-3">
     <form>
       <h1 class="font-bold text-2xl">System</h1>
@@ -223,10 +225,7 @@
           </p>
         </Label>
         <div class="col-span-12 md:col-span-8 row-span-10 md:row-span-12">
-          <Textarea
-            rows="8"
-            bind:value={sysConfig.mqtt_config.lwt}
-          />
+          <Textarea rows="8" bind:value={sysConfig.mqtt_config.lwt} />
         </div>
       </div>
 

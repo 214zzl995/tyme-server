@@ -84,7 +84,8 @@ impl SysConfig {
 
             if arg_path.is_dir() {
                 return Err(anyhow::anyhow!("Illegal command parameter -c"));
-            }
+            };
+            arg_path
         } else {
             let current_dir = env::current_dir().unwrap();
             current_dir.join("SysConfig.toml")
@@ -201,11 +202,7 @@ impl MQTTConfig {
     }
 
     pub fn get_topics_string(&self) -> Vec<String> {
-        self.topics
-            .clone()
-            .into_iter()
-            .map(|x| x.topic)
-            .collect()
+        self.topics.clone().into_iter().map(|x| x.topic).collect()
     }
 }
 

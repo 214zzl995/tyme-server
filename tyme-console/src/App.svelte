@@ -68,9 +68,9 @@
 
   <!-- PAGE LOADING -->
   <div
-    class="overflow-auto bg-green-50 flex-1 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]"
+    class="overflow-auto bg-slate-50 flex-1 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]"
   >
-    <div class="w-full flex justify-center">
+    <div class="w-full flex justify-center font-sans">
       {#if menu === 0}
         <div class="w-1/2 flex justify-center" />
       {:else if menu === 1}
