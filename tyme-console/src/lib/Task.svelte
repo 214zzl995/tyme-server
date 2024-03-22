@@ -62,7 +62,7 @@
   };
 </script>
 
-<div class="rounded w-full h-48 shadow p-2 flex flex-col">
+<div class="rounded w-full h-48 shadow-lg p-2 flex flex-col bg-primary-50">
   <p class="text-xs h-6 flex flex-row items-center">
     <span
       class="block rounded-full p-1 w-16 flex justify-center items-center text-white mr-2 font-extrabold"

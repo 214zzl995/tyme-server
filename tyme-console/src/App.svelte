@@ -62,13 +62,13 @@
 
 <Toasts />
 
-<div class="h-screen flex flex-col">
+<div class="h-screen flex flex-col bg-slate-500">
   <!-- MENNU BAR ON TOP -->
   <NavBar navItems={set_menu_items(loggedin)} bind:menu />
 
   <!-- PAGE LOADING -->
   <div
-    class="overflow-auto bg-slate-50 flex-1 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]"
+    class="overflow-auto flex-1 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]"
   >
     <div class="w-full flex justify-center font-sans">
       {#if menu === 0}

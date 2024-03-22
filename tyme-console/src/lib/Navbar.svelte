@@ -19,7 +19,7 @@
 
   const handleMenuSelection = (
     /** @type {number} */ id,
-    /** @type {String} */ hash
+    /** @type {String} */ hash,
   ) => {
     menu = id;
     nowHash = hash;
@@ -28,7 +28,7 @@
 </script>
 
 <div class="w-full z-[888] h-16 md:h-20">
-  <Navbar class="px-2 sm:px-4 py-2.5 z-20 border-b h-full">
+  <Navbar class="px-2 sm:px-4 py-2.5 z-20 border-b h-full backdrop-blur-sm" color="none">
     <NavBrand href="/">
       <img src={appIco} alt="appIco" class="h-12 w-12 lg:h-16 lg:w-16" />
       <span
@@ -49,9 +49,13 @@
         >
           <div class="flex flex-row justify-center items-center">
             {#if item.icon}
-              <iconify-icon icon={item.icon} class="mr-2 font-medium" />
+              <iconify-icon icon={item.icon} class="mr-2 font-semibold" />
             {/if}
-            <span class="font-semibold">{item.label}</span>
+            <span
+              class="font-semibold hover:text-primary-500"
+              class:text-primary-500={nowHash === item.label}
+              class:text-slate-500={nowHash !== item.label}>{item.label}</span
+            >
           </div>
         </NavLi>
       {/each}
