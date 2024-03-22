@@ -127,7 +127,7 @@
   </GradientButton>
 </div>
 
-<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-32 md:mb-3 mt-3">
+<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-20 md:mb-3 mt-3">
   <div class="bg-white rounded shadow-md p-8 w-full mb-3">
     <form>
       <h1 class="font-bold text-2xl">System</h1>

@@ -27,8 +27,8 @@
   };
 </script>
 
-<div class="w-full z-[888] h-16 md:h-20">
-  <Navbar class="px-2 sm:px-4 py-2.5 z-20 border-b h-full backdrop-blur-sm" color="none">
+<div class="w-full z-[888] h-16 md:h-20 fixed top-0">
+  <Navbar class="px-2 sm:px-4 py-2.5 z-20 border-b h-full backdrop-blur-xl bg-white/75" color="none">
     <NavBrand href="/">
       <img src={appIco} alt="appIco" class="h-12 w-12 lg:h-16 lg:w-16" />
       <span

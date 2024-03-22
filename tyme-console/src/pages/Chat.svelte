@@ -54,7 +54,7 @@
   class="w-full sm:w-full md:w-4/5 lg:w-3/4 h-[calc(100vh-4rem)] md:h-[calc(100vh-7rem)] flex flex-col md:flex-row md:mt-3"
 >
   <div
-    class="bg-white md:rounded md:shadow-md h-14 mb:mb-3 md:mr-3 md:mb-0 flex-none md:h-full md:w-40 border-b md:border-b-0 border-gray-200"
+    class="bg-white md:rounded md:shadow-md h-10 md:h-14 mb:mb-3 md:mr-3 md:mb-0 flex-none md:h-full md:w-40 border-b md:border-b-0 border-gray-200"
   >
     <div class="flex flex-row md:flex-col px-2 py-0.5 h-full topics">
       {#each topicList as topic, index}

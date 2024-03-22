@@ -62,37 +62,33 @@
 
 <Toasts />
 
-<div class="h-screen flex flex-col bg-slate-500">
-  <!-- MENNU BAR ON TOP -->
-  <NavBar navItems={set_menu_items(loggedin)} bind:menu />
+<!-- MENNU BAR ON TOP -->
+<NavBar navItems={set_menu_items(loggedin)} bind:menu />
 
-  <!-- PAGE LOADING -->
-  <div
-    class="overflow-auto flex-1 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]"
-  >
-    <div class="w-full flex justify-center font-sans">
-      {#if menu === 0}
-        <div class="w-1/2 flex justify-center" />
-      {:else if menu === 1}
-        <About />
-      {:else if menu === 2}
-        <Secure />
-      {:else if menu === 3}
-        <ApiCheck />
-      {:else if menu === 4}
-        <Chat />
-      {:else if menu === 5}
-        <Tasks />
-      {:else if menu === 6}
-        <Settings />
-      {:else if menu === 98}
-        <LogIn />
-      {:else if menu === 99}
-        <LogOut />
-      {:else}
-        <h2>Page Not Found or Completed Yet</h2>
-      {/if}
-    </div>
+<!-- PAGE LOADING -->
+<div class="min-h-screen pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100">
+  <div class="w-full flex justify-center font-sans">
+    {#if menu === 0}
+      <div class="w-1/2 flex justify-center" />
+    {:else if menu === 1}
+      <About />
+    {:else if menu === 2}
+      <Secure />
+    {:else if menu === 3}
+      <ApiCheck />
+    {:else if menu === 4}
+      <Chat />
+    {:else if menu === 5}
+      <Tasks />
+    {:else if menu === 6}
+      <Settings />
+    {:else if menu === 98}
+      <LogIn />
+    {:else if menu === 99}
+      <LogOut />
+    {:else}
+      <h2>Page Not Found or Completed Yet</h2>
+    {/if}
   </div>
 </div>
 

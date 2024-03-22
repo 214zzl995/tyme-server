@@ -17,7 +17,7 @@
 <div class="md:w-full md:h-14 h-full md:mb-2 mr-2 md:mr-0 md:mt-1">
   <button
     class:active={checked}
-    class="w-full h-full px-2"
+    class="w-full h-full px-2 md:px-6 py-1 md:py-2"
     on:click={changeTopic}>{text}</button
   >
 </div>
@@ -30,7 +30,6 @@
     overflow: hidden;
     z-index: 1;
     color: #090909;
-    padding: 0em 1.7em;
     cursor: pointer;
     font-size: 18px;
     border-radius: 0.3em;
