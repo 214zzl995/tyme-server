@@ -19,6 +19,7 @@ COPY --from=server /app/tyme/target/release/tyme-server ./tyme-server
 COPY --from=web /app/tyme-console/dist ./tyme-console
 CMD ["./tyme-server"]
 
+
 # FROM scratch
 # COPY --from=server /usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/
 # COPY --from=server /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/
@@ -31,6 +32,7 @@ CMD ["./tyme-server"]
 # COPY --from=server /app/tyme/target/release/tyme-server ./tyme-server
 # COPY --from=web /app/tyme-console/dist ./tyme-console
 # CMD ["./tyme-server"]
+
 
 
 
