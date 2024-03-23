@@ -1,0 +1,9 @@
+/.idea
+/.vscode
+/target
+/ssl
+/data
+/log
+/tyme-console/.vscode
+/tyme-console/dist
+/tyme-console/node_modules
