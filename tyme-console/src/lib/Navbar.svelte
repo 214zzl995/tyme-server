@@ -6,29 +6,39 @@
   import Navbar from "flowbite-svelte/Navbar.svelte";
   import appIco from "../assets/icons/app_ico.svg";
   import "iconify-icon";
+  import { getLogout } from "./../js/auth.js";
 
   export let navItems = [{ label: "logo", id: 0 }];
-  export let menu;
+  export let routerId;
 
-  $: nowHash = navItems.find((item) => item.id === menu)?.label;
+  $: activeUrl = navItems.find((item) => item.id === routerId)?.label;
   $: navBarHide = true;
 
   const menuCilck = () => {
     navBarHide = !navBarHide;
   };
 
-  const handleMenuSelection = (
+  const handleMenuSelection = async (
     /** @type {number} */ id,
     /** @type {String} */ hash,
   ) => {
-    menu = id;
-    nowHash = hash;
-    navBarHide = true;
+    if (id === 99) {
+      await getLogout();
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    } else {
+      routerId = id;
+      activeUrl = hash;
+      navBarHide = true;
+    }
   };
 </script>
 
 <div class="w-full z-[888] h-16 md:h-20 fixed top-0">
-  <Navbar class="px-2 sm:px-4 py-2.5 z-20 border-b h-full backdrop-blur-xl bg-white/75" color="none">
+  <Navbar
+    class="px-2 sm:px-4 py-2.5 z-20 border-b h-full backdrop-blur-xl bg-white/75"
+    color="none"
+  >
     <NavBrand href="/">
       <img src={appIco} alt="appIco" class="h-12 w-12 lg:h-16 lg:w-16" />
       <span
@@ -40,7 +50,7 @@
       <NavHamburger />
     </button>
 
-    <NavUl activeUrl="#{nowHash}" bind:hidden={navBarHide}>
+    <NavUl activeUrl="#{activeUrl}" bind:hidden={navBarHide}>
       {#each navItems as item}
         <NavLi
           href="#{item.label}"
@@ -53,8 +63,8 @@
             {/if}
             <span
               class="font-semibold hover:text-primary-500"
-              class:text-primary-500={nowHash === item.label}
-              class:text-slate-500={nowHash !== item.label}>{item.label}</span
+              class:text-primary-500={activeUrl === item.label}
+              class:text-slate-500={activeUrl !== item.label}>{item.label}</span
             >
           </div>
         </NavLi>

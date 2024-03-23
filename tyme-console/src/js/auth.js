@@ -1,11 +1,10 @@
 import { getMqttUser } from './fetch.js';
-import { user, createSocket, mqttUser } from './store.js';
+import { user, createSocket, closeSocket, mqttUser } from './store.js';
 
 export async function getSession() {
     const res = await fetch('/auth/session', { credentials: 'same-origin' });
     let sessionResponse = await res.json();
     if (sessionResponse.user_id !== '') {
-        user.set(sessionResponse.user_id);
 
         var host = window.location.host;
         createSocket({
@@ -34,6 +33,8 @@ export async function getSession() {
         getMqttUser().then((/** @type {any} */ res) => {
             mqttUser.set(res.user);
         });
+
+        user.set(sessionResponse.user_id);
     } else {
         user.set('');
     }
@@ -61,7 +62,9 @@ export async function getLogout() {
     let logoutResponse = await res.json();
     if (logoutResponse.result == "error") {
         // may want to return an error here
+
     } else {
         user.set('');
+        closeSocket();
     }
 }

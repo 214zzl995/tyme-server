@@ -11,6 +11,15 @@ export const createSocket = (/** @type {any} */ options) => {
     socket.set(new Socket(options));
 }
 
+export const closeSocket = () => {
+    socket.update((s) => {
+        if (s) {
+            s.handleClose();
+        }
+        return undefined;
+    });
+}
+
 //登陆后保持 websocket 连接
 
 /** @type import('svelte/store').Writable<{id:number,type:"gray" | "red" | "yellow" | "green" | "indigo" | "purple" | "blue" | "primary" | "orange" | "none" | undefined,dismissible:Boolean,message:string,timeout:number}[]> */
