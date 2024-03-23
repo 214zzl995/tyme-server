@@ -35,5 +35,8 @@ pub use task::get_all_task;
 pub use task::add_task;
 pub use task::remove_task;
 pub use task::restart_task;
+pub use task::stop_task;
+pub use task::start_task;
+pub use task::update_task;
 pub use task::get_all_script_file_name;
 

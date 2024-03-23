@@ -89,15 +89,6 @@ impl TaskManager {
         info!("TaskManger started");
     }
 
-    pub fn stop_task(&mut self, id: &str) -> anyhow::Result<()> {
-        let runner = self
-            .tasks
-            .get_mut(id)
-            .ok_or(anyhow::anyhow!("Task Not Found"))?;
-        runner.stop()?;
-        Ok(())
-    }
-
     pub fn stop_all(&mut self) -> anyhow::Result<()> {
         for (_, runner) in self.tasks.iter_mut() {
             runner.stop()?;
@@ -142,40 +133,15 @@ impl TaskManager {
         Ok(id_c)
     }
 
-    pub fn remove_task(&mut self, id: &str) -> anyhow::Result<()> {
-        self.stop_task(id)?;
-        self.tasks.remove(id);
-        Task::remove(&String::from(id))?;
-        Ok(())
-    }
-
-    pub fn restart_task(&mut self, id: &str) -> anyhow::Result<()> {
-        self.stop_task(id)?;
-        self.start_task(&String::from(id))?;
-        Ok(())
-    }
-
-    pub fn get_task(&self, id: &str) -> anyhow::Result<Task> {
-        let runner = self
-            .tasks
-            .get(id)
-            .ok_or(anyhow::anyhow!("Task Not Found"))?;
-        Ok(runner.task.clone())
-    }
-
-    pub fn get_all_task(&self) -> anyhow::Result<Vec<Task>> {
-        let mut tasks = Vec::new();
-        for (_, runner) in self.tasks.iter() {
-            tasks.push(runner.task.clone());
-        }
-        Ok(tasks)
-    }
-
     pub fn start_task(&mut self, id: &String) -> anyhow::Result<()> {
         let runner = self
             .tasks
             .get_mut(id)
             .ok_or(anyhow::anyhow!("Task Not Found"))?;
+
+        if runner.tx.is_some() {
+            return Err(anyhow::anyhow!("Task is running, please stop it first"));
+        }
 
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -205,6 +171,67 @@ impl TaskManager {
             return Err(anyhow::anyhow!("Task is running, please stop it first"));
         }
         Ok(())
+    }
+
+    pub fn stop_task(&mut self, id: &String) -> anyhow::Result<()> {
+        let runner = self
+            .tasks
+            .get_mut(id)
+            .ok_or(anyhow::anyhow!("Task Not Found"))?;
+
+        if runner.tx.is_some() {
+            runner.stop()?;
+        } else {
+            return Err(anyhow::anyhow!(
+                "Task is not running, please start it first"
+            ));
+        }
+        runner.stop()?;
+        Ok(())
+    }
+
+    pub fn update_task(&mut self, id: &String, task: Task) -> anyhow::Result<()> {
+        task.update(id)?;
+        let running = self.get_running_status(id);
+        if running {
+            self.stop_task(id)?;
+        }
+        self.tasks
+            .insert(id.to_string(), TaskRunner::new(task.clone(), None));
+
+        if running {
+            self.start_task(id)?;
+        }
+        Ok(())
+    }
+
+    pub fn remove_task(&mut self, id: &String) -> anyhow::Result<()> {
+        self.stop_task(id)?;
+        self.tasks.remove(id);
+        Task::remove(&String::from(id))?;
+        Ok(())
+    }
+
+    pub fn restart_task(&mut self, id: &String) -> anyhow::Result<()> {
+        self.stop_task(id)?;
+        self.start_task(&String::from(id))?;
+        Ok(())
+    }
+
+    pub fn get_task(&self, id: &String) -> anyhow::Result<Task> {
+        let runner = self
+            .tasks
+            .get(id)
+            .ok_or(anyhow::anyhow!("Task Not Found"))?;
+        Ok(runner.task.clone())
+    }
+
+    pub fn get_all_task(&self) -> anyhow::Result<Vec<Task>> {
+        let mut tasks = Vec::new();
+        for (_, runner) in self.tasks.iter() {
+            tasks.push(runner.task.clone());
+        }
+        Ok(tasks)
     }
 
     pub fn get_running_status(&self, id: &String) -> bool {

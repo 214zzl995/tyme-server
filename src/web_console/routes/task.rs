@@ -21,14 +21,35 @@ pub async fn add_task(Json(task): Json<Task>) -> impl IntoResponse {
 }
 
 pub async fn restart_task(Path(id): Path<String>) -> impl IntoResponse {
-    match crate::task_manger.lock().restart_task(id.as_str()) {
+    match crate::task_manger.lock().restart_task(&id) {
         Ok(_) => Json(json!({"result": "ok"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
 }
 
 pub async fn remove_task(Path(id): Path<String>) -> impl IntoResponse {
-    match crate::task_manger.lock().remove_task(id.as_str()) {
+    match crate::task_manger.lock().remove_task(&id) {
+        Ok(_) => Json(json!({"result": "ok"})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
+}
+
+pub async fn stop_task(Path(id): Path<String>) -> impl IntoResponse {
+    match crate::task_manger.lock().stop_task(&id) {
+        Ok(_) => Json(json!({"result": "ok"})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
+}
+
+pub async fn start_task(Path(id): Path<String>) -> impl IntoResponse {
+    match crate::task_manger.lock().start_task(&id) {
+        Ok(_) => Json(json!({"result": "ok"})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
+}
+
+pub async fn update_task(Path(id): Path<String>,Json(task): Json<Task>) -> impl IntoResponse {
+    match crate::task_manger.lock().update_task(&id,task) {
         Ok(_) => Json(json!({"result": "ok"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }

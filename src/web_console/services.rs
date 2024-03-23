@@ -135,7 +135,10 @@ pub fn back_chat_route_c() -> Router<()> {
         .route("/task", get(routes::get_all_task))
         .route("/task", post(routes::add_task))
         .route("/task/:id", delete(routes::remove_task))
+        .route("/stop-task/:id", get(routes::stop_task))
         .route("/restart-task/:id", get(routes::restart_task))
+        .route("/start-task/:id", get(routes::start_task))
+        .route("/update-task/:id", post(routes::update_task))
         .route("/script-file-name", get(routes::get_all_script_file_name))
 }
 

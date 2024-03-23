@@ -147,14 +147,24 @@ impl Task {
     pub fn remove(id: &String) -> anyhow::Result<()> {
         let header = get_task_header()?;
 
-    let id_b = id.as_bytes();
+        let id_b = id.as_bytes();
 
-    RDB.delete_cf(&header, id_b)?;
+        RDB.delete_cf(&header, id_b)?;
 
-    Ok(())
+        Ok(())
+    }
+
+    pub fn update(&self, id: &String) -> anyhow::Result<()> {
+        let header = get_task_header()?;
+
+        let id_b = id.as_bytes();
+        let task = bincode::serialize::<Task>(self)?;
+
+        RDB.put_cf(&header, id_b, task)?;
+
+        Ok(())
     }
 }
-
 
 pub fn _delete_all_tasks() -> anyhow::Result<()> {
     let tasks = get_all_task()?;

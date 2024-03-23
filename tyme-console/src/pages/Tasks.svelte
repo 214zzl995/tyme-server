@@ -8,15 +8,17 @@
     uploadScript,
     addTask,
     getAllTask,
+    updateTask,
   } from "../js/fetch.js";
   import Label from "flowbite-svelte/Label.svelte";
   import Input from "flowbite-svelte/Input.svelte";
   import Select from "flowbite-svelte/Select.svelte";
   import { addToast } from "../js/store.js";
   import Task from "../lib/Task.svelte";
-  import is from "date-fns/locale/is";
+  import cronParser from "cron-parser";
 
   let addModal = false;
+  let cronParserModal = false;
 
   let scriptFiles = [];
   let tasks = [];
@@ -27,7 +29,12 @@
 
   let isEdit = false;
 
+  let editId = "";
+
   let modelTitle = "Add Task";
+
+  let cronModelTitle = "Cron Parser";
+  let cronModelContent = [];
 
   onMount(async () => {
     getAllScriptFile().then((res) => {
@@ -103,39 +110,67 @@
   };
 
   const modelConfirm = () => {
+    if (modelTask.name === "") {
+      addToast({
+        type: "red",
+        message: "Task Name is required.",
+        dismissible: true,
+        timeout: 3000,
+      });
+      return;
+    }
+
+    if (modelTask.cron === "") {
+      addToast({
+        type: "red",
+        message: "Cron is required.",
+        dismissible: true,
+        timeout: 3000,
+      });
+      return;
+    }
+
+    if (modelTask.script === "") {
+      addToast({
+        type: "red",
+        message: "Script is required.",
+        dismissible: true,
+        timeout: 3000,
+      });
+      return;
+    }
     if (isEdit) {
-      modelClose();
+      console.log(editId, modelTask);
+
+      updateTask(editId, modelTask)
+        .then((res) => {
+          if (res.result === "ok") {
+            addToast({
+              type: "green",
+              message: "Edit Task Success.",
+              dismissible: true,
+              timeout: 3000,
+            });
+            tasks = tasks.map((item) => {
+              if (item.id === editId) {
+                item.task = modelTask;
+              }
+              return item;
+            });
+          } else {
+            addToast({
+              type: "red",
+              message: res.message,
+              dismissible: true,
+              timeout: 3000,
+            });
+          }
+        })
+        .finally(() => {
+          modelClose();
+          editId = "";
+        });
     } else {
-      if (modelTask.name === "") {
-        addToast({
-          type: "red",
-          message: "Task Name is required.",
-          dismissible: true,
-          timeout: 3000,
-        });
-        return;
-      }
-
-      if (modelTask.cron === "") {
-        addToast({
-          type: "red",
-          message: "Cron is required.",
-          dismissible: true,
-          timeout: 3000,
-        });
-        return;
-      }
-
-      if (modelTask.script === "") {
-        addToast({
-          type: "red",
-          message: "Script is required.",
-          dismissible: true,
-          timeout: 3000,
-        });
-        return;
-      }
-
       addTask(modelTask)
         .then((res) => {
           if (res.result === "ok") {
@@ -176,11 +211,31 @@
     tasks = tasks.filter((item) => item.id !== id);
   };
 
-  const updateTask = (/** @type {any} */ task) => {
+  const updateTaskHandle = (/** @type {any} */ task) => {
     isEdit = true;
     modelTask = task.task;
+    editId = task.id;
     modelTitle = "Edit Task: " + task.task.name;
     addModal = true;
+  };
+
+  const cronParserHandle = (/** @type {any} */ cron) => {
+    try {
+      let interval = cronParser.parseExpression(cron, {
+        tz: "Asia/Shanghai",
+      });
+      for (let i = 0; i < 5; i++) {
+        cronModelContent[i] = interval.next().toString();
+      }
+    } catch (e) {
+      addToast({
+        type: "red",
+        message: e.message,
+        dismissible: true,
+        timeout: 3000,
+      });
+    }
+    cronParserModal = true;
   };
 </script>
 
@@ -202,12 +257,13 @@
   </div>
 
   <div class="mt-16 w-full h-[calc(100vh-11rem)] absolute">
-    <div class="grid grid-cols-1 md:grid-cols-3 p-2">
+    <div class="grid grid-cols-1 md:grid-cols-3 p-2 gap-2">
       {#each tasks as task}
         <Task
           {task}
           on:delete={() => deleteTask(task.id)}
-          on:update={() => updateTask(task)}
+          on:update={() => updateTaskHandle(task)}
+          on:cronParser={() => cronParserHandle(task.task.cron)}
         />
       {/each}
     </div>
@@ -307,6 +363,21 @@
           <Button on:click={modelClose} color="alternative">Cancel</Button>
         </div>
       </div>
+    </svelte:fragment>
+  </Modal>
+
+  <Modal title="Cron Parser" bind:open={cronParserModal} autoclose>
+    <div class="p-2">
+      <p class="text-sm text-gray-500 mb-2">
+        The next 5 times of the cron expression are as follows:
+      </p>
+      <ul class="list-disc list-inside">
+        {#each cronModelContent as item}
+          <li>{item}</li>
+        {/each}
+      </ul>
+    </div>
+    <svelte:fragment slot="footer">
     </svelte:fragment>
   </Modal>
 </div>
