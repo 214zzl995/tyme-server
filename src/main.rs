@@ -1,6 +1,4 @@
-use std::{collections::HashMap, env};
-
-use config::SysConfig;
+use config::TymeConfig;
 use flexi_logger::{
     colored_detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming,
     WriteMode,
@@ -11,6 +9,7 @@ extern crate lazy_static;
 extern crate mime;
 extern crate serde_json;
 
+mod args;
 mod clint;
 mod config;
 mod message;
@@ -19,29 +18,29 @@ mod subscribe;
 mod task;
 mod web_console;
 
-pub use config::SYSCONIFG as sys_config;
-pub use task::TASK_MANGER as task_manger;
 use tokio::signal;
 
-lazy_static! {
-    pub static ref ARGS: HashMap<String, Option<String>> = {
-        let mut args = env::args();
-        let mut arg_map = HashMap::new();
-        while let Some(arg) = args.next() {
-            if arg.starts_with('-') {
-                arg_map.insert(arg, args.next());
-            }
-        }
-        arg_map
-    };
-}
+pub use args::START_PARAM as start_param;
+pub use config::TYME_CONFIG as tyme_config;
+pub use task::TASK_MANGER as task_manger;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    if env::args().nth(1) == Some("init".to_string()) {
-        SysConfig::initial().unwrap();
+    if start_param.init {
+        TymeConfig::initial().unwrap();
     } else {
         log_init()?;
+
+        if tyme_config.lock().first_start {
+            match web_console::run_web_console().await {
+                Ok(_) => {}
+                Err(err) => {
+                    log::error!("WebConsole Error:{}", err);
+                    std::process::exit(1);
+                }
+            }
+        }
+
         let ctrl_c = async {
             signal::ctrl_c()
                 .await
@@ -70,7 +69,11 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn log_init() -> anyhow::Result<()> {
-    let file_spec = FileSpec::default().directory(sys_config.lock().clone().log_location);
+    let log_location = start_param.word_dir.clone().join("log");
+    if !log_location.exists() {
+        std::fs::create_dir_all(&log_location)?;
+    }
+    let file_spec = FileSpec::default().directory(log_location);
 
     let _ = Logger::try_with_str("info,pago_mqtt=error,paho_mqtt_c=error")?
         .write_mode(WriteMode::BufferAndFlush)

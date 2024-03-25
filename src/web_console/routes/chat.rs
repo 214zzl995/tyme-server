@@ -45,13 +45,13 @@ pub async fn send(Json(msg): Json<crate::message::SendMessage>) -> impl IntoResp
 #[allow(clippy::unused_async)]
 pub async fn get_mqtt_user() -> impl IntoResponse {
     Json(
-        json!({"result": "ok", "message": "Get success", "user": crate::sys_config.lock().get_clint_name()}),
+        json!({"result": "ok", "message": "Get success", "user": crate::tyme_config.lock().get_clint_name()}),
     )
 }
 
 #[allow(clippy::unused_async)]
 pub async fn get_all_toppic() -> impl IntoResponse {
-    Json(json!({"result": "ok", "topics": crate::sys_config.lock().mqtt_config.topics.clone()}))
+    Json(json!({"result": "ok", "topics": crate::tyme_config.lock().mqtt_config.topics.clone()}))
 }
 
 #[allow(clippy::unused_async)]

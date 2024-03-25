@@ -1,16 +1,16 @@
 use axum::{response::IntoResponse, Json};
 use serde_json::json;
 
-use crate::config::{SysConfig, SYSCONIFG};
+use crate::config::{TymeConfig, TYME_CONFIG};
 
 #[allow(clippy::unused_async)]
 pub async fn get_config() -> impl IntoResponse {
-    let config = SYSCONIFG.clone();
+    let config = TYME_CONFIG.clone();
     Json(config)
 }
 
 #[allow(clippy::unused_async)]
-pub async fn update_config(Json(config): Json<SysConfig>) -> impl IntoResponse {
+pub async fn update_config(Json(config): Json<TymeConfig>) -> impl IntoResponse {
 
     match config.update().await {
         Ok(_) => Json(json!({"result": "ok"})),

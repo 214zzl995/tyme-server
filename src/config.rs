@@ -2,18 +2,23 @@ use mlua::IntoLua;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
-    env,
     fs::{self, File},
     io::Read,
     path::PathBuf,
     sync::Arc,
 };
 
-use crate::ARGS;
-
 lazy_static! {
-    pub static ref SYSCONIFG: Arc<Mutex<SysConfig>> =
-        Arc::new(Mutex::new(SysConfig::obtain().expect("Config Error")));
+    pub static ref TYME_CONFIG: Arc<Mutex<TymeConfig>> = {
+        let config = match TymeConfig::obtain() {
+            Ok(c) => c,
+            Err(err) => {
+                log::error!("Config Error:{}", err);
+                std::process::exit(1)
+            }
+        };
+        Arc::new(Mutex::new(config))
+    };
     static ref SYS_TOPIC: Vec<Header> = vec![Header {
         topic: "system/#".to_string(),
         qos: 1
@@ -21,10 +26,15 @@ lazy_static! {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct SysConfig {
+pub struct TymeConfig {
     pub mqtt_config: MQTTConfig,
     pub web_console_config: WebConsoleConfig,
-    pub log_location: PathBuf,
+
+    #[serde(skip)]
+    pub first_start: bool,
+
+    #[serde(skip)]
+    pub config_file: PathBuf,
 }
 
 #[derive(Deserialize, Serialize, Clone, Default)]
@@ -75,35 +85,23 @@ pub struct WebConsoleConfig {
     pub api_token: Option<String>,
 }
 
-impl SysConfig {
+impl TymeConfig {
     fn obtain() -> anyhow::Result<Self> {
-        let config_path: Option<Option<String>> = ARGS.get("-c").cloned();
+        let config_file = crate::start_param.get_config_file();
 
-        let config_file_path = if let Some(Some(path)) = config_path {
-            let arg_path = PathBuf::from(path);
+        if !config_file.exists() {
+            log::warn!("No configuration file found, using default configuration");
 
-            if arg_path.is_dir() {
-                return Err(anyhow::anyhow!("Illegal command parameter -c"));
-            };
-            arg_path
-        } else {
-            let current_dir = env::current_dir().unwrap();
-            current_dir.join("SysConfig.toml")
-        };
-
-        //check exist
-        if !config_file_path.exists() {
-            return Err(anyhow::anyhow!("Configuration file does not exist"));
+            let mut config = TymeConfig::default();
+            config.config_file = config_file;
+            return Ok(config);
         }
 
         let mut str_val = String::new();
 
-        File::open(config_file_path)
-            .unwrap()
-            .read_to_string(&mut str_val)
-            .unwrap();
+        File::open(config_file)?.read_to_string(&mut str_val).unwrap();
 
-        let config: SysConfig = match toml_edit::de::from_str(&str_val) {
+        let mut config: TymeConfig = match toml_edit::de::from_str(&str_val) {
             Ok(config) => config,
             Err(err) => {
                 return Err(anyhow::anyhow!(
@@ -126,18 +124,19 @@ impl SysConfig {
             ));
         }
 
+        config.first_start = false;
+
         Ok(config)
     }
 
     ///Generate initial config file
     pub fn initial() -> anyhow::Result<()> {
-        let current_dir = env::current_dir()?;
-        let conf = current_dir.join("../SysConfig.toml");
+        let conf = crate::start_param.word_dir.join("tyme_conf.toml");
 
         if !conf.exists() {
             match File::create(&conf) {
                 Ok(_) => {
-                    let config = SysConfig::default();
+                    let config = TymeConfig::default();
 
                     let config_str = toml_edit::ser::to_string_pretty(&config).unwrap();
 
@@ -154,16 +153,13 @@ impl SysConfig {
     }
 
     pub async fn update(&self) -> anyhow::Result<()> {
-        let current_dir = env::current_dir()?;
-        let conf = current_dir.join("../../../SysConfig.toml");
-
         let config_str = toml_edit::ser::to_string_pretty(&self)?;
         {
-            let mut loc_config = SYSCONIFG.lock();
+            let mut loc_config = TYME_CONFIG.lock();
             *loc_config = self.clone();
         }
 
-        tokio::fs::write(&conf, config_str).await?;
+        tokio::fs::write(self.config_file.clone(), config_str).await?;
         Ok(())
     }
 }
@@ -242,12 +238,13 @@ impl Header {
     }
 }
 
-impl Default for SysConfig {
+impl Default for TymeConfig {
     fn default() -> Self {
         Self {
             mqtt_config: Default::default(),
             web_console_config: Default::default(),
-            log_location: PathBuf::from("./log"),
+            first_start: true,
+            config_file: Default::default(),
         }
     }
 }
@@ -265,15 +262,11 @@ impl Default for WebConsoleConfig {
     }
 }
 
-impl<'a> IntoLua<'a> for SysConfig {
+impl<'a> IntoLua<'a> for TymeConfig {
     fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
         let table = lua.create_table()?;
         table.set("mqtt_config", self.mqtt_config.into_lua(lua)?)?;
         table.set("web_console_config", self.web_console_config.into_lua(lua)?)?;
-        table.set(
-            "log_location",
-            self.log_location.as_os_str().to_str().into_lua(lua)?,
-        )?;
         table.into_lua(lua)
     }
 }

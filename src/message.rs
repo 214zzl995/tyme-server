@@ -52,7 +52,7 @@ impl SendMessage {
         props.push_string_pair(
             mqtt::PropertyCode::UserProperty,
             "sender",
-            &crate::config::SYSCONIFG.lock().clone().get_clint_name(),
+            &crate::config::TYME_CONFIG.lock().clone().get_clint_name(),
         )?;
 
         if let Some(receiver) = &self.receiver {
@@ -104,7 +104,7 @@ impl RecMessage {
     }
 
     pub fn get_header(&self) -> Option<Header> {
-        crate::sys_config
+        crate::tyme_config
             .lock()
             .mqtt_config
             .get_topics_with_sys()
@@ -131,7 +131,7 @@ impl TryFrom<&mqtt::Message> for RecMessage {
         let mine = sender
             .clone()
             .context("Unable to find publish property")?
-            .eq(&crate::config::SYSCONIFG.lock().clone().get_clint_name());
+            .eq(&crate::config::TYME_CONFIG.lock().clone().get_clint_name());
 
         let receiver = msg.properties().find_user_property("receiver");
 

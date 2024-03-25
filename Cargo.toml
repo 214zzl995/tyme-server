@@ -40,6 +40,8 @@ mlua = { version = "0.9.4", features = [
     "send",
 ] }
 linked-hash-map = "0.5.6"
+structopt = "0.3"
+dirs = "5"
 
 
 [dev-dependencies]

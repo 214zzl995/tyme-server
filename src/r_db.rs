@@ -7,10 +7,11 @@ use rocksdb::{
 
 use crate::{config::Header, message::RecMessage, task::Task};
 const TASK_CF_NAME: &str = "tasks";
+const SYS_CF_NAME: &str = "tyme_sys";
 
 lazy_static! {
     pub static ref RDB: DBWithThreadMode<MultiThreaded> = {
-        let path = "data";
+        let path = crate::start_param.word_dir.clone().join("data");
         let mut db_opts = Options::default();
         db_opts.create_missing_column_families(true);
         db_opts.create_if_missing(true);
@@ -19,9 +20,8 @@ lazy_static! {
         db_opts.set_keep_log_file_num(1);
         db_opts.set_log_level(LogLevel::Warn);
 
-        //可以直接使用 topic存储 当加入同名topic时  直接修改同名topic的值
-        let mut cfs = crate::sys_config.lock().mqtt_config.get_topics_string();
-
+        let mut cfs = crate::tyme_config.lock().mqtt_config.get_topics_string();
+        cfs.push(SYS_CF_NAME.to_string());
         cfs.push(TASK_CF_NAME.to_string());
 
         rocksdb::DB::open_cf(&db_opts, path, cfs).unwrap()

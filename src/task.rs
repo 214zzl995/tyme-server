@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::{str::FromStr, sync::Arc};
 use tokio::sync::oneshot::Sender;
 
-use crate::config::SysConfig;
+use crate::config::TymeConfig;
 
 lazy_static! {
     pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
@@ -325,8 +325,8 @@ impl mlua::UserData for TymeUserData {
     }
 }
 
-fn get_sys_config<'a>(_: &mlua::Lua, _: &'a TymeUserData) -> mlua::Result<SysConfig> {
-    let sys_config = crate::sys_config.lock().clone();
+fn get_sys_config<'a>(_: &mlua::Lua, _: &'a TymeUserData) -> mlua::Result<TymeConfig> {
+    let sys_config = crate::tyme_config.lock().clone();
     Ok(sys_config)
 }
 
@@ -409,48 +409,3 @@ fn get_lua() -> mlua::Lua {
     lua
 }
 
-#[test]
-pub fn test() {
-    let rn = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-
-    rn.spawn(async {
-        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-        let mut task_manger = TASK_MANGER.lock();
-        let _ = task_manger.stop_all();
-    });
-
-    rn.block_on(async {
-        let mut task_manger = TASK_MANGER.lock();
-        task_manger.start();
-        parking_lot::MutexGuard::unlock_fair(task_manger);
-        tokio::time::sleep(std::time::Duration::from_secs(35)).await;
-    });
-}
-
-#[test]
-fn add_task() {
-    let tasks = Task::new(
-        "test.lua".to_string(),
-        "*/60 * * * * *".to_string(),
-        "os".to_string(),
-        None,
-        None,
-        true,
-    );
-
-    tasks.insert().unwrap();
-}
-
-#[test]
-fn delete_all_task() {
-    crate::r_db::_delete_all_tasks().unwrap();
-}
-
-#[test]
-fn get_all_task() {
-    let tasks = crate::r_db::get_all_task().unwrap();
-    println!("{:?}", tasks);
-}

@@ -9,7 +9,7 @@ use tokio::{
 };
 use tower_sessions::{MemoryStore, SessionManagerLayer};
 
-use crate::config::SYSCONIFG;
+use crate::config::TYME_CONFIG;
 
 mod middlewares;
 mod routes;
@@ -23,7 +23,7 @@ lazy_static! {
 }
 
 pub async fn run_web_console() -> anyhow::Result<()> {
-    let config = SYSCONIFG.lock().clone();
+    let config = TYME_CONFIG.lock().clone();
     let host = if config.web_console_config.public {
         [0, 0, 0, 0]
     } else {

@@ -10,7 +10,7 @@ use parking_lot::Mutex;
 
 use crate::config::Header;
 use crate::message::SendMessage;
-use crate::{sys_config, task_manger};
+use crate::{task_manger, tyme_config};
 
 const QOS: &[i32] = &[1, 1];
 
@@ -27,7 +27,7 @@ lazy_static! {
 }
 
 fn get_clint() -> anyhow::Result<AsyncClient> {
-    let config = sys_config.lock().clone();
+    let config = tyme_config.lock().clone();
     let protocol = if config.mqtt_config.ssl.enable {
         "mqtts://"
     } else {
@@ -112,7 +112,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                 // Will not resubscribe when kicked out by broker
             } else {
                 // Register subscriptions on the server, using Subscription ID's.
-                let topics = crate::sys_config.lock().mqtt_config.get_topics();
+                let topics = crate::tyme_config.lock().mqtt_config.get_topics();
                 info!(
                     r#"Subscribing to topics [{}]..."#,
                     topics
@@ -166,7 +166,7 @@ pub async fn publish(msg: SendMessage) -> anyhow::Result<()> {
 /// Subscribe to a topic Temporary not stored
 pub async fn subscribe_topic(topics: Vec<Header>) -> anyhow::Result<()> {
     {
-        let mut loc_topics = crate::sys_config.lock().mqtt_config.get_topics();
+        let mut loc_topics = crate::tyme_config.lock().mqtt_config.get_topics();
         loc_topics.extend(topics.clone());
     };
 

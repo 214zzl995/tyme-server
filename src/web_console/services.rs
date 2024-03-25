@@ -11,7 +11,7 @@ use tower::{BoxError, ServiceBuilder};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tower_sessions::{SessionManagerLayer, SessionStore};
 
-use crate::config::SYSCONIFG;
+use crate::config::TYME_CONFIG;
 
 use super::{
     middlewares, routes,
@@ -23,7 +23,7 @@ use super::{
 // *********
 // Front end to server svelte build bundle, css and index.html from public folder
 pub fn front_public_route() -> Router {
-    let front_end_path = SYSCONIFG
+    let front_end_path = TYME_CONFIG
         .lock()
         .clone()
         .web_console_config
