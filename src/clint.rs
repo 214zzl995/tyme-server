@@ -76,7 +76,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
 
         if config.mqtt_config.auth.enable {
             if let (Some(user_name), Some(password)) = (
-                &config.mqtt_config.auth.user_name,
+                &config.mqtt_config.auth.username,
                 &config.mqtt_config.auth.password,
             ) {
                 conn_opts.user_name(user_name).password(password);

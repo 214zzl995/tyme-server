@@ -3,6 +3,8 @@ import Socket from './socket';
 
 export const user = writable("");
 
+export const guide = writable(false);
+
 export const mqttUser = writable("");
 
 export const socket = writable(undefined);

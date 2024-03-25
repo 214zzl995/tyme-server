@@ -20,5 +20,10 @@ pub async fn data_handler(session: Session) -> impl IntoResponse {
         .get_value("user_id")
         .unwrap_or_else(|| serde_json::Value::String("".to_string()));
     debug!("user_id: {}", user_id);
-    Json(json!({ "user_id": user_id }))
+
+    if crate::tyme_config.lock().first_start {
+        Json(json!({ "guide": true}))
+    } else {
+        Json(json!({ "user_id": user_id }))
+    }
 }

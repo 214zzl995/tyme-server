@@ -26,7 +26,6 @@ pub use file::upload_crt;
 pub use file::upload_script;
 
 pub use sys::get_config;
-pub use sys::is_first_start;
 pub use sys::update_config;
 
 pub use session::data_handler;

@@ -1,10 +1,10 @@
 import { getMqttUser } from './fetch.js';
-import { user, createSocket, closeSocket, mqttUser } from './store.js';
+import { user, createSocket, closeSocket, mqttUser, guide } from './store.js';
 
 export async function getSession() {
     const res = await fetch('/auth/session', { credentials: 'same-origin' });
     let sessionResponse = await res.json();
-    if (sessionResponse.user_id !== '') {
+    if (sessionResponse.user_id !== '' && sessionResponse.user_id !== undefined) {
 
         var host = window.location.host;
         createSocket({
@@ -36,6 +36,9 @@ export async function getSession() {
 
         user.set(sessionResponse.user_id);
     } else {
+        if (sessionResponse.guide === true) {
+            guide.set(true);
+        }
         user.set('');
     }
 }

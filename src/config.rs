@@ -59,7 +59,7 @@ pub struct Header {
 #[derive(Deserialize, Serialize, Clone, Default)]
 pub struct Auth {
     pub enable: bool,
-    pub user_name: Option<String>,
+    pub username: Option<String>,
     pub password: Option<String>,
 }
 
@@ -78,10 +78,9 @@ pub struct Ssl {
 #[derive(Deserialize, Serialize, Clone)]
 pub struct WebConsoleConfig {
     pub public: bool,
-    pub user_name: String,
+    pub username: String,
     pub password: String,
     pub port: u16,
-    pub front_end_path: Option<PathBuf>,
     pub api_token: Option<String>,
 }
 
@@ -89,7 +88,7 @@ impl TymeConfig {
     fn obtain() -> anyhow::Result<Self> {
         let config_file = crate::start_param.get_config_file();
 
-        if !config_file.exists() {
+        if !config_file.clone().exists() {
             log::warn!("No configuration file found, using default configuration");
 
             let mut config = TymeConfig::default();
@@ -99,7 +98,9 @@ impl TymeConfig {
 
         let mut str_val = String::new();
 
-        File::open(config_file)?.read_to_string(&mut str_val).unwrap();
+        File::open(config_file.clone())?
+            .read_to_string(&mut str_val)
+            .unwrap();
 
         let mut config: TymeConfig = match toml_edit::de::from_str(&str_val) {
             Ok(config) => config,
@@ -116,7 +117,7 @@ impl TymeConfig {
         }
 
         if config.mqtt_config.auth.enable
-            && (config.mqtt_config.auth.user_name.is_none()
+            && (config.mqtt_config.auth.username.is_none()
                 || config.mqtt_config.auth.password.is_none())
         {
             return  Err(anyhow::anyhow!(
@@ -125,6 +126,7 @@ impl TymeConfig {
         }
 
         config.first_start = false;
+        config.config_file = config_file;
 
         Ok(config)
     }
@@ -172,7 +174,7 @@ impl MQTTConfig {
             ));
         }
 
-        if self.auth.enable && (self.auth.user_name.is_none() || self.auth.password.is_none()) {
+        if self.auth.enable && (self.auth.username.is_none() || self.auth.password.is_none()) {
             return Err(anyhow::anyhow!(
                 "When the identity authentication is Yes, the username and password cannot be empty."
             ));
@@ -253,10 +255,9 @@ impl Default for WebConsoleConfig {
     fn default() -> Self {
         Self {
             public: false,
-            user_name: String::from("root"),
+            username: String::from("root"),
             password: nanoid::nanoid!(8),
             port: 12566,
-            front_end_path: Default::default(),
             api_token: Default::default(),
         }
     }
@@ -294,16 +295,9 @@ impl<'a> IntoLua<'a> for WebConsoleConfig {
     fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
         let table = lua.create_table()?;
         table.set("public", self.public.into_lua(lua)?)?;
-        table.set("user_name", self.user_name.into_lua(lua)?)?;
+        table.set("username", self.username.into_lua(lua)?)?;
         table.set("password", self.password.into_lua(lua)?)?;
         table.set("port", self.port.into_lua(lua)?)?;
-        table.set(
-            "front_end_path",
-            self.front_end_path
-                .as_ref()
-                .map(|p| p.as_os_str().to_str().into_lua(lua))
-                .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
-        )?;
         table.set("api_token", self.api_token.into_lua(lua)?)?;
         table.into_lua(lua)
     }
@@ -313,7 +307,7 @@ impl<'a> IntoLua<'a> for Auth {
     fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
         let table = lua.create_table()?;
         table.set("enable", self.enable.into_lua(lua)?)?;
-        table.set("user_name", self.user_name.into_lua(lua)?)?;
+        table.set("username", self.username.into_lua(lua)?)?;
         table.set("password", self.password.into_lua(lua)?)?;
         table.into_lua(lua)
     }

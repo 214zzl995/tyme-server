@@ -11,8 +11,6 @@ use tower::{BoxError, ServiceBuilder};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tower_sessions::{SessionManagerLayer, SessionStore};
 
-use crate::config::TYME_CONFIG;
-
 use super::{
     middlewares, routes,
     store::{self, Store},
@@ -23,13 +21,7 @@ use super::{
 // *********
 // Front end to server svelte build bundle, css and index.html from public folder
 pub fn front_public_route() -> Router {
-    let front_end_path = TYME_CONFIG
-        .lock()
-        .clone()
-        .web_console_config
-        .front_end_path
-        .clone()
-        .unwrap_or(PathBuf::from("./assets"));
+    let front_end_path = PathBuf::from("./assets");
 
     Router::new()
         .fallback_service(
@@ -77,7 +69,6 @@ pub fn back_public_route() -> Router {
         .route("/auth/session", get(routes::data_handler)) // gets session data
         .route("/auth/login", post(routes::login)) // sets username in session
         .route("/auth/logout", get(routes::logout)) // deletes username in session
-        .route("/first-start", get(routes::is_first_start))
         .route("/test", get(routes::not_implemented_route))
 }
 
@@ -100,7 +91,7 @@ pub fn back_auth_route() -> Router<()> {
 pub fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
     Router::new()
         .route("/check", get(routes::api_handler))
-        .nest("/a", back_chat_route_a(state.clone()))
+        .nest("/api", back_chat_route_a(state.clone()))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             middlewares::auth,

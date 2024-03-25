@@ -1,5 +1,5 @@
 <script>
-  import { user } from "./js/store.js";
+  import { user, guide } from "./js/store.js";
   import NavBar from "./lib/Navbar.svelte";
   import Login from "./pages/Login.svelte";
   import { onMount } from "svelte";
@@ -7,6 +7,7 @@
   import Settings from "./pages/Settings.svelte";
   import Toasts from "./lib/Toasts.svelte";
   import Tasks from "./pages/Tasks.svelte";
+  import Guide from "./pages/Guide.svelte";
 
   let routerId = 98;
 
@@ -48,7 +49,7 @@
   const handleLoginSuccess = () => {
     let currentHash = window.location.hash.substring(1);
     let router = menuItems($user !== "").find(
-      (item) => item.label === currentHash,
+      (item) => item.label === currentHash
     );
     router = router ? router : { label: "Chat", id: 4 };
     window.location.hash = router.label;
@@ -63,29 +64,30 @@
 
 <Toasts />
 
-<!-- MENNU BAR ON TOP -->
-<NavBar navItems={menuItems(loggedin)} bind:routerId />
+{#if $guide}
+  <Guide />
+{:else}
+  <!-- MENNU BAR ON TOP -->
+  <NavBar navItems={menuItems(loggedin)} bind:routerId />
 
-<!-- PAGE LOADING -->
-<div
-  class="min-h-screen pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100"
->
-  <div class="w-full flex justify-center font-sans">
-    {#if routerId === 0}
-      <div class="w-1/2 flex justify-center" />
-    {:else if routerId === 4}
-      <Chat />
-    {:else if routerId === 5}
-      <Tasks />
-    {:else if routerId === 6}
-      <Settings />
-    {:else if routerId === 98}
-      <Login on:loginSuccess={handleLoginSuccess} />
-    {:else}
-      <h2>Page Not Found or Completed Yet</h2>
-    {/if}
+  <!-- PAGE LOADING -->
+  <div
+    class="min-h-screen pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100"
+  >
+    <div class="w-full flex justify-center font-sans">
+      {#if routerId === 0}
+        <div class="w-1/2 flex justify-center" />
+      {:else if routerId === 4}
+        <Chat />
+      {:else if routerId === 5}
+        <Tasks />
+      {:else if routerId === 6}
+        <Settings />
+      {:else if routerId === 98}
+        <Login on:loginSuccess={handleLoginSuccess} />
+      {:else}
+        <h2>Page Not Found or Completed Yet</h2>
+      {/if}
+    </div>
   </div>
-</div>
-
-<style>
-</style>
+{/if}

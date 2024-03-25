@@ -9,7 +9,7 @@ lwt = "Im offline"
 
 [mqtt_config.auth]
 enable = true
-user_name = "leri"
+username = "leri"
 password = "R7ddsQxAGchQPQB"
 
 [mqtt_config.ssl]
@@ -18,8 +18,7 @@ trust_store = "./ssl/emqxsl-ca.crt"
 
 [web_console_config]
 public = true
-user_name = "root"
+username = "root"
 password = "FxL3nw70"
 port = 12566
-front_end_path = "./tyme-console/dist"
 api_token = "1uY-1MPhNtIzQ1NK"
