@@ -7,7 +7,6 @@
   import Settings from "./pages/Settings.svelte";
   import Toasts from "./lib/Toasts.svelte";
   import Tasks from "./pages/Tasks.svelte";
-  import ro from "date-fns/locale/ro";
 
   let routerId = 98;
 

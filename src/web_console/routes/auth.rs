@@ -10,6 +10,10 @@ use tower_sessions::Session;
 pub async fn login(session: Session, Json(login): Json<Login>) -> impl IntoResponse {
     info!("Logging in user: {}", login.username);
 
+    if crate::tyme_config.lock().first_start {
+        return Json(json!({"result": "error", "message": "First start, please update config"}));
+    }
+
     if check_password(&login.username, &login.password) {
         session.insert("user_id", login.username).unwrap();
         Json(json!({"result": "ok"}))

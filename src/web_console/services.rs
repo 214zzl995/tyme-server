@@ -77,6 +77,7 @@ pub fn back_public_route() -> Router {
         .route("/auth/session", get(routes::data_handler)) // gets session data
         .route("/auth/login", post(routes::login)) // sets username in session
         .route("/auth/logout", get(routes::logout)) // deletes username in session
+        .route("/first-start", get(routes::is_first_start))
         .route("/test", get(routes::not_implemented_route))
 }
 

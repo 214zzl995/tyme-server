@@ -38,3 +38,5 @@ export const updateTask = (/** @type {string} */ id, /** @type {any} */ body) =>
 export const getAllScriptFile = () => api.get(`/c/script-file-name`)
 
 export const uploadScript = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post(`/c/upload-script/${filename}`, body, "", "multipart/form-data")
+
+export const getFirstStart = () => api.get(`/c/first-start`)

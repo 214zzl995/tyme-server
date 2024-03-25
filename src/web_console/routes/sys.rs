@@ -17,3 +17,7 @@ pub async fn update_config(Json(config): Json<TymeConfig>) -> impl IntoResponse 
         Err(err) => Json(json!({"result": "error","message" : format!("Update Config{}",err)})),
     }
 }
+
+pub async fn is_first_start() -> impl IntoResponse {
+    Json(json!({"result": "ok", "first_start":TYME_CONFIG.lock().first_start}))
+}
