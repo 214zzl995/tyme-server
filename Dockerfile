@@ -16,8 +16,7 @@ RUN apk update && apk add --no-cache openssl
 WORKDIR /app/tyme
 COPY --from=server /app/tyme/target/release/tyme-server ./tyme-server
 COPY --from=web /app/tyme-console/dist ./tyme-console
-# 初始化配置文件
-# 创建ssl文件夹 log文件夹 data文件夹 
+RUN mkdir -p /app/tyme/ssl /app/tyme/log /app/tyme/data
 CMD ["./tyme-server"]
 
 

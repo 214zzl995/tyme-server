@@ -18,8 +18,6 @@ mod subscribe;
 mod task;
 mod web_console;
 
-use tokio::signal;
-
 pub use args::START_PARAM as start_param;
 pub use config::TYME_CONFIG as tyme_config;
 pub use task::TASK_MANGER as task_manger;
@@ -31,36 +29,37 @@ async fn main() -> anyhow::Result<()> {
     } else {
         log_init()?;
 
-        if tyme_config.lock().first_start {
-            match web_console::run_web_console().await {
-                Ok(_) => {}
-                Err(err) => {
-                    log::error!("WebConsole Error:{}", err);
-                    std::process::exit(1);
-                }
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<bool>(1);
+
+        let web_console_mqtt_state = tx.clone();
+
+        tokio::spawn(async move {
+            tokio::select! {
+                res =  web_console::run_web_console(web_console_mqtt_state) => {
+                    match res {
+                        Ok(_) => {}
+                        Err(err) => {
+                            log::error!("WebConsole Error:{}", err);
+                            std::process::exit(1);
+                        }
+                    }
+                },
+                _= tokio::signal::ctrl_c() => {}
             }
+        });
+
+        if !tyme_config.lock().first_start {
+            tx.send(true).await?;
         }
 
-        let ctrl_c = async {
-            signal::ctrl_c()
-                .await
-                .expect("failed to install Ctrl+C handler");
-        };
-
-        tokio::select! {
-           _= subscribe::subscribe() => {
-
-           },
-           res = web_console::run_web_console() => {
-            match res {
-                Ok(_) => {}
-                Err(err) => {
-                    log::error!("WebConsole Error:{}", err);
-                    std::process::exit(1);
-                }
+        while let Some(clint_operate) = rx.recv().await {
+            if clint_operate {
+                tokio::spawn(async move {
+                    subscribe::subscribe().await;
+                });
+            } else {
+                clint::diable_connect();
             }
-           },
-           _= ctrl_c => {}
         }
 
         clint::diable_connect();

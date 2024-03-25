@@ -16,10 +16,6 @@ use super::{
     store::{self, Store},
 };
 
-// *********
-// FRONT END
-// *********
-// Front end to server svelte build bundle, css and index.html from public folder
 pub fn front_public_route() -> Router {
     let front_end_path = PathBuf::from("./assets");
 
@@ -37,13 +33,10 @@ async fn handle_error() -> (StatusCode, &'static str) {
     (StatusCode::INTERNAL_SERVER_ERROR, "Page not found...")
 }
 
-// ********
-// BACK END
-// ********
-// Back end server built form various routes that are either public, require auth, or secure login
 pub fn backend<Store: SessionStore>(
     session_layer: SessionManagerLayer<Store>,
     shared_state: Arc<store::Store>,
+    mqtt_state: super::MqttOperate,
 ) -> Router {
     let session_service = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|_: BoxError| async {
@@ -51,31 +44,25 @@ pub fn backend<Store: SessionStore>(
         }))
         .layer(session_layer);
 
-    // could add tower::ServiceBuilder here to group layers, especially if you add more layers.
-    // see https://docs.rs/axum/latest/axum/middleware/index.html#ordering
     Router::new()
-        .merge(back_public_route())
         .merge(back_auth_route())
         .merge(back_token_route(shared_state))
+        .merge(back_public_route())
+        .with_state(())
+        .route("/mqtt-start", get(routes::start_mqtt))
+        .with_state(mqtt_state)
         .layer(session_service)
+        .with_state(())
 }
 
-// *********
-// BACKEND NON-AUTH
-// *********
-//
-pub fn back_public_route() -> Router {
+pub fn back_public_route() -> Router<()> {
     Router::new()
-        .route("/auth/session", get(routes::data_handler)) // gets session data
-        .route("/auth/login", post(routes::login)) // sets username in session
-        .route("/auth/logout", get(routes::logout)) // deletes username in session
+        .route("/auth/session", get(routes::data_handler))
+        .route("/auth/login", post(routes::login))
+        .route("/auth/logout", get(routes::logout))
         .route("/test", get(routes::not_implemented_route))
 }
 
-// *********
-// BACKEND SESSION
-// *********
-//
 pub fn back_auth_route() -> Router<()> {
     Router::new()
         .route("/secure", get(routes::session_handler))
@@ -83,11 +70,6 @@ pub fn back_auth_route() -> Router<()> {
         .route_layer(middleware::from_fn(middlewares::user_secure))
 }
 
-// *********
-// BACKEND API
-// *********
-//
-// invoked with State that stores API that is checked by the `middleware::auth`
 pub fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
     Router::new()
         .route("/check", get(routes::api_handler))

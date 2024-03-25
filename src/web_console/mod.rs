@@ -19,10 +19,28 @@ mod store;
 pub use routes::ws_send_all;
 
 lazy_static! {
-    static ref SD_CANNEL: Mutex<Option<Sender<bool>>> = Mutex::new(None); 
+    static ref CONSOLE_STATE: Mutex<Option<Sender<bool>>> = Mutex::new(None);
 }
 
-pub async fn run_web_console() -> anyhow::Result<()> {
+#[derive(Clone)]
+struct MqttOperate {
+    sender: Sender<bool>,
+}
+
+impl MqttOperate {
+    fn new(sender: Sender<bool>) -> Self {
+        Self { sender }
+    }
+    pub async fn start(&self) {
+        let _ = self.sender.send(true).await;
+    }
+
+    pub async fn stop(&self) {
+        let _ = self.sender.send(false);
+    }
+}
+
+pub async fn run_web_console(mqtt_state: Sender<bool>) -> anyhow::Result<()> {
     let config = TYME_CONFIG.lock().clone();
     let host = if config.web_console_config.public {
         [0, 0, 0, 0]
@@ -50,9 +68,11 @@ pub async fn run_web_console() -> anyhow::Result<()> {
         .with_secure(false)
         .with_name("web_console.sid");
 
+    let mqtt_state = MqttOperate::new(mqtt_state);
+
     let app = Router::new()
         .merge(services::front_public_route())
-        .merge(services::backend(session_layer, shared_state));
+        .merge(services::backend(session_layer, shared_state, mqtt_state));
 
     let server = server
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
@@ -68,7 +88,7 @@ pub async fn run_web_console() -> anyhow::Result<()> {
 pub async fn shutdown_signal() {
     let (tx, mut rx) = mpsc::channel(1);
 
-    SD_CANNEL.lock().replace(tx);
+    CONSOLE_STATE.lock().replace(tx);
 
     let ctrl_c = async {
         signal::ctrl_c()
@@ -93,6 +113,5 @@ pub async fn shutdown_signal() {
         _ = rx.recv() => {},
     }
 
-    SD_CANNEL.lock().take();
+    CONSOLE_STATE.lock().take();
 }
-
