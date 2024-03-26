@@ -72,7 +72,7 @@
 
   <!-- PAGE LOADING -->
   <div
-    class="min-h-screen pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100"
+    class="min-h-dvh pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100"
   >
     <div class="w-full flex justify-center font-sans">
       {#if routerId === 0}

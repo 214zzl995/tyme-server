@@ -205,4 +205,5 @@
       </div>
     </div>
   </form>
+  <slot />
 </div>

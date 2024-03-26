@@ -71,7 +71,7 @@ fn back_auth_route() -> Router<()> {
 fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
     Router::new()
         .route("/check", get(routes::api_handler))
-        .nest("/api", back_chat_route_a(state.clone()))
+        .nest("/a", back_chat_route_a(state.clone()))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             middlewares::auth,

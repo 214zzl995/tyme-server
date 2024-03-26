@@ -12,6 +12,9 @@ const SYS_CF_NAME: &str = "tyme_sys";
 lazy_static! {
     pub static ref RDB: DBWithThreadMode<MultiThreaded> = {
         let path = crate::start_param.word_dir.clone().join("data");
+        if !path.exists() {
+            std::fs::create_dir_all(&path).unwrap();
+        }
         let mut db_opts = Options::default();
         db_opts.create_missing_column_families(true);
         db_opts.create_if_missing(true);

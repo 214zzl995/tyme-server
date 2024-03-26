@@ -7,8 +7,8 @@
   import ConsoleSetting from "../lib/ConsoleSetting.svelte";
   import MqttSetting from "../lib/MqttSetting.svelte";
 
-  let sysConfig;
-  $: sysConfig = {
+  let config;
+  $: config = {
     mqtt_config: {
       lwt: "",
       auth: {},
@@ -29,11 +29,11 @@
     } else return;
 
     if (crtFiles !== undefined && crtFiles.length !== 0) {
-      sysConfig.mqtt_config.ssl.trust_store = "./ssl/" + crtFiles[0].name;
+      config.mqtt_config.ssl.trust_store = "./ssl/" + crtFiles[0].name;
       upLoadCrtFile();
     }
 
-    putConfig(sysConfig).then((res) => {
+    putConfig(config).then((res) => {
       if (res.result == "error") {
         saveStatus = "Save Failed";
       } else {
@@ -54,7 +54,7 @@
 
   onMount(() => {
     getConfig().then((res) => {
-      sysConfig = res;
+      config = res;
     });
   });
 </script>
@@ -83,21 +83,21 @@
 
 <div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-20 md:mb-3 mt-3">
   <MqttSetting
-    bind:broker={sysConfig.mqtt_config.broker}
-    bind:port={sysConfig.mqtt_config.port}
-    bind:clientId={sysConfig.mqtt_config.client_id}
-    bind:keepAliveInterval={sysConfig.mqtt_config.keep_alive_interval}
-    bind:lwt={sysConfig.mqtt_config.lwt}
-    bind:auth={sysConfig.mqtt_config.auth}
-    bind:ssl={sysConfig.mqtt_config.ssl}
+    bind:broker={config.mqtt_config.broker}
+    bind:port={config.mqtt_config.port}
+    bind:clientId={config.mqtt_config.client_id}
+    bind:keepAliveInterval={config.mqtt_config.keep_alive_interval}
+    bind:lwt={config.mqtt_config.lwt}
+    bind:auth={config.mqtt_config.auth}
+    bind:ssl={config.mqtt_config.ssl}
     bind:crtFiles
   />
 
   <ConsoleSetting
-    bind:publicNet={sysConfig.web_console_config.public}
-    bind:port={sysConfig.web_console_config.port}
-    bind:username={sysConfig.web_console_config.username}
-    bind:password={sysConfig.web_console_config.password}
-    bind:apiToken={sysConfig.web_console_config.api_token}
+    bind:publicNet={config.web_console_config.public}
+    bind:port={config.web_console_config.port}
+    bind:username={config.web_console_config.username}
+    bind:password={config.web_console_config.password}
+    bind:apiToken={config.web_console_config.api_token}
   />
 </div>

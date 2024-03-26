@@ -1,19 +1,25 @@
 import api from './request.js';
 
 
-export const getSecure = (/** @type {{}} */ params) => api.get(`/secure`)
+export const getSecure = () => api.get(`/secure`)
 
-export const getAllTopic = (/** @type {{}} */ params) => api.get(`/c/get-all-topic`)
+export const getAllTopic = () => api.get(`/c/get-all-topic`)
 
-export const getConfig = (/** @type {{}} */ params) => api.get(`/c/config`)
+export const getConfig = () => api.get(`/c/config`)
+
+export const getConfigGuide = () => api.get(`/g/config`)
 
 export const putConfig = ( /** @type {any} */ body) => api.post('/c/config', body)
+
+export const putConfigGuide = ( /** @type {any} */ body) => api.post('/g/config', body)
 
 export const getApi = (/** @type {string} */ api_token) => api.get('/check', undefined, undefined, {
     'Authorization': 'Bearer ' + api_token,
 })
 
 export const uploadCrt = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post(`/c/upload-crt/${filename}`, body, "", "multipart/form-data")
+
+export const uploadCrtGuide = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post(`/g/upload-crt/${filename}`, body, "", "multipart/form-data")
 
 export const getChatMsg = (/** @type {string} */ topic) => api.get(`/c/get-chat-msg/${encodeURIComponent(topic)}`)
 

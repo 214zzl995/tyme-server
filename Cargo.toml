@@ -17,6 +17,7 @@ serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 toml_edit = { version = "0.21", features = ["serde"] }
 axum = { version = "0.6", features = ["ws", "headers"] }
+hyper = { version = "0.14", features = ["full"] }
 nanoid = "0.4"
 tower = { version = "0.4", features = ["full"] }
 tower-http = { version = "0.4", features = ["fs", "trace"] }
