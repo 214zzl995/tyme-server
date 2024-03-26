@@ -24,3 +24,11 @@ pub async fn start_mqtt(
     mqtt_state.start().await;
     Json(json!({"result": "ok"}))
 }
+
+#[allow(clippy::unused_async)]
+pub async fn stop_mqtt(
+    State(mqtt_state): State<crate::web_console::MqttOperate>,
+) -> impl IntoResponse {
+    mqtt_state.stop().await;
+    Json(json!({"result": "ok"}))
+}

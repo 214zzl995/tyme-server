@@ -13,11 +13,6 @@ use serde::{Deserialize, Serialize};
 use crate::web_console::store::Store;
 
 
-/// middleware function to authenticate authorization token
-/// check store that contains token and see if it matches authorization header starting with "Bearer"
-/// used example in axum docs on middleware <https://docs.rs/axum/latest/axum/middleware/index.html>
-///
-/// Returns Error's in JSON format.  
 #[allow(clippy::missing_errors_doc)]
 pub async fn auth<B: Send + Sync>(
     State(store): State<Arc<Store>>,

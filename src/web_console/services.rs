@@ -48,14 +48,12 @@ pub fn backend<Store: SessionStore>(
         .merge(back_auth_route())
         .merge(back_token_route(shared_state))
         .merge(back_public_route())
-        .with_state(())
-        .route("/mqtt-start", get(routes::start_mqtt))
-        .with_state(mqtt_state)
+        .merge(back_guide_route(mqtt_state))
         .layer(session_service)
         .with_state(())
 }
 
-pub fn back_public_route() -> Router<()> {
+fn back_public_route() -> Router<()> {
     Router::new()
         .route("/auth/session", get(routes::data_handler))
         .route("/auth/login", post(routes::login))
@@ -63,14 +61,14 @@ pub fn back_public_route() -> Router<()> {
         .route("/test", get(routes::not_implemented_route))
 }
 
-pub fn back_auth_route() -> Router<()> {
+fn back_auth_route() -> Router<()> {
     Router::new()
         .route("/secure", get(routes::session_handler))
         .nest("/c", back_chat_route_c())
         .route_layer(middleware::from_fn(middlewares::user_secure))
 }
 
-pub fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
+fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
     Router::new()
         .route("/check", get(routes::api_handler))
         .nest("/api", back_chat_route_a(state.clone()))
@@ -81,7 +79,7 @@ pub fn back_token_route<S>(state: Arc<Store>) -> Router<S> {
         .with_state(state)
 }
 
-pub fn back_chat_route<S>(state: S) -> Router<S>
+fn back_chat_route<S>(state: S) -> Router<S>
 where
     S: Send + Sync + 'static + Clone,
 {
@@ -92,16 +90,11 @@ where
         .with_state(state)
 }
 
-pub fn back_chat_route_c() -> Router<()> {
+fn back_chat_route_c() -> Router<()> {
     Router::new()
         .merge(back_chat_route(()))
         .merge(script_file())
-        .route("/upload-crt/:file_name", post(routes::upload_crt))
-        .route("/upload-script/:file_name", post(routes::upload_script))
-        .route(
-            "/config",
-            get(routes::get_config).post(routes::update_config),
-        )
+        .merge(back_config_route())
         .route("/get-chat-msg/:header", get(routes::get_chat_msg))
         .route("/msg/:header", get(routes::msg))
         .route("/ws", get(routes::ws_handler))
@@ -116,7 +109,7 @@ pub fn back_chat_route_c() -> Router<()> {
         .route("/script-file-name", get(routes::get_all_script_file_name))
 }
 
-pub fn script_file() -> Router {
+fn script_file() -> Router {
     let script_file_path = PathBuf::from("./script");
     Router::new()
         .nest_service(
@@ -128,8 +121,31 @@ pub fn script_file() -> Router {
         .layer(TraceLayer::new_for_http())
 }
 
-pub fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {
+fn back_config_route<S>() -> Router<S> {
+    Router::new()
+        .route("/upload-crt/:file_name", post(routes::upload_crt))
+        .route("/upload-script/:file_name", post(routes::upload_script))
+        .route(
+            "/config",
+            get(routes::get_config).post(routes::update_config),
+        )
+        .with_state(())
+}
+
+fn back_chat_route_a<S>(state: Arc<Store>) -> Router<S> {
     Router::new()
         .merge(back_chat_route(state.clone()))
         .with_state(state)
+}
+
+fn back_guide_route<S>(mqtt_state: super::MqttOperate) -> Router<S> {
+    let router = Router::new()
+        .merge(back_config_route())
+        .route("/mqtt-start", get(routes::start_mqtt))
+        .route("/mqtt-stop", get(routes::stop_mqtt));
+
+    Router::new()
+        .nest("/g", router)
+        .route_layer(middleware::from_fn(middlewares::guide_secure))
+        .with_state(mqtt_state)
 }

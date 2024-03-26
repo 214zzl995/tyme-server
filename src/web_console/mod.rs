@@ -36,7 +36,7 @@ impl MqttOperate {
     }
 
     pub async fn stop(&self) {
-        let _ = self.sender.send(false);
+        let _ = self.sender.send(false).await;
     }
 }
 

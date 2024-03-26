@@ -26,8 +26,9 @@ pub use file::upload_crt;
 pub use file::upload_script;
 
 pub use sys::get_config;
-pub use sys::update_config;
 pub use sys::start_mqtt;
+pub use sys::stop_mqtt;
+pub use sys::update_config;
 
 pub use session::data_handler;
 pub use session::handler as session_handler;
