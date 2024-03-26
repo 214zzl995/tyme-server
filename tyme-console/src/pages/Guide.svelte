@@ -8,53 +8,20 @@
 
   let crtFiles;
 
-  let config = {
-    mqtt_config: {
-      broker: "k37bbe35.ala.cn-hangzhou.emqxsl.cn",
-      port: 8883,
-      client_id: "test",
-      keep_alive_interval: 60,
-      topics: [
-        {
-          topic: "command/#",
-          qos: 1,
-        },
-        {
-          topic: "chat/#",
-          qos: 1,
-        },
-      ],
-      version: 5,
-      lwt: "Im offline",
-      auth: {
-        enable: true,
-        username: "leri",
-        password: "R7ddsQxAGchQPQB",
-      },
-      ssl: {
-        enable: true,
-        trust_store: "./ssl/emqxsl-ca.crt",
-        key_store: null,
-        private_key: null,
-        private_key_password: null,
-        ca_path: null,
-        protos: null,
-      },
-    },
-    web_console_config: {
-      public: true,
-      username: "root",
-      password: "FxL3nw70",
-      port: 12566,
-      api_token: "1uY-1MPhNtIzQ1NK",
-    },
-  };
+  let config;
 
   let activeTab = 0;
   let saveLoading = false;
   let saveStatus = "";
 
+  let consoleSetting;
+
+  let mqttSetting;
+
   const saveConfig = () => {
+    if (!mqttSetting.check()) {
+      return;
+    }
     if (saveLoading == false) {
       saveLoading = !saveLoading;
     } else return;
@@ -63,6 +30,9 @@
       config.mqtt_config.ssl.trust_store = "./ssl/" + crtFiles[0].name;
       upLoadCrtFile();
     }
+
+    config.mqtt_config.port = parseInt(config.mqtt_config.port);
+    config.web_console_config.port = parseInt(config.web_console_config.port);
 
     putConfigGuide(config).then((res) => {
       if (res.result == "error") {
@@ -83,11 +53,17 @@
     });
   };
 
-  onMount(() => {
-    getConfigGuide().then((res) => {
-      config = res;
-    });
-  });
+  (async () => {
+    config = await getConfigGuide();
+  })();
+
+  onMount(() => {});
+
+  const consoleSettingConfirm = () => {
+    if (consoleSetting.check()) {
+      activeTab = 1;
+    }
+  };
 </script>
 
 <div
@@ -102,45 +78,42 @@
     </p>
   </div>
   <div
-    class="flex-1 md:h-full w-11/12 md:w-3/5 flex justify-center items-center mt-3 overflow-x-hidden px-2 md:px-12 lg:px-24"
+    class="flex-1 md:h-full w-11/12 md:w-3/5 flex justify-center items-center mt-3 overflow-x-hidden px-2 md:px-12 lg:px-24 xl:px-52"
   >
     <div class="w-full whitespace-nowrap">
       <div class="w-full inline-block">
-        {#if activeTab === 0}
-          <ConsoleSetting
-            bind:publicNet={config.web_console_config.public}
-            bind:port={config.web_console_config.port}
-            bind:username={config.web_console_config.username}
-            bind:password={config.web_console_config.password}
-            bind:apiToken={config.web_console_config.api_token}
-          >
-            <div class="w-full flex flex-row justify-end gap-2 mt-6">
-              <Button
-                class="hidden"
-                color="alternative"
-                disabled={activeTab == 0}>Previous</Button
-              >
-              <Button on:click={() => (activeTab = 1)}>Next</Button>
-            </div>
-          </ConsoleSetting>
-        {:else}
-          <MqttSetting
-            bind:broker={config.mqtt_config.broker}
-            bind:port={config.mqtt_config.port}
-            bind:clientId={config.mqtt_config.client_id}
-            bind:keepAliveInterval={config.mqtt_config.keep_alive_interval}
-            bind:lwt={config.mqtt_config.lwt}
-            bind:auth={config.mqtt_config.auth}
-            bind:ssl={config.mqtt_config.ssl}
-            bind:crtFiles
-          >
-            <div class="w-full flex flex-row justify-end gap-2 mt-6">
-              <Button color="alternative" on:click={() => (activeTab = 0)}
-                >Previous</Button
-              >
-              <Button on:click={saveConfig}>Confirm</Button>
-            </div>
-          </MqttSetting>
+        {#if config}
+          {#if activeTab === 0}
+            <ConsoleSetting
+              bind:this={consoleSetting}
+              bind:port={config.web_console_config.port}
+              bind:username={config.web_console_config.username}
+              bind:password={config.web_console_config.password}
+              bind:apiToken={config.web_console_config.api_token}
+            >
+              <div class="w-full flex flex-row justify-end gap-2 mt-6">
+                <Button on:click={consoleSettingConfirm}>Next</Button>
+              </div>
+            </ConsoleSetting>
+          {:else}
+            <MqttSetting
+              bind:this={mqttSetting}
+              bind:broker={config.mqtt_config.broker}
+              bind:port={config.mqtt_config.port}
+              bind:clientId={config.mqtt_config.client_id}
+              bind:keepAliveInterval={config.mqtt_config.keep_alive_interval}
+              bind:auth={config.mqtt_config.auth}
+              bind:ssl={config.mqtt_config.ssl}
+              bind:crtFiles
+            >
+              <div class="w-full flex flex-row justify-end gap-2 mt-6">
+                <Button color="alternative" on:click={() => (activeTab = 0)}
+                  >Previous</Button
+                >
+                <Button on:click={saveConfig}>Confirm</Button>
+              </div>
+            </MqttSetting>
+          {/if}
         {/if}
       </div>
     </div>

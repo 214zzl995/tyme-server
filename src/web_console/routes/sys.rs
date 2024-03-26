@@ -13,7 +13,10 @@ pub async fn get_config() -> impl IntoResponse {
 pub async fn update_config(Json(config): Json<TymeConfig>) -> impl IntoResponse {
     match config.update().await {
         Ok(_) => Json(json!({"result": "ok"})),
-        Err(err) => Json(json!({"result": "error","message" : format!("Update Config{}",err)})),
+        Err(err) => {
+            log::error!("Config Update: {}", err);
+            Json(json!({"result": "error","message" : format!("{}",err)}))
+        }
     }
 }
 

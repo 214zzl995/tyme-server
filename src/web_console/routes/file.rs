@@ -45,7 +45,7 @@ where
         // Create the file. `File` implements `AsyncWrite`.
         let path = std::path::Path::new(folder).join(path);
         if path.exists() {
-            tokio::fs::remove_file(&path).await.unwrap();
+            tokio::fs::remove_file(&path).await?;
         }
         let mut file = BufWriter::new(File::create(path).await?);
 

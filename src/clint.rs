@@ -83,19 +83,17 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
             }
         }
 
-        if let Some(lwt) = &config.mqtt_config.lwt {
-            let lwt_msg = SendMessage {
-                topic: "system/lwt".to_string(),
-                qos: 1,
-                retain: Some(false),
-                receiver: None,
-                ephemeral: true,
-                message_type: String::from("text/markdown; charset=UTF-8"),
-                raw: lwt.clone(),
-            };
-
-            conn_opts.will_message(lwt_msg.to_mqtt()?);
+        let lwt_msg = SendMessage {
+            topic: "system/lwt".to_string(),
+            qos: 1,
+            retain: Some(true),
+            receiver: None,
+            ephemeral: true,
+            message_type: String::from("text/markdown; charset=UTF-8"),
+            raw: String::new(),
         };
+
+        conn_opts.will_message(lwt_msg.to_mqtt()?);
 
         let conn_opts = conn_opts.finalize();
 

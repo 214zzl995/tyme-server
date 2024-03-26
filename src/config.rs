@@ -11,12 +11,13 @@ use std::{
 lazy_static! {
     pub static ref TYME_CONFIG: Arc<Mutex<TymeConfig>> = {
         let config = match TymeConfig::obtain() {
-            Ok(c) => c,
+            Ok(config) => config,
             Err(err) => {
                 log::error!("Config Error:{}", err);
                 std::process::exit(1)
             }
         };
+        println!("{:?}", config.config_file);
         Arc::new(Mutex::new(config))
     };
     static ref SYS_TOPIC: Vec<Header> = vec![Header {
@@ -45,7 +46,6 @@ pub struct MQTTConfig {
     pub keep_alive_interval: Option<u64>,
     pub topics: Vec<Header>,
     pub version: u32,
-    pub lwt: Option<String>,
     pub auth: Auth,
     pub ssl: Ssl,
 }
@@ -77,7 +77,6 @@ pub struct Ssl {
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct WebConsoleConfig {
-    pub public: bool,
     pub username: String,
     pub password: String,
     pub port: u16,
@@ -89,20 +88,25 @@ impl TymeConfig {
         let config_file = crate::start_param.get_config_file();
 
         if !config_file.clone().exists() {
-            log::warn!("No configuration file found, using default configuration");
+            log::warn!(
+                "No configuration file found, using default configuration,Working location is: {}",
+                config_file.display()
+            );
 
             let mut config = TymeConfig::default();
             config.config_file = config_file;
             return Ok(config);
+        } else {
+            log::info!("Using configuration file: {}", config_file.display());
         }
 
-        let mut str_val = String::new();
+        let mut config_val = String::new();
 
         File::open(config_file.clone())?
-            .read_to_string(&mut str_val)
+            .read_to_string(&mut config_val)
             .unwrap();
 
-        let mut config: TymeConfig = match toml_edit::de::from_str(&str_val) {
+        let mut config: TymeConfig = match toml_edit::de::from_str(&config_val) {
             Ok(config) => config,
             Err(err) => {
                 return Err(anyhow::anyhow!(
@@ -156,12 +160,23 @@ impl TymeConfig {
 
     pub async fn update(&self) -> anyhow::Result<()> {
         let config_str = toml_edit::ser::to_string_pretty(&self)?;
-        {
+        let config_file = {
             let mut loc_config = TYME_CONFIG.lock();
-            *loc_config = self.clone();
+            loc_config.mqtt_config = self.mqtt_config.clone();
+            loc_config.web_console_config = self.web_console_config.clone();
+            loc_config.config_file.clone()
+        };
+
+        if !config_file.exists() {
+            tokio::io::AsyncWriteExt::write_all(
+                &mut tokio::fs::File::create(config_file).await?,
+                config_str.as_bytes(),
+            )
+            .await?;
+        } else {
+            tokio::fs::write(config_file.clone(), config_str).await?;
         }
 
-        tokio::fs::write(self.config_file.clone(), config_str).await?;
         Ok(())
     }
 }
@@ -254,7 +269,6 @@ impl Default for TymeConfig {
 impl Default for WebConsoleConfig {
     fn default() -> Self {
         Self {
-            public: false,
             username: String::from("root"),
             password: nanoid::nanoid!(8),
             port: 12566,
@@ -284,7 +298,6 @@ impl<'a> IntoLua<'a> for MQTTConfig {
         )?;
         table.set("topics", self.topics.into_lua(lua)?)?;
         table.set("version", self.version.into_lua(lua)?)?;
-        table.set("lwt", self.lwt.into_lua(lua)?)?;
         table.set("auth", self.auth.into_lua(lua)?)?;
         table.set("ssl", self.ssl.into_lua(lua)?)?;
         table.into_lua(lua)
@@ -294,7 +307,6 @@ impl<'a> IntoLua<'a> for MQTTConfig {
 impl<'a> IntoLua<'a> for WebConsoleConfig {
     fn into_lua(self, lua: &'a mlua::Lua) -> mlua::Result<mlua::Value> {
         let table = lua.create_table()?;
-        table.set("public", self.public.into_lua(lua)?)?;
         table.set("username", self.username.into_lua(lua)?)?;
         table.set("password", self.password.into_lua(lua)?)?;
         table.set("port", self.port.into_lua(lua)?)?;

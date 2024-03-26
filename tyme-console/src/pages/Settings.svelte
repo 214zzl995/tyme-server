@@ -10,7 +10,6 @@
   let config;
   $: config = {
     mqtt_config: {
-      lwt: "",
       auth: {},
       ssl: {
         trust_store: "./ssl/emqxsl-ca.crt",
@@ -32,6 +31,9 @@
       config.mqtt_config.ssl.trust_store = "./ssl/" + crtFiles[0].name;
       upLoadCrtFile();
     }
+
+    config.mqtt_config.port = parseInt(config.mqtt_config.port);
+    config.web_console_config.port = parseInt(config.web_console_config.port);
 
     putConfig(config).then((res) => {
       if (res.result == "error") {
@@ -87,14 +89,12 @@
     bind:port={config.mqtt_config.port}
     bind:clientId={config.mqtt_config.client_id}
     bind:keepAliveInterval={config.mqtt_config.keep_alive_interval}
-    bind:lwt={config.mqtt_config.lwt}
     bind:auth={config.mqtt_config.auth}
     bind:ssl={config.mqtt_config.ssl}
     bind:crtFiles
   />
 
   <ConsoleSetting
-    bind:publicNet={config.web_console_config.public}
     bind:port={config.web_console_config.port}
     bind:username={config.web_console_config.username}
     bind:password={config.web_console_config.password}

@@ -30,6 +30,8 @@ impl StartParam {
         }
 
         #[cfg(target_os = "linux")]
+        use std::path::Path;
+        #[cfg(target_os = "linux")]
         let config_path = Path::new("/etc/tyme_conf");
         #[cfg(target_os = "linux")]
         if config_path.exists() {
@@ -48,7 +50,6 @@ impl StartParam {
                 return home_path;
             }
         }
-
         self.word_dir.clone().join("config.toml")
     }
 }

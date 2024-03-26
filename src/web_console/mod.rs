@@ -1,7 +1,4 @@
-use std::{
-    net::SocketAddr,
-    sync::Arc,
-};
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::Router;
 use log::info;
@@ -18,7 +15,6 @@ mod middlewares;
 mod routes;
 mod services;
 mod store;
-mod mut_s;
 
 pub use routes::ws_send_all;
 
@@ -27,7 +23,7 @@ lazy_static! {
 }
 
 #[derive(Clone)]
-struct MqttOperate {
+pub struct MqttOperate {
     sender: Sender<bool>,
 }
 
@@ -46,13 +42,8 @@ impl MqttOperate {
 
 pub async fn run_web_console(mqtt_state: Sender<bool>) -> anyhow::Result<()> {
     let config = TYME_CONFIG.lock().clone();
-    let host = if config.web_console_config.public {
-        [0, 0, 0, 0]
-    } else {
-        [127, 0, 0, 1]
-    };
 
-    let addr = SocketAddr::from((host, config.web_console_config.port));
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.web_console_config.port));
 
     let server = axum::Server::try_bind(&addr)?;
 
