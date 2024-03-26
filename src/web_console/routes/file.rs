@@ -36,6 +36,12 @@ where
         return Err(anyhow::anyhow!(format!("Invalid path:{}", path)));
     }
 
+    let folder = std::path::Path::new(folder);
+
+    if !folder.exists() {
+        tokio::fs::create_dir_all(folder).await?;
+    }
+    
     async {
         // Convert the stream into an `AsyncRead`.
         let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
@@ -43,7 +49,7 @@ where
         futures::pin_mut!(body_reader);
 
         // Create the file. `File` implements `AsyncWrite`.
-        let path = std::path::Path::new(folder).join(path);
+        let path = folder.join(path);
         if path.exists() {
             tokio::fs::remove_file(&path).await?;
         }
