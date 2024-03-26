@@ -1,6 +1,6 @@
 FROM rust:1.76.0-slim-bullseye AS server
-RUN apt update && apt install -y libssl-dev cmake libclang-dev pkg-config g++ 
-WORKDIR /app/tyme  
+RUN apt update && apt install -y libssl-dev cmake libclang-dev pkg-config g++
+WORKDIR /app/tyme
 COPY . ./
 RUN cargo build --release
 
