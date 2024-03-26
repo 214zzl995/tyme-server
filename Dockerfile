@@ -13,11 +13,13 @@ RUN npm run build
 
 FROM alpine:latest AS base
 RUN apk update && apk add --no-cache openssl
+ENV TYME_WORKDIR=/data/tyme/
+ENV TYME_CONF=/data/tyme/tyme_conf.toml
 WORKDIR /app/tyme
 COPY --from=server /app/tyme/target/release/tyme-server ./tyme-server
 COPY --from=web /app/tyme-console/dist ./tyme-console
-RUN mkdir -p /app/tyme/ssl /app/tyme/log /app/tyme/data
-CMD ["./tyme-server"]
+RUN mkdir -p "$TYME_WORKDIR/ssl" "$TYME_WORKDIR/log" "$TYME_WORKDIR/data"
+CMD ["./tyme-server -w $TYME_WORKDIR -c $TYME_CONF"]
 
 
 
