@@ -18,5 +18,8 @@
   ],
   "Lua.diagnostics.disable": [
     "assign-type-mismatch"
+  ],
+  "rust-analyzer.linkedProjects": [
+    ".\\Cargo.toml"
   ]
 }

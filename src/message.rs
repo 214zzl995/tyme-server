@@ -18,7 +18,7 @@ pub struct RecMessage {
     pub sender: Option<String>,
     pub receiver: Option<String>,
 }
-// 一个是发送流程中的 Message 需要实现 Message转换为mqtt消息
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SendMessage {
     pub topic: String,

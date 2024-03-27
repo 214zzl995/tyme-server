@@ -53,7 +53,7 @@ impl TaskManager {
     }
 
     pub fn start(&mut self) {
-        let tasks = crate::r_db::get_all_task().unwrap();
+        let tasks = crate::db::get_all_task().unwrap();
         for (id, task) in tasks.into_iter().filter(|(_, task)| task.auto_start) {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -325,7 +325,7 @@ impl mlua::UserData for TymeUserData {
     }
 }
 
-fn get_sys_config<'a>(_: &mlua::Lua, _: &'a TymeUserData) -> mlua::Result<TymeConfig> {
+fn get_sys_config(_: &mlua::Lua, _: &TymeUserData) -> mlua::Result<TymeConfig> {
     let sys_config = crate::tyme_config.lock().clone();
     Ok(sys_config)
 }

@@ -24,7 +24,7 @@ tower-sessions = "0.4.1"
 tokio-util = { version = "0.7", features = ["io"] }
 markdown = "1.0.0-alpha.14"
 headers = "0.3"
-rocksdb = { version = "0.21.0", features = ["multi-threaded-cf"] }
+# rocksdb = { version = "0.21.0", features = ["multi-threaded-cf"] }
 bincode = "1"
 askama = { version = "0.12", features = ["with-axum"] }
 askama_axum = "*"
@@ -42,6 +42,7 @@ mlua = { version = "0.9.4", features = [
 linked-hash-map = "0.5.6"
 structopt = "0.3"
 dirs = "5"
+sqlx = { version = "0.7", features = ["runtime-tokio", "any","mysql","sqlite"] }
 
 [target.x86_64-pc-windows-msvc.dependencies]
 paho-mqtt = "0.12"

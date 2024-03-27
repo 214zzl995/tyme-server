@@ -30,6 +30,7 @@ lazy_static! {
 pub struct TymeConfig {
     pub mqtt_config: MQTTConfig,
     pub web_console_config: WebConsoleConfig,
+    pub database: String,
 
     #[serde(skip)]
     pub first_start: bool,
@@ -262,6 +263,7 @@ impl Default for TymeConfig {
             web_console_config: Default::default(),
             first_start: true,
             config_file: Default::default(),
+            database: Default::default(),
         }
     }
 }

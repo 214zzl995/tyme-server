@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --from=server /app/target/x86_64-unknown-linux-musl/release/tyme-server ./tyme-server
 COPY --from=web /app/assets ./assets
 RUN mkdir -p "$TYME_WORKDIR/ssl" "$TYME_WORKDIR/log" "$TYME_WORKDIR/data"
-CMD ["./tyme-server", "-w" ,"$TYME_WORKDIR" ,"-c", "$TYME_CONF"]
+CMD ./tyme-server -w $TYME_WORKDIR -c $TYME_CONF
 
 
 

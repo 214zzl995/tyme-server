@@ -13,10 +13,10 @@ mod args;
 mod clint;
 mod config;
 mod message;
-mod r_db;
 mod subscribe;
 mod task;
 mod web_console;
+mod db;
 
 pub use args::START_PARAM as start_param;
 pub use config::TYME_CONFIG as tyme_config;

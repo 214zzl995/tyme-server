@@ -64,24 +64,31 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<crate::config::Header>>) -> 
 
 #[allow(clippy::unused_async)]
 pub async fn get_chat_msg(Path(header): Path<String>) -> impl IntoResponse {
-    let msgs: Vec<crate::message::RecMessage> =
-        crate::r_db::get_msg_by_header_name(&header).unwrap();
+    let msgs: Vec<crate::message::RecMessage> = crate::db::get_msg_by_header_name(&header).unwrap();
 
     Json(json!({"result": "ok", "data": msgs}))
 }
 
 #[allow(clippy::unused_async)]
 pub async fn msg(Path(header): Path<String>, msg_params: Query<MsgParams>) -> impl IntoResponse {
-    if let Some(msg) = crate::r_db::get_msg_by_header_with_id(&header, &msg_params.id) {
-        let template = MsgTemplate {
-            name: "丁真珍珠".to_string(),
-            content: msg.content.html.unwrap(),
-        };
-        template.into_response()
-    } else {
+    if let Ok(msg) = crate::db::get_msg_by_header_with_id(&header, &msg_params.id) {
+        if let Some(msg) = msg {
+            let template = MsgTemplate {
+                name: "丁真珍珠".to_string(),
+                content: msg.content.html.unwrap(),
+            };
+            template.into_response()
+        } else {
+            Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body("Msg Not Found".to_string())
+                .unwrap()
+                .into_response()
+        }
+    }else {
         Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body("Msg Not Found".to_string())
+            .status(StatusCode::BAD_REQUEST)
+            .body("Get Error".to_string())
             .unwrap()
             .into_response()
     }
