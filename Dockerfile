@@ -1,22 +1,25 @@
-FROM rust:1.76.0-slim-bullseye AS server
-RUN apt update && apt install -y libssl-dev cmake libclang-dev pkg-config g++
-WORKDIR /app/tyme
+FROM rust:1.76.0-slim AS server
+RUN rustup target add x86_64-unknown-linux-musl
+RUN rustup component add rustfmt
+RUN apt update && apt install -y libssl-dev cmake libclang-dev pkg-config g++ musl-tools musl-dev llvm clang perl   
+RUN update-ca-certificates
+RUN ln -s /usr/bin/g++ /usr/bin/musl-g++
+WORKDIR /app
 COPY . ./
-RUN cargo build --release
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
 FROM node:16.14.0-alpine AS web
-WORKDIR /app/tyme-console
+WORKDIR /app
 COPY ./tyme-console .
 RUN npm install
-RUN npm run build
+RUN npm run buildDocker
 
 FROM alpine:latest AS base
 RUN apk update && apk add --no-cache openssl
-ENV TYME_WORKDIR=/data/tyme/
-ENV TYME_CONF=/data/tyme/tyme_conf.toml
-RUN mkdir -p /app/tyme
-WORKDIR /app/tyme
-COPY --from=server /app/tyme/target/release/tyme-server ./tyme-server
+ENV TYME_WORKDIR=/app/data
+ENV TYME_CONF=/app/data/tyme_conf.toml
+WORKDIR /app
+COPY --from=server /app/target/x86_64-unknown-linux-musl/release/tyme-server ./tyme-server
 COPY --from=web /app/assets ./assets
 RUN mkdir -p "$TYME_WORKDIR/ssl" "$TYME_WORKDIR/log" "$TYME_WORKDIR/data"
 CMD ["./tyme-server", "-w" ,"$TYME_WORKDIR" ,"-c", "$TYME_CONF"]
