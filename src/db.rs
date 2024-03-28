@@ -79,7 +79,7 @@ pub async fn db_init() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn get_msg_by_id(id: &str) -> anyhow::Result<RecMessage> {
+pub async fn get_msg_by_id(id: &str) -> anyhow::Result<Option<RecMessage>> {
     let msg = sqlx::query_as!(RecMessage,"SELECT * FROM message WHERE id = ?", id)
         .fetch_optional(&*DB_POOL)
         .await?;
