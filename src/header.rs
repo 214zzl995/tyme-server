@@ -13,7 +13,7 @@ lazy_static! {
     };
 }
 
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
+#[derive(Deserialize, Serialize, Clone, Default, Debug, sqlx::FromRow)]
 pub struct Header {
     pub id: Option<String>,
     pub topic: String,

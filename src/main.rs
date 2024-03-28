@@ -8,6 +8,8 @@ use flexi_logger::{
 extern crate lazy_static;
 extern crate mime;
 extern crate serde_json;
+extern crate sqlx;
+
 
 mod args;
 mod clint;
@@ -68,6 +70,7 @@ async fn main() -> anyhow::Result<()> {
 
         clint::diable_connect();
     };
+
     Ok(())
 }
 

@@ -12,9 +12,8 @@ pub async fn get_all_task() -> impl IntoResponse {
     }
 }
 
-#[axum_macros::debug_handler]
 pub async fn add_task(Json(task): Json<Task>) -> impl IntoResponse {
-    match crate::task_manger.lock().add_task(task).await {
+    match crate::task_manger.lock().add_task(task) {
         Ok(id) => Json(json!({"result": "ok","id":id})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }

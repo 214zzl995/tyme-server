@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::header::Header;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, sqlx::FromRow)]
 pub struct RecMessage {
     pub id: String,
     pub topic: String,
@@ -14,6 +14,7 @@ pub struct RecMessage {
     pub retain: bool,
     pub mine: bool,
     pub timestamp: u128,
+    #[sqlx(flatten)]
     pub content: MessageContent,
     pub sender: Option<String>,
     pub receiver: Option<String>,
@@ -31,13 +32,15 @@ pub struct SendMessage {
     pub raw: String,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, sqlx::FromRow)]
 pub struct MessageContent {
     #[serde(rename = "type")]
+    #[sqlx(rename = "type")]
     pub message_type: String,
     pub raw: String,
     pub html: Option<String>,
 }
+
 
 impl SendMessage {
     pub fn to_mqtt(&self) -> anyhow::Result<mqtt::Message> {

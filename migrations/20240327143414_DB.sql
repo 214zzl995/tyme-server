@@ -7,7 +7,7 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    tasks (
+    task (
         id CHAR(21) PRIMARY KEY,
         script VARCHAR(255) NOT NULL,
         cron VARCHAR(255) NOT NULL,
@@ -18,14 +18,25 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    messages (
+    header (
+        id CHAR(21) PRIMARY KEY,
+        topic VARCHAR(255) NOT NULL,
+        qos INT NOT NULL
+    );
+
+CREATE TABLE
+    message (
         id CHAR(21) PRIMARY KEY,
         topic VARCHAR(255) NOT NULL,
         qos INT NOT NULL,
         retain BOOLEAN NOT NULL,
         mine BOOLEAN NOT NULL,
         timestamp BIGINT NOT NULL,
-        content BLOB NOT NULL,
         sender VARCHAR(255),
-        receiver VARCHAR(255)
+        receiver VARCHAR(255),
+        type VARCHAR(255) NOT NULL,
+        raw TEXT NOT NULL,
+        html TEXT NOT NULL,
+        header_id CHAR(21) NOT NULL,
+        FOREIGN KEY (header_id) REFERENCES header (id)
     );

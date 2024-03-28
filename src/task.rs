@@ -1,11 +1,13 @@
 use anyhow::Context;
 use cron::Schedule;
+
+use futures::executor::block_on;
 use linked_hash_map::LinkedHashMap;
 use log::{error, info};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{str::FromStr, sync::Arc};
-use tokio::sync::oneshot::Sender;
+use tokio::{sync::oneshot::Sender, task::block_in_place};
 
 use crate::config::TymeConfig;
 
@@ -98,8 +100,10 @@ impl TaskManager {
         Ok(())
     }
 
-    pub async fn add_task(&self, task: Task) -> anyhow::Result<String> {
-        let id = task.insert().await?;
+    pub fn add_task(&mut self, task: Task) -> anyhow::Result<String> {
+        let task_block = task.clone();
+
+        let id = block_in_place(move || block_on(async { task_block.insert().await }))?;
 
         let id_c = id.clone();
 
@@ -130,7 +134,7 @@ impl TaskManager {
             runner.tx = None;
         }
 
-        // self.tasks.insert(id_c.clone(), runner);
+        self.tasks.insert(id_c.clone(), runner);
 
         Ok(id_c)
     }
@@ -193,24 +197,28 @@ impl TaskManager {
     }
 
     pub fn update_task(&mut self, id: &String, task: Task) -> anyhow::Result<()> {
-        task.update(id)?;
+        let block_task = task.clone();
+        block_in_place(move || block_on(async { block_task.update(id).await }))?;
         let running = self.get_running_status(id);
+
         if running {
             self.stop_task(id)?;
         }
+
         self.tasks
             .insert(id.to_string(), TaskRunner::new(task.clone(), None));
 
         if running {
             self.start_task(id)?;
         }
+        
         Ok(())
     }
 
     pub fn remove_task(&mut self, id: &String) -> anyhow::Result<()> {
         self.stop_task(id)?;
         self.tasks.remove(id);
-        Task::remove(&String::from(id))?;
+        block_in_place(move || block_on(async { Task::remove(&String::from(id)).await }))?;
         Ok(())
     }
 
