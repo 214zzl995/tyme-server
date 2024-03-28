@@ -8,7 +8,7 @@ CREATE TABLE
 
 CREATE TABLE
     tasks (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id CHAR(21) PRIMARY KEY,
         script VARCHAR(255) NOT NULL,
         cron VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,

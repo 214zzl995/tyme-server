@@ -8,7 +8,7 @@ use paho_mqtt::AsyncClient;
 use paho_mqtt::{self as mqtt};
 use parking_lot::Mutex;
 
-use crate::config::Header;
+use crate::header::Header;
 use crate::message::SendMessage;
 use crate::{task_manger, tyme_config};
 
@@ -110,7 +110,7 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                 // Will not resubscribe when kicked out by broker
             } else {
                 // Register subscriptions on the server, using Subscription ID's.
-                let topics = crate::tyme_config.lock().mqtt_config.get_topics();
+                let topics = crate::headers.lock().clone();
                 info!(
                     r#"Subscribing to topics [{}]..."#,
                     topics
@@ -135,11 +135,9 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
                     .await?;
             }
         }
-
+        task_manger.lock().start().await?;
         Ok::<(), anyhow::Error>(())
     })?;
-
-    task_manger.lock().start();
 
     Ok(cli)
 }
@@ -164,7 +162,7 @@ pub async fn publish(msg: SendMessage) -> anyhow::Result<()> {
 /// Subscribe to a topic Temporary not stored
 pub async fn subscribe_topic(topics: Vec<Header>) -> anyhow::Result<()> {
     {
-        let mut loc_topics = crate::tyme_config.lock().mqtt_config.get_topics();
+        let mut loc_topics = crate::headers.lock().clone();
         loc_topics.extend(topics.clone());
     };
 

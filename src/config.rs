@@ -8,6 +8,8 @@ use std::{
     sync::Arc,
 };
 
+use crate::header::Header;
+
 lazy_static! {
     pub static ref TYME_CONFIG: Arc<Mutex<TymeConfig>> = {
         let config = match TymeConfig::obtain() {
@@ -20,10 +22,6 @@ lazy_static! {
         println!("{:?}", config.config_file);
         Arc::new(Mutex::new(config))
     };
-    static ref SYS_TOPIC: Vec<Header> = vec![Header {
-        topic: "system/#".to_string(),
-        qos: 1
-    }];
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -45,16 +43,9 @@ pub struct MQTTConfig {
     pub port: i32,
     pub client_id: String,
     pub keep_alive_interval: Option<u64>,
-    pub topics: Vec<Header>,
     pub version: u32,
     pub auth: Auth,
     pub ssl: Ssl,
-}
-
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
-pub struct Header {
-    pub topic: String,
-    pub qos: i32,
 }
 
 #[derive(Deserialize, Serialize, Clone, Default)]
@@ -195,64 +186,7 @@ impl MQTTConfig {
                 "When the identity authentication is Yes, the username and password cannot be empty."
             ));
         }
-        if self
-            .topics
-            .iter()
-            .any(|topic| topic.mqtt_topic_matches("system/#"))
-        {
-            return Err(anyhow::anyhow!("system/# is a reserved topic"));
-        }
         Ok(())
-    }
-
-    pub fn get_topics_with_sys(&self) -> Vec<Header> {
-        let mut topics = self.topics.clone();
-        topics.extend(SYS_TOPIC.clone());
-        topics
-    }
-
-    pub fn get_topics(&self) -> Vec<Header> {
-        self.topics.clone()
-    }
-
-    pub fn get_topics_string(&self) -> Vec<String> {
-        self.topics.clone().into_iter().map(|x| x.topic).collect()
-    }
-}
-
-impl Header {
-    pub fn mqtt_topic_matches(&self, topic: &str) -> bool {
-        let pattern = self.topic.as_str();
-        let mut pattern_parts = pattern.split('/').peekable();
-        let mut topic_parts = topic.split('/').peekable();
-
-        while pattern_parts.peek().is_some() || topic_parts.peek().is_some() {
-            match (pattern_parts.next(), topic_parts.next()) {
-                (Some("#"), _) => {
-                    // # 匹配该级别及其所有子级
-                    return true;
-                }
-                (Some("+"), None) | (None, Some(_)) => {
-                    // + 需要匹配一个级别，如果没有额外的级别，则不匹配
-                    return false;
-                }
-                (Some("+"), Some(_)) => {
-                    // + 匹配任何单个级别
-                }
-                (Some(pattern), Some(topic)) => {
-                    // 如果两者不相等，则不匹配
-                    if pattern != topic {
-                        return false;
-                    }
-                }
-                _ => {
-                    // 其他情况，不匹配
-                    return false;
-                }
-            }
-        }
-
-        true
     }
 }
 
@@ -298,7 +232,6 @@ impl<'a> IntoLua<'a> for MQTTConfig {
             "keep_alive_interval",
             self.keep_alive_interval.into_lua(lua)?,
         )?;
-        table.set("topics", self.topics.into_lua(lua)?)?;
         table.set("version", self.version.into_lua(lua)?)?;
         table.set("auth", self.auth.into_lua(lua)?)?;
         table.set("ssl", self.ssl.into_lua(lua)?)?;

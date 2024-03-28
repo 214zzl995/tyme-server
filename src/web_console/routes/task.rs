@@ -4,17 +4,17 @@ use serde_json::json;
 use crate::{db, task::Task};
 
 pub async fn get_all_task() -> impl IntoResponse {
-    let task_manger = crate::task_manger.lock();
-    match db::get_all_task() {
+    match db::get_all_task().await {
         Ok(tasks) => Json(
-            json!({"result": "ok", "tasks": tasks.into_iter().map(|(id,task)| json!({"id":id.clone(),"task":task,"running":task_manger.get_running_status(&id)})).collect::<Vec<_>>()}),
+            json!({"result": "ok", "tasks": tasks.into_iter().map(|(id,task)| json!({"id":id.clone(),"task":task,"running":crate::task_manger.lock().get_running_status(&id)})).collect::<Vec<_>>()}),
         ),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
 }
 
+#[axum_macros::debug_handler]
 pub async fn add_task(Json(task): Json<Task>) -> impl IntoResponse {
-    match crate::task_manger.lock().add_task(task) {
+    match crate::task_manger.lock().add_task(task).await {
         Ok(id) => Json(json!({"result": "ok","id":id})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
@@ -48,8 +48,8 @@ pub async fn start_task(Path(id): Path<String>) -> impl IntoResponse {
     }
 }
 
-pub async fn update_task(Path(id): Path<String>,Json(task): Json<Task>) -> impl IntoResponse {
-    match crate::task_manger.lock().update_task(&id,task) {
+pub async fn update_task(Path(id): Path<String>, Json(task): Json<Task>) -> impl IntoResponse {
+    match crate::task_manger.lock().update_task(&id, task) {
         Ok(_) => Json(json!({"result": "ok"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }

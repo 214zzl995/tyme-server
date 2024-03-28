@@ -39,7 +39,9 @@ pub async fn subscribe() {
                                 tokio::spawn(async move {
                                     crate::web_console::ws_send_all(&header, &rec_msg).await;
                                     if !ephemeral {
-                                        rec_msg.insert(&header).unwrap();
+                                        if let Err(err) = rec_msg.insert(&header).await {
+                                            error!("Error inserting message: {}", err);
+                                        };
                                     }
                                 });
                             }

@@ -4,7 +4,7 @@ use askama::Template;
 use axum::{
     extract::{
         ws::{Message as wsMessage, WebSocket},
-        ConnectInfo, Path, Query, WebSocketUpgrade,
+        ConnectInfo, Path, WebSocketUpgrade,
     },
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -51,11 +51,11 @@ pub async fn get_mqtt_user() -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn get_all_toppic() -> impl IntoResponse {
-    Json(json!({"result": "ok", "topics": crate::tyme_config.lock().mqtt_config.topics.clone()}))
+    Json(json!({"result": "ok", "topics": crate::headers.lock().clone()}))
 }
 
 #[allow(clippy::unused_async)]
-pub async fn subscribe_topic(Json(topics): Json<Vec<crate::config::Header>>) -> impl IntoResponse {
+pub async fn subscribe_topic(Json(topics): Json<Vec<crate::header::Header>>) -> impl IntoResponse {
     match crate::clint::subscribe_topic(topics).await {
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
@@ -64,14 +64,15 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<crate::config::Header>>) -> 
 
 #[allow(clippy::unused_async)]
 pub async fn get_chat_msg(Path(header): Path<String>) -> impl IntoResponse {
-    let msgs: Vec<crate::message::RecMessage> = crate::db::get_msg_by_header_name(&header).unwrap();
-
-    Json(json!({"result": "ok", "data": msgs}))
+    match crate::db::get_msg_by_header(&header).await {
+        Ok(msgs) => Json(json!({"result": "ok", "data": msgs})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
 }
 
 #[allow(clippy::unused_async)]
-pub async fn msg(Path(header): Path<String>, msg_params: Query<MsgParams>) -> impl IntoResponse {
-    if let Ok(msg) = crate::db::get_msg_by_header_with_id(&header, &msg_params.id) {
+pub async fn msg(Path(id): Path<String>) -> impl IntoResponse {
+    if let Ok(msg) = crate::db::get_msg_by_id(&id).await {
         if let Some(msg) = msg {
             let template = MsgTemplate {
                 name: "丁真珍珠".to_string(),
@@ -85,7 +86,7 @@ pub async fn msg(Path(header): Path<String>, msg_params: Query<MsgParams>) -> im
                 .unwrap()
                 .into_response()
         }
-    }else {
+    } else {
         Response::builder()
             .status(StatusCode::BAD_REQUEST)
             .body("Get Error".to_string())
@@ -216,7 +217,7 @@ pub fn remove_clint(session: &Session) {
 
 pub async fn _ws_send(
     session: Session,
-    header: crate::config::Header,
+    header: crate::header::Header,
     msg: &crate::message::RecMessage,
 ) {
     let user_id = session.id().0.to_string();
@@ -235,7 +236,7 @@ pub async fn _ws_send(
     }
 }
 
-pub async fn ws_send_all(header: &crate::config::Header, msg: &crate::message::RecMessage) {
+pub async fn ws_send_all(header: &crate::header::Header, msg: &crate::message::RecMessage) {
     let msg = json!({"header": header, "msg": msg});
     let msg = serde_json::to_string(&msg).unwrap();
     let msg = wsMessage::Text(msg);

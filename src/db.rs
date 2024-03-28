@@ -5,7 +5,7 @@ use sqlx::{
     Any, Pool,
 };
 
-use crate::{config::Header, message::RecMessage, task::Task, tyme_config};
+use crate::{header::Header, message::RecMessage, task::Task, tyme_config};
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
@@ -34,31 +34,31 @@ lazy_static! {
     };
 }
 
-pub async fn init() -> anyhow::Result<()> {
+pub async fn db_init() -> anyhow::Result<()> {
     MIGRATOR.run(&*DB_POOL).await?;
     Ok(())
 }
 
-pub fn get_msg_by_header_with_id(topic_name: &str, id: &str) -> anyhow::Result<Option<RecMessage>> {
+pub async fn get_msg_by_id(id: &str) -> anyhow::Result<Option<RecMessage>> {
     Ok(None)
 }
 
-pub fn get_msg_by_header_name(topic_name: &String) -> anyhow::Result<Vec<RecMessage>> {
+pub async fn get_msg_by_header(header: &str) -> anyhow::Result<Vec<RecMessage>> {
     Ok(vec![])
 }
 
 impl RecMessage {
-    pub fn insert(&self, header: &Header) -> anyhow::Result<()> {
+    pub async fn insert(&self, header: &Header) -> anyhow::Result<()> {
         Ok(())
     }
 }
 
-pub fn get_all_task() -> anyhow::Result<Vec<(String, Task)>> {
+pub async fn get_all_task() -> anyhow::Result<Vec<(String, Task)>> {
     Ok(vec![])
 }
 
 impl Task {
-    pub fn insert(&self) -> anyhow::Result<String> {
+    pub async fn insert(&self) -> anyhow::Result<String> {
         Ok("".to_string())
     }
 
@@ -68,5 +68,33 @@ impl Task {
 
     pub fn update(&self, id: &String) -> anyhow::Result<()> {
         Ok(())
+    }
+}
+
+impl Header {
+    pub fn insert(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    pub fn remove(id: &String) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    pub fn update(&self, id: &String) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    pub fn get_all_msg(&self) -> anyhow::Result<Vec<RecMessage>> {
+        Ok(vec![])
+    }
+
+    pub fn get_all_header() -> anyhow::Result<Vec<Header>> {
+        let mut headers = vec![];
+        headers.push(Header {
+            id: None,
+            topic: "system/#".to_string(),
+            qos: 2,
+        });
+        Ok(headers)
     }
 }

@@ -4,7 +4,7 @@ use anyhow::{Context, Ok};
 use paho_mqtt::{self as mqtt};
 use serde::{Deserialize, Serialize};
 
-use crate::config::Header;
+use crate::header::Header;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct RecMessage {
@@ -29,12 +29,6 @@ pub struct SendMessage {
     #[serde(rename = "type")]
     pub message_type: String,
     pub raw: String,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct Topic {
-    pub topic: String,
-    pub header: Header,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -104,10 +98,8 @@ impl RecMessage {
     }
 
     pub fn get_header(&self) -> Option<Header> {
-        crate::tyme_config
+        crate::headers
             .lock()
-            .mqtt_config
-            .get_topics_with_sys()
             .clone()
             .into_iter()
             .find(|pattern| pattern.mqtt_topic_matches(self.topic.as_ref()))

@@ -1,5 +1,6 @@
 use anyhow::Context;
 use cron::Schedule;
+use futures::executor::block_on;
 use linked_hash_map::LinkedHashMap;
 use log::{error, info};
 use parking_lot::Mutex;
@@ -98,8 +99,8 @@ impl TaskManager {
         Ok(())
     }
 
-    pub async fn add_task(&self, task: Task) -> anyhow::Result<String> {
-        let id = task.insert().await?;
+    pub fn add_task(&mut self, task: Task) -> anyhow::Result<String> {
+        let id = block_on(async { task.insert().await })?;
 
         let id_c = id.clone();
 
@@ -130,7 +131,7 @@ impl TaskManager {
             runner.tx = None;
         }
 
-        // self.tasks.insert(id_c.clone(), runner);
+        self.tasks.insert(id_c.clone(), runner);
 
         Ok(id_c)
     }

@@ -17,10 +17,13 @@ mod subscribe;
 mod task;
 mod web_console;
 mod db;
+mod header;
 
 pub use args::START_PARAM as start_param;
 pub use config::TYME_CONFIG as tyme_config;
 pub use task::TASK_MANGER as task_manger;
+pub use db::DB_POOL as db_pool;
+pub use header::HEADERS as headers;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -50,6 +53,7 @@ async fn main() -> anyhow::Result<()> {
 
         if !tyme_config.lock().first_start {
             tx.send(true).await?;
+            db::db_init().await?;
         }
 
         while let Some(clint_operate) = rx.recv().await {
