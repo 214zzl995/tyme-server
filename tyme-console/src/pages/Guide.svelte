@@ -5,6 +5,7 @@
   import MqttSetting from "../lib/MqttSetting.svelte";
   import { getConfigGuide, putConfigGuide, uploadCrtGuide } from "../js/fetch";
   import { onMount } from "svelte";
+  import DbSetting from "../lib/DbSetting.svelte";
 
   let crtFiles;
 
@@ -61,8 +62,12 @@
 
   const consoleSettingConfirm = () => {
     if (consoleSetting.check()) {
-      activeTab = 1;
+      activeTab = 2;
     }
+  };
+
+  const dbSettingConfirm = () => {
+    activeTab = 1;
   };
 </script>
 
@@ -84,6 +89,12 @@
       <div class="w-full inline-block">
         {#if config}
           {#if activeTab === 0}
+            <DbSetting bind:database={config.database}>
+              <div class="w-full flex flex-row justify-end gap-2 mt-6">
+                <Button on:click={dbSettingConfirm}>Next</Button>
+              </div>
+            </DbSetting>
+          {:else if activeTab === 1}
             <ConsoleSetting
               bind:this={consoleSetting}
               bind:port={config.web_console_config.port}
@@ -92,6 +103,9 @@
               bind:apiToken={config.web_console_config.api_token}
             >
               <div class="w-full flex flex-row justify-end gap-2 mt-6">
+                <Button color="alternative" on:click={() => (activeTab = 0)}
+                  >Previous</Button
+                >
                 <Button on:click={consoleSettingConfirm}>Next</Button>
               </div>
             </ConsoleSetting>
@@ -107,7 +121,7 @@
               bind:crtFiles
             >
               <div class="w-full flex flex-row justify-end gap-2 mt-6">
-                <Button color="alternative" on:click={() => (activeTab = 0)}
+                <Button color="alternative" on:click={() => (activeTab = 1)}
                   >Previous</Button
                 >
                 <Button on:click={saveConfig}>Confirm</Button>

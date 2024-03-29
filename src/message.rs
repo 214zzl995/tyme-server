@@ -1,5 +1,5 @@
 use anyhow::Context;
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Local};
 use paho_mqtt::{self as mqtt};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -13,7 +13,7 @@ pub struct RecMessage {
     pub qos: i32,
     pub retain: bool,
     pub mine: bool,
-    pub timestamp: DateTime<Utc>,
+    pub timestamp: DateTime<Local>,
     #[sqlx(flatten)]
     pub content: MessageContent,
     pub sender: Option<String>,

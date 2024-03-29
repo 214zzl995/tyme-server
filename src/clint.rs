@@ -61,82 +61,86 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
         .trust_store(trust_store)?
         .finalize();
 
-    let cli = mqtt::AsyncClient::new(create_opts)?;
+    let topics = crate::headers.lock().clone();
 
-    block_on(async {
-        let mut conn_opts = ConnectOptionsBuilder::with_mqtt_version(config.mqtt_config.version);
-        let conn_opts = conn_opts
-            .ssl_options(ssl_opts)
-            .clean_start(true)
-            .properties(mqtt::properties![mqtt::PropertyCode::SessionExpiryInterval => 3600]);
+    let cli = tokio::task::block_in_place(move || {
+        block_on(async {
+            let cli = mqtt::AsyncClient::new(create_opts)?;
+            let mut conn_opts =
+                ConnectOptionsBuilder::with_mqtt_version(config.mqtt_config.version);
+            let conn_opts = conn_opts
+                .ssl_options(ssl_opts)
+                .clean_start(true)
+                .properties(mqtt::properties![mqtt::PropertyCode::SessionExpiryInterval => 3600]);
 
-        if let Some(keep_alive_interval) = config.mqtt_config.keep_alive_interval {
-            conn_opts.keep_alive_interval(Duration::from_secs(keep_alive_interval));
-        }
-
-        if config.mqtt_config.auth.enable {
-            if let (Some(user_name), Some(password)) = (
-                &config.mqtt_config.auth.username,
-                &config.mqtt_config.auth.password,
-            ) {
-                conn_opts.user_name(user_name).password(password);
+            if let Some(keep_alive_interval) = config.mqtt_config.keep_alive_interval {
+                conn_opts.keep_alive_interval(Duration::from_secs(keep_alive_interval));
             }
-        }
 
-        let lwt_msg = SendMessage {
-            topic: "system/lwt".to_string(),
-            qos: 1,
-            retain: Some(true),
-            receiver: None,
-            ephemeral: true,
-            message_type: String::from("text/markdown; charset=UTF-8"),
-            raw: String::new(),
-        };
+            if config.mqtt_config.auth.enable {
+                if let (Some(user_name), Some(password)) = (
+                    &config.mqtt_config.auth.username,
+                    &config.mqtt_config.auth.password,
+                ) {
+                    conn_opts.user_name(user_name).password(password);
+                }
+            }
 
-        conn_opts.will_message(lwt_msg.to_mqtt()?);
+            let lwt_msg = SendMessage {
+                topic: "system/lwt".to_string(),
+                qos: 1,
+                retain: Some(true),
+                receiver: None,
+                ephemeral: true,
+                message_type: String::from("text/markdown; charset=UTF-8"),
+                raw: String::new(),
+            };
 
-        let conn_opts = conn_opts.finalize();
+            conn_opts.will_message(lwt_msg.to_mqtt()?);
 
-        let rsp = cli.connect(conn_opts).await?;
+            let conn_opts = conn_opts.finalize();
 
-        if let Some(conn_rsp) = rsp.connect_response() {
-            info!(
-                "Connected to: '{}' with MQTT version {}",
-                conn_rsp.server_uri, conn_rsp.mqtt_version
-            );
+            let rsp = cli.connect(conn_opts).await?;
 
-            if conn_rsp.session_present {
-                info!("Client session already present on broker.");
-                // Will not resubscribe when kicked out by broker
-            } else {
-                // Register subscriptions on the server, using Subscription ID's.
-                let topics = crate::headers.lock().clone();
+            if let Some(conn_rsp) = rsp.connect_response() {
                 info!(
-                    r#"Subscribing to topics [{}]..."#,
-                    topics
+                    "Connected to: '{}' with MQTT version {}",
+                    conn_rsp.server_uri, conn_rsp.mqtt_version
+                );
+
+                if conn_rsp.session_present {
+                    info!("Client session already present on broker.");
+                    // Will not resubscribe when kicked out by broker
+                } else {
+                    // Register subscriptions on the server, using Subscription ID's.
+
+                    info!(
+                        r#"Subscribing to topics [{}]..."#,
+                        topics
+                            .clone()
+                            .into_iter()
+                            .map(|x| format!("{{topic:{:?},qos:{}}}", x.topic, x.qos))
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                    );
+                    let sub_opts =
+                        vec![mqtt::SubscribeOptions::with_retain_as_published(); topics.len()];
+
+                    let qos = topics
                         .clone()
                         .into_iter()
-                        .map(|x| format!("{{topic:{:?},qos:{}}}", x.topic, x.qos))
-                        .collect::<Vec<String>>()
-                        .join(", ")
-                );
-                let sub_opts =
-                    vec![mqtt::SubscribeOptions::with_retain_as_published(); topics.len()];
+                        .map(|x| x.qos)
+                        .collect::<Vec<i32>>();
 
-                let qos = topics
-                    .clone()
-                    .into_iter()
-                    .map(|x| x.qos)
-                    .collect::<Vec<i32>>();
+                    let topics = topics.into_iter().map(|x| x.topic).collect::<Vec<String>>();
 
-                let topics = topics.into_iter().map(|x| x.topic).collect::<Vec<String>>();
-
-                cli.subscribe_many_with_options(&topics, &qos, &sub_opts, None)
-                    .await?;
+                    cli.subscribe_many_with_options(&topics, &qos, &sub_opts, None)
+                        .await?;
+                }
             }
-        }
-        task_manger.lock().start().await?;
-        Ok::<(), anyhow::Error>(())
+            task_manger.lock().start().await?;
+            Ok::<AsyncClient, anyhow::Error>(cli)
+        })
     })?;
 
     Ok(cli)

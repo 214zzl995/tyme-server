@@ -6,6 +6,7 @@
 
   /**
    * @typedef {Object} Topic
+   * @property {string} id - The topic id.
    * @property {string} topic - The topic string.
    * @property {number} qos - The QoS value.
    */
@@ -14,6 +15,7 @@
    * @type {Topic}
    */
   export let header = {
+    id: "",
     topic: "",
     qos: 0,
   };
@@ -27,7 +29,7 @@
   $: {
     if (header.topic !== undefined && header.topic !== "") {
       msgs = [];
-      getChatMsg(header.topic).then((res) => {
+      getChatMsg(header.id).then((res) => {
         pushMsgs(res.data);
         scrollToBottom(false);
       });
@@ -84,7 +86,7 @@
 
 <div class="w-full h-full overflow-y-scroll" bind:this={divRef}>
   {#each msgs as msg}
-    <ChatCard header={header.topic} {msg} />
+    <ChatCard {msg} />
   {/each}
 </div>
 

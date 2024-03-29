@@ -26,9 +26,9 @@ struct TaskRunner {
     task: Task,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, sqlx::FromRow)]
 pub struct Task {
-    pub id: Option<String>,
+    pub id: String,
     pub script: String,
     pub cron: String,
     pub name: String,
@@ -56,31 +56,31 @@ impl TaskManager {
     }
 
     pub async fn start(&mut self) -> anyhow::Result<()> {
-        let tasks = crate::db::get_all_task().await?;
-        for (id, task) in tasks.into_iter().filter(|(_, task)| task.auto_start) {
+        let tasks = crate::task::Task::get_all_task().await?;
+        for task in tasks.into_iter().filter(|task| task.auto_start) {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
             let runner = TaskRunner::new(task.clone(), Some(tx));
 
-            let log_id = id.clone();
+            let log_id = task.id.clone();
             let log_task = task.clone();
 
-            self.tasks.insert(id.clone(), runner);
+            self.tasks.insert(task.id.clone(), runner);
             self.runtime.spawn(async move {
                 tokio::select! {
                 result = task.run() => {
                     match result {
                         Ok(_) => {
-                            info!("{} auto stop", id)
+                            info!("{} auto stop", task.id)
                         },
                         Err(e) => {
                             println!("{}", e);
-                            error!("{} auto stop, error: {}", id, e)
+                            error!("{} auto stop, error: {}", task.id, e)
                         }
                     }
                 },
                 _ = rx => {
-                    info!("{} manual stop", id)
+                    info!("{} manual stop", task.id)
                 },
                 }
             });
@@ -211,7 +211,7 @@ impl TaskManager {
         if running {
             self.start_task(id)?;
         }
-        
+
         Ok(())
     }
 
@@ -236,10 +236,10 @@ impl TaskManager {
         Ok(runner.task.clone())
     }
 
-    pub fn get_all_task(&self) -> anyhow::Result<Vec<Task>> {
+    pub fn get_all_task(&self) -> anyhow::Result<Vec<(bool, Task)>> {
         let mut tasks = Vec::new();
         for (_, runner) in self.tasks.iter() {
-            tasks.push(runner.task.clone());
+            tasks.push((runner.tx.is_some(), runner.task.clone()));
         }
         Ok(tasks)
     }
@@ -264,25 +264,6 @@ impl TaskRunner {
 }
 
 impl Task {
-    pub fn new(
-        script: String,
-        cron: String,
-        name: String,
-        remark: Option<String>,
-        max_executions: Option<u32>,
-        auto_start: bool,
-    ) -> Self {
-        Self {
-            id: None,
-            script,
-            cron,
-            name,
-            remark,
-            max_executions,
-            auto_start,
-        }
-    }
-
     /// 执行脚本
     /// let _ = script.exec().unwrap();
     /// let _ = script.call::<_, mlua::Value>(()).unwrap();

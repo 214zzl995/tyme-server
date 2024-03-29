@@ -43,9 +43,7 @@ structopt = "0.3"
 dirs = "5"
 sqlx = { version = "0.7", features = [
     "runtime-tokio",
-    "any",
     "mysql",
-    "sqlite",
     "macros",
     "chrono",
 ] }

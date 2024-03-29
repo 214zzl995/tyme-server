@@ -4,13 +4,12 @@
   import { addToast } from "../js/store";
 
   export let msg;
-  export let header;
 
   $: mine = msg.mine;
   $: source = msg.content.html;
 
   const showMsgNewTab = () => {
-    let url = `\/c\/msg\/${encodeURIComponent(header)}?id=${msg.id}`;
+    let url = `\/c\/msg\/${encodeURIComponent(msg.id)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -47,7 +46,7 @@
   >
     <div class="flex gap-px md:gap-3 md:flex-row flex-col text-xs">
       <span class="time">
-        {format(msg.timestamp, "yyyy-MM-dd HH:mm:ss")}
+        {format(Date.parse(msg.timestamp), "yyyy-MM-dd HH:mm:ss")}
       </span>
       <span class="topic">
         sender: {msg.sender}

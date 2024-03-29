@@ -72,9 +72,9 @@
 
   <!-- PAGE LOADING -->
   <div
-    class="min-h-dvh pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100"
+    class="min-h-dvh md:min-h-screen pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100"
   >
-    <div class="w-full flex justify-center font-sans">
+    <div class="w-full flex justify-center font-sans min-h-full">
       {#if routerId === 0}
         <div class="w-1/2 flex justify-center" />
       {:else if routerId === 4}

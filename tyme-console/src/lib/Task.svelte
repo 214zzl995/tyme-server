@@ -5,7 +5,7 @@
   import { addToast } from "../js/store.js";
   import { createEventDispatcher } from "svelte";
 
-  export let task;
+  export let runner;
 
   const dispatch = createEventDispatcher();
 
@@ -14,7 +14,7 @@
   };
 
   const remove = () => {
-    removeTask(task.id).then((res) => {
+    removeTask(runner.task.id).then((res) => {
       if (res.result === "ok") {
         addToast({
           type: "green",
@@ -38,7 +38,7 @@
 
   const restart = () => {
     restartLoading = true;
-    restartTask(task.id)
+    restartTask(runner.task.id)
       .then((res) => {
         if (res.result === "ok") {
           addToast({
@@ -64,7 +64,7 @@
   let handleLoading = false;
 
   const start = () => {
-    startTask(task.id)
+    startTask(runner.task.id)
       .then((res) => {
         if (res.result === "ok") {
           addToast({
@@ -74,7 +74,7 @@
             timeout: 3000,
           });
 
-          task.running = true;
+          runner.running = true;
         } else {
           addToast({
             type: "red",
@@ -90,7 +90,7 @@
   };
 
   const stop = () => {
-    stopTask(task.id)
+    stopTask(runner.task.id)
       .then((res) => {
         if (res.result === "ok") {
           addToast({
@@ -100,7 +100,7 @@
             timeout: 3000,
           });
 
-          task.running = false;
+          runner.running = false;
         } else {
           addToast({
             type: "red",
@@ -118,7 +118,7 @@
   const handleTask = () => {
     if (handleLoading) return;
     handleLoading = true;
-    if (task.running) {
+    if (runner.running) {
       stop();
     } else {
       start();
@@ -136,22 +136,22 @@
   <p class="text-xs h-6 flex flex-row items-center">
     <span
       class="block rounded-full p-1 w-16 flex justify-center items-center text-white mr-2 font-extrabold"
-      class:bg-emerald-600={task.running}
-      class:bg-pink-600={!task.running}
+      class:bg-emerald-600={runner.running}
+      class:bg-pink-600={!runner.running}
     >
-      {#if task.running}
+      {#if runner.running}
         已启动
       {:else}
         未启动
       {/if}</span
     >
     <span class="italic text-slate-400">
-      {task.id}
+      {runner.task.id}
     </span>
   </p>
 
   <p class="font-extrabold mt-2 text-4xl">
-    {task.task.name}
+    {runner.task.name}
   </p>
 
   <p class="flex flex-row-reverse py-3 flex-1 gap-2">
@@ -167,7 +167,7 @@
           icon="8-dots-rotate"
           height="1.2rem"
         />
-      {:else if task.running}
+      {:else if runner.running}
         <iconify-icon
           style="color: #ffffff"
           icon="material-symbols:stop-circle-outline"
@@ -247,15 +247,15 @@
   >
     <p>
       <span class="text-xs text-white rounded-full p-1 mr-2">
-        {task.task.auto_start ? "自动启动" : "手动启动"}
+        {runner.task.auto_start ? "自动启动" : "手动启动"}
       </span>
       <span>
-        {task.task.cron}
+        {runner.task.cron}
       </span>
     </p>
 
     <span>
-      {task.task.script}
+      {runner.task.script}
     </span>
   </div>
 </div>

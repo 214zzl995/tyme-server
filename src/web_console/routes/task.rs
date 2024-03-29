@@ -1,12 +1,12 @@
 use axum::{extract::Path, response::IntoResponse, Json};
 use serde_json::json;
 
-use crate::{db, task::Task};
+use crate::task::Task;
 
 pub async fn get_all_task() -> impl IntoResponse {
-    match db::get_all_task().await {
+    match crate::task_manger.lock().get_all_task() {
         Ok(tasks) => Json(
-            json!({"result": "ok", "tasks": tasks.into_iter().map(|(id,task)| json!({"id":id.clone(),"task":task,"running":crate::task_manger.lock().get_running_status(&id)})).collect::<Vec<_>>()}),
+            json!({"result": "ok", "tasks": tasks.into_iter().map(|(running,task)| json!({"task":task,"running":running})).collect::<Vec<_>>()}),
         ),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }

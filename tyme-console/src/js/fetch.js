@@ -21,7 +21,7 @@ export const uploadCrt = (/** @type {string} */ filename, /** @type {FormData} *
 
 export const uploadCrtGuide = (/** @type {string} */ filename, /** @type {FormData} */ body) => api.post(`/g/upload-crt/${filename}`, body, "", "multipart/form-data")
 
-export const getChatMsg = (/** @type {string} */ topic) => api.get(`/c/get-chat-msg/${encodeURIComponent(topic)}`)
+export const getChatMsg = (/** @type {string} */ topic) => api.get(`/c/msgs/${encodeURIComponent(topic)}`)
 
 export const sendMsg = (/** @type {any} */ params) => api.post(`/c/send`, params)
 

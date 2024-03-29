@@ -1,10 +1,10 @@
 database = "mysql://tyme_dev:3rdLFzmLYUpaq57@lers.buzz:9009/tyme_dev"
+
 [mqtt_config]
 broker = "k37bbe35.ala.cn-hangzhou.emqxsl.cn"
 port = 8883
 client_id = "test"
 keep_alive_interval = 60
-topics = [{ topic = "command/#", qos = 1 }, { topic = "chat/#", qos = 1 }]
 version = 5
 lwt = "Im offline"
 

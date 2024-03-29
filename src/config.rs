@@ -19,7 +19,6 @@ lazy_static! {
                 std::process::exit(1)
             }
         };
-        println!("{:?}", config.config_file);
         Arc::new(Mutex::new(config))
     };
 }

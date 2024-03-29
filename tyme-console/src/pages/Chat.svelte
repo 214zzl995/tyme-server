@@ -7,6 +7,7 @@
 
   /**
    * @typedef {Object} Topic
+   * @property {string} id - The topic id.
    * @property {string} topic - The topic string.
    * @property {number} qos - The QoS value.
    */

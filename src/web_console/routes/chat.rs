@@ -51,7 +51,7 @@ pub async fn get_mqtt_user() -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn get_all_toppic() -> impl IntoResponse {
-    Json(json!({"result": "ok", "topics": crate::headers.lock().clone()}))
+    Json(json!({"result": "ok", "topics": crate::headers.lock().clone().into_iter().filter(|h| h.topic!="system/#").collect::<Vec<_>>()}))
 }
 
 #[allow(clippy::unused_async)]
@@ -63,8 +63,8 @@ pub async fn subscribe_topic(Json(topics): Json<Vec<crate::header::Header>>) -> 
 }
 
 #[allow(clippy::unused_async)]
-pub async fn get_chat_msg(Path(header): Path<String>) -> impl IntoResponse {
-    match crate::db::get_msg_by_header(&header).await {
+pub async fn get_chat_msg(Path(id): Path<String>) -> impl IntoResponse {
+    match crate::message::RecMessage::get_msg_by_header(&id).await {
         Ok(msgs) => Json(json!({"result": "ok", "data": msgs})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }

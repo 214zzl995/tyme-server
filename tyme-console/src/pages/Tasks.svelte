@@ -33,7 +33,6 @@
 
   let modelTitle = "Add Task";
 
-  let cronModelTitle = "Cron Parser";
   let cronModelContent = [];
 
   onMount(async () => {
@@ -91,6 +90,7 @@
   }
 
   let modelTask = {
+    id: "",
     name: "",
     cron: "",
     remark: "",
@@ -100,6 +100,7 @@
 
   const modelClose = () => {
     modelTask = {
+      id: "",
       name: "",
       cron: "",
       remark: "",
@@ -140,8 +141,6 @@
       return;
     }
     if (isEdit) {
-      console.log(editId, modelTask);
-
       updateTask(editId, modelTask)
         .then((res) => {
           if (res.result === "ok") {
@@ -211,11 +210,11 @@
     tasks = tasks.filter((item) => item.id !== id);
   };
 
-  const updateTaskHandle = (/** @type {any} */ task) => {
+  const updateTaskHandle = (/** @type {any} */ runner) => {
     isEdit = true;
-    modelTask = task.task;
-    editId = task.id;
-    modelTitle = "Edit Task: " + task.task.name;
+    modelTask = runner.task;
+    editId = runner.task.id;
+    modelTitle = "Edit Task: " + runner.task.name;
     addModal = true;
   };
 
@@ -258,12 +257,12 @@
 
   <div class="mt-16 w-full h-[calc(100vh-11rem)] absolute">
     <div class="grid grid-cols-1 md:grid-cols-3 p-2 gap-2">
-      {#each tasks as task}
+      {#each tasks as runner}
         <Task
-          {task}
-          on:delete={() => deleteTask(task.id)}
-          on:update={() => updateTaskHandle(task)}
-          on:cronParser={() => cronParserHandle(task.task.cron)}
+          {runner}
+          on:delete={() => deleteTask(runner.task.id)}
+          on:update={() => updateTaskHandle(runner)}
+          on:cronParser={() => cronParserHandle(runner.task.cron)}
         />
       {/each}
     </div>
@@ -377,7 +376,6 @@
         {/each}
       </ul>
     </div>
-    <svelte:fragment slot="footer">
-    </svelte:fragment>
+    <svelte:fragment slot="footer"></svelte:fragment>
   </Modal>
 </div>

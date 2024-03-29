@@ -6,6 +6,7 @@
   import { getConfig, putConfig, uploadCrt } from "../js/fetch";
   import ConsoleSetting from "../lib/ConsoleSetting.svelte";
   import MqttSetting from "../lib/MqttSetting.svelte";
+  import DbSetting from "../lib/DbSetting.svelte";
 
   let config;
   $: config = {
@@ -83,7 +84,9 @@
   </GradientButton>
 </div>
 
-<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-20 md:mb-3 mt-3">
+<div class="w-11/12 sm:w-11/12 md:w-3/5 lg:w-2/4 mb-20 md:mb-3 mt-3 min-h-full">
+  <DbSetting bind:database={config.database} />
+
   <MqttSetting
     bind:broker={config.mqtt_config.broker}
     bind:port={config.mqtt_config.port}

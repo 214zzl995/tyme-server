@@ -1,4 +1,4 @@
--- Add migration script here
+-- Add up migration script here
 CREATE TABLE
     sys (
         name VARCHAR(255) NOT NULL,
