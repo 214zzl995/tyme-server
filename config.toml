@@ -1,4 +1,4 @@
-database = ""
+database = "mysql://tyme_dev:3rdLFzmLYUpaq57@lers.buzz:9009/tyme_dev"
 [mqtt_config]
 broker = "k37bbe35.ala.cn-hangzhou.emqxsl.cn"
 port = 8883

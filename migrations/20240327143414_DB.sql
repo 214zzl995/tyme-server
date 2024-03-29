@@ -31,7 +31,7 @@ CREATE TABLE
         qos INT NOT NULL,
         retain BOOLEAN NOT NULL,
         mine BOOLEAN NOT NULL,
-        timestamp BIGINT NOT NULL,
+        `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         sender VARCHAR(255),
         receiver VARCHAR(255),
         type VARCHAR(255) NOT NULL,

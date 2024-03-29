@@ -1,19 +1,19 @@
-use std::time::SystemTime;
-
-use anyhow::{Context, Ok};
+use anyhow::Context;
+use chrono::{DateTime, Local, Utc};
 use paho_mqtt::{self as mqtt};
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 use crate::header::Header;
 
-#[derive(Deserialize, Serialize, Clone, Debug, sqlx::FromRow)]
+#[derive(Deserialize, Serialize, Clone, Debug, FromRow)]
 pub struct RecMessage {
     pub id: String,
     pub topic: String,
     pub qos: i32,
     pub retain: bool,
     pub mine: bool,
-    pub timestamp: u128,
+    pub timestamp: DateTime<Utc>,
     #[sqlx(flatten)]
     pub content: MessageContent,
     pub sender: Option<String>,
@@ -40,7 +40,6 @@ pub struct MessageContent {
     pub raw: String,
     pub html: Option<String>,
 }
-
 
 impl SendMessage {
     pub fn to_mqtt(&self) -> anyhow::Result<mqtt::Message> {
@@ -113,8 +112,6 @@ impl TryFrom<&mqtt::Message> for RecMessage {
     type Error = anyhow::Error;
 
     fn try_from(msg: &mqtt::Message) -> Result<Self, Self::Error> {
-        let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
-
         let topic = msg.topic().to_string();
 
         let qos = msg.qos();
@@ -147,7 +144,7 @@ impl TryFrom<&mqtt::Message> for RecMessage {
             qos,
             retain,
             mine,
-            timestamp: now.as_millis(),
+            timestamp: Local::now().into(),
             content,
             sender,
             receiver,
