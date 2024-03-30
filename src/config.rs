@@ -42,7 +42,6 @@ pub struct MQTTConfig {
     pub port: i32,
     pub client_id: String,
     pub keep_alive_interval: Option<u64>,
-    pub version: u32,
     pub auth: Auth,
     pub ssl: Ssl,
 }
@@ -231,7 +230,6 @@ impl<'a> IntoLua<'a> for MQTTConfig {
             "keep_alive_interval",
             self.keep_alive_interval.into_lua(lua)?,
         )?;
-        table.set("version", self.version.into_lua(lua)?)?;
         table.set("auth", self.auth.into_lua(lua)?)?;
         table.set("ssl", self.ssl.into_lua(lua)?)?;
         table.into_lua(lua)

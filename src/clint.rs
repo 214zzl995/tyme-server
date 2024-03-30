@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use anyhow::Context;
 use futures::executor::block_on;
 use log::{error, info};
 use mqtt::ConnectOptionsBuilder;
@@ -41,65 +42,74 @@ fn get_clint() -> anyhow::Result<AsyncClient> {
 
     info!("Connecting to the MQTT server at '{}'...", host);
 
-    let trust_store = if let Some(trust_store) = &config.mqtt_config.ssl.trust_store {
-        if !trust_store.exists() {
-            return Err(anyhow::anyhow!(
-                "The trust store file does not exist: {:?}",
-                trust_store
-            ));
-        }
-        trust_store
-    } else {
-        return Err(anyhow::anyhow!("The trust store connfig is none"));
-    };
     let create_opts = mqtt::CreateOptionsBuilder::new()
         .server_uri(host)
         .client_id(config.get_clint_name())
         .finalize();
 
-    let ssl_opts = mqtt::SslOptionsBuilder::new()
-        .trust_store(trust_store)?
-        .finalize();
+    let cli = mqtt::AsyncClient::new(create_opts)?;
+
+    let mut conn_opts = ConnectOptionsBuilder::with_mqtt_version(5);
+
+    if config.mqtt_config.ssl.enable {
+        let trust_store = &config
+            .mqtt_config
+            .ssl
+            .trust_store
+            .context("The trust store config is none")?;
+        let trust_store = crate::start_param
+            .word_dir
+            .clone()
+            .join("ssl")
+            .join(trust_store);
+        if !trust_store.exists() {
+            return Err(anyhow::anyhow!(
+                "The trust store file does not exist: {:?}",
+                trust_store
+            ));
+        };
+
+        let ssl_opts = mqtt::SslOptionsBuilder::new()
+            .trust_store(trust_store)?
+            .finalize();
+        conn_opts.ssl_options(ssl_opts);
+    }
+
+    let conn_opts = conn_opts
+        .clean_start(true)
+        .properties(mqtt::properties![mqtt::PropertyCode::SessionExpiryInterval => 3600]);
+
+    if let Some(keep_alive_interval) = config.mqtt_config.keep_alive_interval {
+        conn_opts.keep_alive_interval(Duration::from_secs(keep_alive_interval));
+    }
+
+    if config.mqtt_config.auth.enable {
+        if let (Some(user_name), Some(password)) = (
+            &config.mqtt_config.auth.username,
+            &config.mqtt_config.auth.password,
+        ) {
+            conn_opts.user_name(user_name).password(password);
+        }
+    }
+
+    let lwt_msg = SendMessage {
+        topic: "system/lwt".to_string(),
+        qos: 1,
+        retain: Some(true),
+        receiver: None,
+        ephemeral: true,
+        message_type: String::from("text/markdown; charset=UTF-8"),
+        raw: String::new(),
+    };
+
+    conn_opts.will_message(lwt_msg.to_mqtt()?);
+
+    let conn_opts = conn_opts.finalize();
 
     let topics = crate::headers.lock().clone();
 
     let cli = tokio::task::block_in_place(move || {
         block_on(async {
-            let cli = mqtt::AsyncClient::new(create_opts)?;
-            let mut conn_opts =
-                ConnectOptionsBuilder::with_mqtt_version(config.mqtt_config.version);
-            let conn_opts = conn_opts
-                .ssl_options(ssl_opts)
-                .clean_start(true)
-                .properties(mqtt::properties![mqtt::PropertyCode::SessionExpiryInterval => 3600]);
-
-            if let Some(keep_alive_interval) = config.mqtt_config.keep_alive_interval {
-                conn_opts.keep_alive_interval(Duration::from_secs(keep_alive_interval));
-            }
-
-            if config.mqtt_config.auth.enable {
-                if let (Some(user_name), Some(password)) = (
-                    &config.mqtt_config.auth.username,
-                    &config.mqtt_config.auth.password,
-                ) {
-                    conn_opts.user_name(user_name).password(password);
-                }
-            }
-
-            let lwt_msg = SendMessage {
-                topic: "system/lwt".to_string(),
-                qos: 1,
-                retain: Some(true),
-                receiver: None,
-                ephemeral: true,
-                message_type: String::from("text/markdown; charset=UTF-8"),
-                raw: String::new(),
-            };
-
-            conn_opts.will_message(lwt_msg.to_mqtt()?);
-
-            let conn_opts = conn_opts.finalize();
-
             let rsp = cli.connect(conn_opts).await?;
 
             if let Some(conn_rsp) = rsp.connect_response() {

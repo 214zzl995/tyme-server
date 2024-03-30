@@ -15,12 +15,14 @@ RUN npm install
 RUN npm run buildDocker
 
 FROM alpine:latest AS base
+EXPOSE 12566/tcp
 RUN apk update && apk add --no-cache openssl
 ENV TYME_WORKDIR=/app/data
 ENV TYME_CONF=/app/data/tyme_conf.toml
 WORKDIR /app
 COPY --from=server /app/target/x86_64-unknown-linux-musl/release/tyme-server ./tyme-server
 COPY --from=web /app/assets ./assets
+COPY ./script/tyme_sys.lua ./tyme_sys.lua
 RUN mkdir -p "$TYME_WORKDIR/ssl" "$TYME_WORKDIR/log" "$TYME_WORKDIR/data"
 CMD ./tyme-server -w $TYME_WORKDIR -c $TYME_CONF
 

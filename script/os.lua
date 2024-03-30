@@ -1,7 +1,7 @@
 -- package.path = package.path .. ';./scrcpy/?.lua' --搜索lua模块
 package.cpath = package.cpath .. ';./?.dll;' --搜索dll模块
 
-local sys = require("sys")
+local sys = require("tyme_sys")
 
 local os_type = nil
 

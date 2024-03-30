@@ -381,8 +381,36 @@ fn get_lua() -> mlua::Lua {
         .get::<_, String>("cpath")
         .unwrap();
 
-    let package_path = format!("{};./script/?.lua", package_path);
-    let package_cpath = format!("{};./script/?.so;./script/?.dll", package_cpath);
+    let tyme_package_path = crate::start_param
+        .word_dir
+        .clone()
+        .join("script")
+        .join("?.lua");
+
+    let tyme_sys_package_path = std::env::current_dir().unwrap().join("?.lua");
+
+    #[cfg(target_os = "windows")]
+    let tyme_package_cpath = crate::start_param
+        .word_dir
+        .clone()
+        .join("script")
+        .join("?.dll");
+
+    #[cfg(not(target_os = "windows"))]
+    let tyme_package_cpath = crate::start_param
+        .word_dir
+        .clone()
+        .join("script")
+        .join("?.so");
+
+    let package_path = format!(
+        "{};{};{}",
+        package_path,
+        tyme_sys_package_path.display(),
+        tyme_package_path.display()
+    );
+    println!("{:?}", package_path);
+    let package_cpath = format!("{};{}", package_cpath, tyme_package_cpath.display());
 
     lua.globals()
         .get::<_, mlua::Table>("package")
