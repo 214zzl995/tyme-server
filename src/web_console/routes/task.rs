@@ -55,7 +55,7 @@ pub async fn update_task(Path(id): Path<String>, Json(task): Json<Task>) -> impl
 }
 
 pub async fn get_all_script_file_name() -> impl IntoResponse {
-    let path = std::path::Path::new("./script");
+    let path = crate::start_param.word_dir.join("script");
     let mut files = vec![];
     if path.exists() {
         for entry in path.read_dir().unwrap() {
