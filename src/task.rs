@@ -409,7 +409,6 @@ fn get_lua() -> mlua::Lua {
         tyme_sys_package_path.display(),
         tyme_package_path.display()
     );
-    println!("{:?}", package_path);
     let package_cpath = format!("{};{}", package_cpath, tyme_package_cpath.display());
 
     lua.globals()
