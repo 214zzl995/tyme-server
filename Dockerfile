@@ -24,6 +24,7 @@ COPY --from=server /app/target/x86_64-unknown-linux-musl/release/tyme-server ./t
 COPY --from=web /app/assets ./assets
 COPY ./script/tyme_sys.lua ./tyme_sys.lua
 RUN mkdir -p "$TYME_WORKDIR/ssl" "$TYME_WORKDIR/log" "$TYME_WORKDIR/data"
+RUN ln -s /bin/sh /bin/bash
 CMD ./tyme-server -w $TYME_WORKDIR -c $TYME_CONF
 
 
