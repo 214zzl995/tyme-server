@@ -127,7 +127,7 @@ impl TymeConfig {
 
     ///Generate initial config file
     pub fn initial() -> anyhow::Result<()> {
-        let conf = crate::start_param.word_dir.join("tyme_conf.toml");
+        let conf = crate::start_param.word_dir.join("config.toml");
 
         if !conf.exists() {
             match File::create(&conf) {
