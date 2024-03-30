@@ -273,7 +273,9 @@ impl Task {
 
         let lua = get_lua();
 
-        let script_content = tokio::fs::read_to_string(format!("./script/{}", self.script)).await?;
+        let script_path = crate::start_param.word_dir.clone().join("script").join(&self.script);
+
+        let script_content = tokio::fs::read_to_string(script_path).await?;
 
         if let Some(max_executions) = self.max_executions {
             for _ in 0..max_executions {
