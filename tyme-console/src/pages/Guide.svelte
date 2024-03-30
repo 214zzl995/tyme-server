@@ -34,6 +34,7 @@
 
     config.mqtt_config.port = parseInt(config.mqtt_config.port);
     config.web_console_config.port = parseInt(config.web_console_config.port);
+    config.mqtt_config.keep_alive_interval = parseInt(config.mqtt_config.keep_alive_interval);
 
     putConfigGuide(config).then((res) => {
       if (res.result == "error") {
