@@ -65,7 +65,6 @@
       });
     }
 
-    const formData = new FormData();
     uploadScript(uploadScriptFile[0].name, uploadScriptFile[0]).then(() => {
       const name = uploadScriptFile[0].name;
       uploadScriptFile = undefined;
