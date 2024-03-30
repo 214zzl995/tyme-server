@@ -57,7 +57,7 @@ pub struct Auth {
 #[derive(Deserialize, Serialize, Clone, Default)]
 pub struct Ssl {
     pub enable: bool,
-    pub trust_store: Option<PathBuf>,
+    pub trust_store: Option<String>,
     pub key_store: Option<PathBuf>,
     pub private_key: Option<PathBuf>,
     pub private_key_password: Option<String>,
@@ -265,7 +265,7 @@ impl<'a> IntoLua<'a> for Ssl {
             "trust_store",
             self.trust_store
                 .as_ref()
-                .map(|p| p.as_os_str().to_str().into_lua(lua))
+                .map(|p| p.as_str().into_lua(lua))
                 .unwrap_or_else(|| Ok(mlua::Value::Nil))?,
         )?;
         table.set(
