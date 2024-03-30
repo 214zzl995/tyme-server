@@ -28,7 +28,7 @@
     } else return;
 
     if (crtFiles !== undefined && crtFiles.length !== 0) {
-      config.mqtt_config.ssl.trust_store = "./ssl/" + crtFiles[0].name;
+      config.mqtt_config.ssl.trust_store = crtFiles[0].name;
       upLoadCrtFile();
     }
 
