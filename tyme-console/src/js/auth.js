@@ -5,10 +5,16 @@ export async function getSession() {
     const res = await fetch('/auth/session', { credentials: 'same-origin' });
     let sessionResponse = await res.json();
     if (sessionResponse.user_id !== '' && sessionResponse.user_id !== undefined) {
+        let wsProtocol;
+        if (location.protocol === 'https:') {
+            wsProtocol = 'wss';
+        } else if (location.protocol === 'http:') {
+            wsProtocol = 'ws';
+        }
 
         var host = window.location.host;
         createSocket({
-            url: `ws://${host}/c/ws`,
+            url: `${wsProtocol}://${host}/c/ws`,
             node: 'player',
             mode: 'audio',
             debug: true,
