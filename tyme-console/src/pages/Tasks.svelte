@@ -66,8 +66,7 @@
     }
 
     const formData = new FormData();
-    formData.append("file", uploadScriptFile[0]);
-    uploadScript(uploadScriptFile[0].name, formData).then(() => {
+    uploadScript(uploadScriptFile[0].name, uploadScriptFile[0]).then(() => {
       const name = uploadScriptFile[0].name;
       uploadScriptFile = undefined;
       if (!scriptFiles.find((item) => item.name === name)) {
