@@ -48,9 +48,7 @@
   };
 
   const upLoadCrtFile = () => {
-    const formData = new FormData();
-    formData.append("file", crtFiles[0]);
-    uploadCrtGuide(crtFiles[0].name, formData).finally(() => {
+    uploadCrtGuide(crtFiles[0].name, crtFiles[0]).finally(() => {
       console.log("上传成功");
     });
   };
