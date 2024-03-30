@@ -36,12 +36,12 @@ where
         return Err(anyhow::anyhow!(format!("Invalid path:{}", path)));
     }
 
-    let folder = std::path::Path::new(folder);
+    let folder = crate::start_param.word_dir.join(folder);
 
     if !folder.exists() {
-        tokio::fs::create_dir_all(folder).await?;
+        tokio::fs::create_dir_all(&folder).await?;
     }
-    
+
     async {
         // Convert the stream into an `AsyncRead`.
         let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
