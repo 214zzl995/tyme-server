@@ -63,7 +63,6 @@ pub async fn get_all_script_file_name() -> impl IntoResponse {
             let path = entry.path();
             let ex = path.extension();
             if path.is_file()
-                && path.file_name().unwrap() != "sys.lua"
                 && ex.is_some()
                 && ex.unwrap() == "lua"
             {
