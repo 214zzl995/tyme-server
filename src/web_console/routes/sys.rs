@@ -21,17 +21,14 @@ pub async fn update_config(Json(config): Json<TymeConfig>) -> impl IntoResponse 
 }
 
 #[allow(clippy::unused_async)]
-pub async fn start_mqtt(
-    State(mqtt_state): State<crate::web_console::MqttOperate>,
+pub async fn guide_finish(
+    State(mqtt_state): State<tokio::sync::mpsc::Sender<()>>,
 ) -> impl IntoResponse {
-    mqtt_state.start().await;
-    Json(json!({"result": "ok"}))
+    if let Err(err) = mqtt_state.send(()).await {
+        log::error!("Guide Final: {}", err);
+        Json(json!({"result": "error","message" : format!("{}",err)}))
+    } else {
+        Json(json!({"result": "ok"}))
+    }
 }
 
-#[allow(clippy::unused_async)]
-pub async fn stop_mqtt(
-    State(mqtt_state): State<crate::web_console::MqttOperate>,
-) -> impl IntoResponse {
-    mqtt_state.stop().await;
-    Json(json!({"result": "ok"}))
-}

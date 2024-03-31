@@ -4,7 +4,7 @@ use askama::Template;
 use axum::{
     extract::{
         ws::{Message as wsMessage, WebSocket},
-        ConnectInfo, Path, WebSocketUpgrade,
+        ConnectInfo, Path, State, WebSocketUpgrade,
     },
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -14,8 +14,16 @@ use futures::{SinkExt, StreamExt};
 use log::info;
 use parking_lot::Mutex;
 use serde_json::json;
-use tokio::sync::mpsc::{self, Sender};
+use tokio::sync::{
+    broadcast::{self, Receiver},
+    mpsc::{Sender, UnboundedSender},
+};
 use tower_sessions::Session;
+
+use crate::{
+    header::Header,
+    message::{RecMessage, SendMessage},
+};
 
 lazy_static! {
     static ref WSCLINTS: Arc<Mutex<HashMap<String, Sender<wsMessage>>>> =
@@ -35,8 +43,11 @@ struct MsgTemplate {
 }
 
 #[allow(clippy::unused_async)]
-pub async fn send(Json(msg): Json<crate::message::SendMessage>) -> impl IntoResponse {
-    match crate::clint::publish(msg.clone()).await {
+pub async fn send(
+    State(send_msg_tx): State<UnboundedSender<SendMessage>>,
+    Json(msg): Json<crate::message::SendMessage>,
+) -> impl IntoResponse {
+    match send_msg_tx.send(msg.clone()) {
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
@@ -51,7 +62,9 @@ pub async fn get_mqtt_user() -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn get_all_toppic() -> impl IntoResponse {
-    Json(json!({"result": "ok", "topics": crate::headers.lock().clone().into_iter().filter(|h| h.topic!="system/#").collect::<Vec<_>>()}))
+    Json(
+        json!({"result": "ok", "topics": crate::headers.lock().clone().into_iter().filter(|h| h.topic!="system/#").collect::<Vec<_>>()}),
+    )
 }
 
 #[allow(clippy::unused_async)]
@@ -97,6 +110,7 @@ pub async fn msg(Path(id): Path<String>) -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn ws_handler(
+    State(rec_msg_tx): State<broadcast::Sender<(Header, RecMessage)>>,
     ws: WebSocketUpgrade,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -109,10 +123,15 @@ pub async fn ws_handler(
     };
     info!("`{user_agent}` at {addr} connected.");
 
-    ws.on_upgrade(move |socket| handle_socket(socket, addr, session))
+    ws.on_upgrade(move |socket| handle_socket(socket, addr, session, rec_msg_tx.subscribe()))
 }
 
-async fn handle_socket(mut socket: WebSocket, who: SocketAddr, session: Session) {
+async fn handle_socket(
+    mut socket: WebSocket,
+    who: SocketAddr,
+    session: Session,
+    mut rec_msg_rx: Receiver<(Header, RecMessage)>,
+) {
     if socket.send(wsMessage::Ping(vec![1, 2, 3])).await.is_ok() {
         info!("Pinged {who}...");
     } else {
@@ -133,17 +152,16 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, session: Session)
 
     let (mut sink, mut stream) = socket.split();
 
-    let (sender, mut receiver) = mpsc::channel::<wsMessage>(16);
-
     let mut send_task = tokio::spawn(async move {
-        while let Some(message) = receiver.recv().await {
-            if sink.send(message).await.is_err() {
+        while let Ok((header, msg)) = rec_msg_rx.recv().await {
+            let msg = json!({"header": header, "msg": msg});
+            let msg = serde_json::to_string(&msg).unwrap();
+            let msg = wsMessage::Text(msg);
+            if sink.send(msg).await.is_err() {
                 break;
             }
         }
     });
-
-    WSCLINTS.lock().insert(session.id().0.to_string(), sender);
 
     let mut recv_task = tokio::spawn(async move {
         let mut cnt = 0;
@@ -213,40 +231,4 @@ pub fn remove_clint(session: &Session) {
     let user_id = session.id().0.to_string();
 
     WSCLINTS.lock().remove(&user_id);
-}
-
-pub async fn _ws_send(
-    session: Session,
-    header: crate::header::Header,
-    msg: &crate::message::RecMessage,
-) {
-    let user_id = session.id().0.to_string();
-
-    let msg = json!({"header": header, "msg": msg});
-    let msg = serde_json::to_string(&msg).unwrap();
-    let msg = wsMessage::Text(msg);
-
-    let clint = {
-        let mut clints = WSCLINTS.lock();
-        clints.get_mut(&user_id).map(|clint| clint.clone())
-    };
-
-    if let Some(clint) = clint {
-        clint.send(msg).await.unwrap();
-    }
-}
-
-pub async fn ws_send_all(header: &crate::header::Header, msg: &crate::message::RecMessage) {
-    let msg = json!({"header": header, "msg": msg});
-    let msg = serde_json::to_string(&msg).unwrap();
-    let msg = wsMessage::Text(msg);
-
-    let clints = {
-        let clints = WSCLINTS.lock();
-        clints.clone()
-    };
-
-    for (_, clint) in clints {
-        clint.send(msg.clone()).await.unwrap();
-    }
 }

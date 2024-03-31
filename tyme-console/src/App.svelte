@@ -18,7 +18,6 @@
       return [
         { label: "Chat", id: 4 },
         { label: "Task", id: 5 },
-        { label: "Setting", id: 6 },
         {
           label: "Logout",
           id: 99,
@@ -49,7 +48,7 @@
   const handleLoginSuccess = () => {
     let currentHash = window.location.hash.substring(1);
     let router = menuItems($user !== "").find(
-      (item) => item.label === currentHash
+      (item) => item.label === currentHash,
     );
     router = router ? router : { label: "Chat", id: 4 };
     window.location.hash = router.label;
@@ -81,8 +80,6 @@
         <Chat />
       {:else if routerId === 5}
         <Tasks />
-      {:else if routerId === 6}
-        <Settings />
       {:else if routerId === 98}
         <Login on:loginSuccess={handleLoginSuccess} />
       {:else}

@@ -20,14 +20,12 @@ pub use chat::msg;
 pub use chat::send;
 pub use chat::subscribe_topic;
 pub use chat::ws_handler;
-pub use chat::ws_send_all;
 
 pub use file::upload_crt;
 pub use file::upload_script;
 
 pub use sys::get_config;
-pub use sys::start_mqtt;
-pub use sys::stop_mqtt;
+pub use sys::guide_finish;
 pub use sys::update_config;
 
 pub use session::data_handler;

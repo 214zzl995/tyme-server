@@ -2,46 +2,50 @@ use std::{net::SocketAddr, sync::Arc};
 
 use axum::Router;
 use log::info;
-use parking_lot::Mutex;
-use tokio::{
-    signal,
-    sync::mpsc::{self, Sender},
+use tokio::sync::{
+    broadcast,
+    mpsc::{self, UnboundedSender},
 };
 use tower_sessions::{MemoryStore, SessionManagerLayer};
 
-use crate::config::TYME_CONFIG;
+use crate::{
+    header::Header,
+    message::{RecMessage, SendMessage},
+};
 
 mod middlewares;
 mod routes;
 mod services;
 mod store;
 
-pub use routes::ws_send_all;
+pub async fn run_guide_web_console() -> anyhow::Result<()> {
+    let (tx, rx) = mpsc::channel::<()>(1);
 
-lazy_static! {
-    static ref CONSOLE_STATE: Mutex<Option<Sender<bool>>> = Mutex::new(None);
+    let addr = SocketAddr::from(([0, 0, 0, 0], 12566));
+
+    let server = axum::Server::try_bind(&addr)?;
+
+    let app = Router::new()
+        .merge(services::front_public_route())
+        .merge(services::guide_backend(tx));
+
+    let server = server
+        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+        .with_graceful_shutdown(shutdown_signal(rx));
+
+    info!("Guide Listening on {}", addr);
+
+    let _ = server.await;
+
+    Ok(())
 }
 
-#[derive(Clone)]
-pub struct MqttOperate {
-    sender: Sender<bool>,
-}
-
-impl MqttOperate {
-    fn new(sender: Sender<bool>) -> Self {
-        Self { sender }
-    }
-    pub async fn start(&self) {
-        let _ = self.sender.send(true).await;
-    }
-
-    pub async fn stop(&self) {
-        let _ = self.sender.send(false).await;
-    }
-}
-
-pub async fn run_web_console(mqtt_state: Sender<bool>) -> anyhow::Result<()> {
-    let config = TYME_CONFIG.lock().clone();
+pub async fn run_web_console(
+    send_msg_tx: UnboundedSender<SendMessage>,
+    rec_msg_tx: broadcast::Sender<(Header, RecMessage)>,
+) -> anyhow::Result<()> {
+    let (_tx, rx) = mpsc::channel::<()>(1);
+    let config = crate::tyme_config.lock().clone();
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.web_console_config.port));
 
@@ -63,15 +67,13 @@ pub async fn run_web_console(mqtt_state: Sender<bool>) -> anyhow::Result<()> {
         .with_secure(false)
         .with_name("web_console.sid");
 
-    let mqtt_state = MqttOperate::new(mqtt_state);
-
     let app = Router::new()
         .merge(services::front_public_route())
-        .merge(services::backend(session_layer, shared_state, mqtt_state));
+        .merge(services::backend(session_layer, shared_state, send_msg_tx, rec_msg_tx));
 
     let server = server
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-        .with_graceful_shutdown(shutdown_signal());
+        .with_graceful_shutdown(shutdown_signal(rx));
 
     info!("WebConsole Listening on {}", addr);
 
@@ -80,33 +82,6 @@ pub async fn run_web_console(mqtt_state: Sender<bool>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn shutdown_signal() {
-    let (tx, mut rx) = mpsc::channel(1);
-
-    CONSOLE_STATE.lock().replace(tx);
-
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
-        _ = rx.recv() => {},
-    }
-
-    CONSOLE_STATE.lock().take();
+async fn shutdown_signal(mut rx: mpsc::Receiver<()>) {
+    rx.recv().await;
 }

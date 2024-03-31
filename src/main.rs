@@ -11,12 +11,13 @@ extern crate serde_json;
 extern crate sqlx;
 
 mod args;
-mod clint;
+// mod clint;
 mod config;
 mod db;
 mod header;
 mod message;
-mod subscribe;
+mod mqtt;
+// mod subscribe;
 mod task;
 mod web_console;
 
@@ -33,42 +34,40 @@ async fn main() -> anyhow::Result<()> {
     } else {
         log_init()?;
 
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<bool>(1);
+        if tyme_config.lock().first_start {
+            web_console::run_guide_web_console().await?;
+        }
 
-        let web_console_mqtt_state = tx.clone();
+        let (send_msg_tx, send_msg_rx) =
+            tokio::sync::mpsc::unbounded_channel::<message::SendMessage>();
 
-        tokio::spawn(async move {
-            tokio::select! {
-                res =  web_console::run_web_console(web_console_mqtt_state) => {
-                    match res {
-                        Ok(_) => {}
-                        Err(err) => {
-                            log::error!("WebConsole Error:{}", err);
-                            std::process::exit(1);
-                        }
+        let (rec_msg_tx, _) =
+            tokio::sync::broadcast::channel::<(header::Header, message::RecMessage)>(0);
+
+        db::db_init().await?;
+
+        tokio::select! {
+            res = mqtt::run_mqtt_clint(send_msg_rx, rec_msg_tx.clone()) => {
+                match res {
+                    Ok(_) => {}
+                    Err(err) => {
+                        log::error!("Mqtt Run Error:{}", err);
+                        std::process::exit(1);
                     }
-                },
-                _= tokio::signal::ctrl_c() => {}
-            }
-        });
-
-        if !tyme_config.lock().first_start {
-            db::db_init().await?;
-            tx.send(true).await?;
-        }
-
-        while let Some(clint_operate) = rx.recv().await {
-            if clint_operate {
-                tokio::spawn(async move {
-                    subscribe::subscribe().await;
-                });
-            } else {
-                clint::diable_connect();
-            }
-        }
-
-        clint::diable_connect();
-    };
+                }
+            },
+            res = web_console::run_web_console(send_msg_tx,rec_msg_tx.clone()) => {
+                match res {
+                    Ok(_) => {}
+                    Err(err) => {
+                        log::error!("WebConsole Error:{}", err);
+                        std::process::exit(1);
+                    }
+                }
+            },
+            _= tokio::signal::ctrl_c() => {}
+        };
+    }
 
     Ok(())
 }
