@@ -37,8 +37,6 @@
   };
 
   let currentHash = window.location.hash.substring(1);
-  console.log("loff", loggedin);
-  console.log("asd", $user !== "");
 
   if ($user !== "") {
     routerId =
@@ -49,12 +47,6 @@
   } else {
     routerId = 98;
   }
-
-  routerId =
-    menuItems(loggedin).find((item) => item.label === currentHash)?.id ||
-    loggedin
-      ? 4
-      : 98;
 
   const handleLoginSuccess = () => {
     console.log("Login Success");
