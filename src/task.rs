@@ -1,24 +1,20 @@
 use anyhow::Context;
 use cron::Schedule;
 
-use futures::executor::block_on;
 use linked_hash_map::LinkedHashMap;
 use log::{error, info};
+use mlua::Lua;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::{str::FromStr, sync::Arc};
-use tokio::{sync::oneshot::Sender, task::block_in_place};
+use std::{ops::Deref, str::FromStr, sync::Arc};
+use tokio::sync::oneshot::Sender;
 
 use crate::config::TymeConfig;
 
-lazy_static! {
-    pub static ref TASK_MANGER: Arc<Mutex<TaskManager>> = Arc::new(Mutex::new(TaskManager::new()));
-    static ref LUA: Mutex<mlua::Lua> = Mutex::new(get_lua());
-}
-
+#[derive(Clone)]
 pub struct TaskManager {
-    runtime: tokio::runtime::Runtime,
-    tasks: LinkedHashMap<String, TaskRunner>,
+    send_msg_tx: tokio::sync::mpsc::UnboundedSender<crate::message::SendMessage>,
+    inner: Arc<Mutex<LinkedHashMap<String, TaskRunner>>>,
 }
 
 struct TaskRunner {
@@ -37,27 +33,20 @@ pub struct Task {
     pub auto_start: bool,
 }
 
-impl Default for TaskManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl TaskManager {
-    pub fn new() -> Self {
-        let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(2)
-            .enable_all()
-            .build()
-            .unwrap();
+    pub fn new(
+        send_msg_tx: tokio::sync::mpsc::UnboundedSender<crate::message::SendMessage>,
+    ) -> Self {
         Self {
-            runtime,
-            tasks: LinkedHashMap::new(),
+            send_msg_tx,
+            inner: Arc::new(Mutex::new(LinkedHashMap::new())),
         }
     }
 
-    pub async fn start(&mut self) -> anyhow::Result<()> {
-        let tasks = crate::task::Task::get_all_task().await?;
+    pub async fn start(&self) -> anyhow::Result<()> {
+        let tasks = Task::get_all_task().await?;
         for task in tasks.into_iter().filter(|task| task.auto_start) {
+            
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
             let runner = TaskRunner::new(task.clone(), Some(tx));
@@ -65,10 +54,11 @@ impl TaskManager {
             let log_id = task.id.clone();
             let log_task = task.clone();
 
-            self.tasks.insert(task.id.clone(), runner);
-            self.runtime.spawn(async move {
+            self.inner.lock().insert(task.id.clone(), runner);
+            let lua = get_lua(self.send_msg_tx.clone());
+            tokio::spawn(async move {
                 tokio::select! {
-                result = task.run() => {
+                result = task.run(lua) => {
                     match result {
                         Ok(_) => {
                             info!("{} auto stop", task.id)
@@ -93,17 +83,15 @@ impl TaskManager {
         Ok(())
     }
 
-    pub fn stop_all(&mut self) -> anyhow::Result<()> {
-        for (_, runner) in self.tasks.iter_mut() {
+    pub fn stop_all(&self) -> anyhow::Result<()> {
+        for (_, runner) in self.inner.lock().iter_mut() {
             runner.stop()?;
         }
         Ok(())
     }
 
-    pub fn add_task(&mut self, task: Task) -> anyhow::Result<String> {
-        let task_block = task.clone();
-
-        let id = block_in_place(move || block_on(async { task_block.insert().await }))?;
+    pub async fn add_task(&self, task: Task) -> anyhow::Result<String> {
+        let id = task.insert().await?;
 
         let id_c = id.clone();
 
@@ -111,9 +99,10 @@ impl TaskManager {
 
         if task.clone().auto_start {
             let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-            self.runtime.spawn(async move {
+            let lua = get_lua(self.send_msg_tx.clone());
+            tokio::spawn(async move {
                 tokio::select! {
-                    result = task.run() => {
+                    result = task.run(lua) => {
                         match result {
                             Ok(_) => {
                                 info!("{} auto stop", id)
@@ -134,14 +123,14 @@ impl TaskManager {
             runner.tx = None;
         }
 
-        self.tasks.insert(id_c.clone(), runner);
+        self.inner.lock().insert(id_c.clone(), runner);
 
         Ok(id_c)
     }
 
-    pub fn start_task(&mut self, id: &String) -> anyhow::Result<()> {
-        let runner = self
-            .tasks
+    pub fn start_task(&self, id: &String) -> anyhow::Result<()> {
+        let mut runner = self.inner.lock();
+        let runner = runner
             .get_mut(id)
             .ok_or(anyhow::anyhow!("Task Not Found"))?;
 
@@ -155,9 +144,11 @@ impl TaskManager {
             runner.tx = Some(tx);
             let task = runner.task.clone();
             let id = id.clone();
-            self.runtime.spawn(async move {
+
+            let lua = get_lua(self.send_msg_tx.clone());
+            tokio::spawn(async move {
                 tokio::select! {
-                result = task.run() => {
+                result = task.run(lua) => {
                     match result {
                         Ok(_) => {
                             info!("{} auto stop", id)
@@ -179,9 +170,9 @@ impl TaskManager {
         Ok(())
     }
 
-    pub fn stop_task(&mut self, id: &String) -> anyhow::Result<()> {
-        let runner = self
-            .tasks
+    pub fn stop_task(&self, id: &String) -> anyhow::Result<()> {
+        let mut runner = self.inner.lock();
+        let runner = runner
             .get_mut(id)
             .ok_or(anyhow::anyhow!("Task Not Found"))?;
 
@@ -196,16 +187,16 @@ impl TaskManager {
         Ok(())
     }
 
-    pub fn update_task(&mut self, id: &String, task: Task) -> anyhow::Result<()> {
-        let block_task = task.clone();
-        block_in_place(move || block_on(async { block_task.update(id).await }))?;
+    pub async fn update_task(&self, id: &String, task: Task) -> anyhow::Result<()> {
+        task.update(id).await?;
         let running = self.get_running_status(id);
 
         if running {
             self.stop_task(id)?;
         }
 
-        self.tasks
+        self.inner
+            .lock()
             .insert(id.to_string(), TaskRunner::new(task.clone(), None));
 
         if running {
@@ -215,37 +206,42 @@ impl TaskManager {
         Ok(())
     }
 
-    pub fn remove_task(&mut self, id: &String) -> anyhow::Result<()> {
+    pub async fn remove_task(&self, id: &String) -> anyhow::Result<()> {
         self.stop_task(id)?;
-        self.tasks.remove(id);
-        block_in_place(move || block_on(async { Task::remove(&String::from(id)).await }))?;
+        self.inner.lock().remove(id);
+
+        Task::remove(&String::from(id)).await?;
         Ok(())
     }
 
-    pub fn restart_task(&mut self, id: &String) -> anyhow::Result<()> {
+    pub fn restart_task(&self, id: &String) -> anyhow::Result<()> {
         self.stop_task(id)?;
         self.start_task(&String::from(id))?;
         Ok(())
     }
 
     pub fn get_task(&self, id: &String) -> anyhow::Result<Task> {
-        let runner = self
-            .tasks
-            .get(id)
+        let mut runner = self.inner.lock();
+        let runner = runner
+            .get_mut(id)
             .ok_or(anyhow::anyhow!("Task Not Found"))?;
         Ok(runner.task.clone())
     }
 
     pub fn get_all_task(&self) -> anyhow::Result<Vec<(bool, Task)>> {
         let mut tasks = Vec::new();
-        for (_, runner) in self.tasks.iter() {
+        for (_, runner) in self.inner.lock().deref().iter() {
             tasks.push((runner.tx.is_some(), runner.task.clone()));
         }
         Ok(tasks)
     }
 
     pub fn get_running_status(&self, id: &String) -> bool {
-        self.tasks.get(id).is_some_and(|f| f.tx.is_some())
+        self.inner
+            .lock()
+            .deref()
+            .get(id)
+            .is_some_and(|f| f.tx.is_some())
     }
 }
 
@@ -268,12 +264,14 @@ impl Task {
     /// let _ = script.exec().unwrap();
     /// let _ = script.call::<_, mlua::Value>(()).unwrap();
     /// let _ = script.eval::<mlua::Value>().unwrap();
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub async fn run(&self, lua: Lua) -> anyhow::Result<()> {
         let schedule = Schedule::from_str(self.cron.as_str()).unwrap();
 
-        let lua = get_lua();
-
-        let script_path = crate::start_param.word_dir.clone().join("script").join(&self.script);
+        let script_path = crate::start_param
+            .word_dir
+            .clone()
+            .join("script")
+            .join(&self.script);
 
         let script_content = tokio::fs::read_to_string(script_path).await?;
 
@@ -306,7 +304,9 @@ impl Task {
     }
 }
 
-struct TymeUserData;
+struct TymeUserData {
+    send_msg_tx: tokio::sync::mpsc::UnboundedSender<crate::message::SendMessage>,
+}
 
 impl mlua::UserData for TymeUserData {
     fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
@@ -326,7 +326,7 @@ fn get_sys_config(_: &mlua::Lua, _: &TymeUserData) -> mlua::Result<TymeConfig> {
 
 async fn lua_send_json(
     _: &mlua::Lua,
-    _: &TymeUserData,
+    tyme_user_data: &TymeUserData,
     (topic, qos, ephemeral, json): (String, i32, bool, mlua::Value<'_>),
 ) -> mlua::Result<()> {
     let json_string = serde_json::to_string(&json).unwrap();
@@ -340,14 +340,13 @@ async fn lua_send_json(
         message_type: "application/json".to_string(),
         raw: json_string,
     };
-
-    crate::clint::publish(msg).await.unwrap();
+    tyme_user_data.send_msg_tx.send(msg).unwrap();
     Ok(())
 }
 
 async fn lua_send_markdown(
     _: &mlua::Lua,
-    _: &TymeUserData,
+    tyme_user_data: &TymeUserData,
     (topic, qos, ephemeral, markdown): (String, i32, bool, mlua::Value<'_>),
 ) -> mlua::Result<()> {
     let markdown_string = markdown.to_string().unwrap();
@@ -362,12 +361,14 @@ async fn lua_send_markdown(
         raw: markdown_string,
     };
 
-    crate::clint::publish(msg).await.unwrap();
+    tyme_user_data.send_msg_tx.send(msg).unwrap();
 
     Ok(())
 }
 
-fn get_lua() -> mlua::Lua {
+fn get_lua(
+    send_msg_tx: tokio::sync::mpsc::UnboundedSender<crate::message::SendMessage>,
+) -> mlua::Lua {
     let lua = mlua::Lua::new();
     let package_path = lua
         .globals()
@@ -425,7 +426,9 @@ fn get_lua() -> mlua::Lua {
         .set("cpath", package_cpath)
         .unwrap();
 
-    lua.globals().set("tyme_sys", TymeUserData).unwrap();
+    let tyme_user_data = TymeUserData { send_msg_tx };
+
+    lua.globals().set("tyme_sys", tyme_user_data).unwrap();
 
     lua
 }

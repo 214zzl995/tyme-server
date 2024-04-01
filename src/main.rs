@@ -11,21 +11,17 @@ extern crate serde_json;
 extern crate sqlx;
 
 mod args;
-// mod clint;
 mod config;
 mod db;
 mod header;
 mod message;
 mod mqtt;
-// mod subscribe;
 mod task;
 mod web_console;
 
 pub use args::START_PARAM as start_param;
 pub use config::TYME_CONFIG as tyme_config;
-pub use db::DB_POOL as db_pool;
-pub use header::HEADERS as headers;
-pub use task::TASK_MANGER as task_manger;
+pub use task::TaskManager;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -41,13 +37,18 @@ async fn main() -> anyhow::Result<()> {
         let (send_msg_tx, send_msg_rx) =
             tokio::sync::mpsc::unbounded_channel::<message::SendMessage>();
 
+        let (sub_header_tx, sub_header_rx) =
+            tokio::sync::mpsc::unbounded_channel::<header::Header>();
+
         let (rec_msg_tx, _) =
-            tokio::sync::broadcast::channel::<(header::Header, message::RecMessage)>(0);
+            tokio::sync::broadcast::channel::<(header::Header, message::RecMessage)>(16);
+
+        let task_manager = TaskManager::new(send_msg_tx.clone());
 
         db::db_init().await?;
 
         tokio::select! {
-            res = mqtt::run_mqtt_clint(send_msg_rx, rec_msg_tx.clone()) => {
+            res = mqtt::run_mqtt_clint(send_msg_rx,sub_header_rx,rec_msg_tx.clone(),task_manager.clone()) => {
                 match res {
                     Ok(_) => {}
                     Err(err) => {
@@ -56,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
             },
-            res = web_console::run_web_console(send_msg_tx,rec_msg_tx.clone()) => {
+            res = web_console::run_web_console(send_msg_tx,sub_header_tx,rec_msg_tx.clone(),task_manager.clone()) => {
                 match res {
                     Ok(_) => {}
                     Err(err) => {

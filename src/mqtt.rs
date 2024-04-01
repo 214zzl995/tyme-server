@@ -17,7 +17,9 @@ use crate::{
 
 pub async fn run_mqtt_clint(
     mut send_msg_rx: UnboundedReceiver<SendMessage>,
+    sub_header_tx: UnboundedReceiver<Header>,
     rec_msg_tx: broadcast::Sender<(Header, RecMessage)>,
+    task_manager: crate::TaskManager,
 ) -> anyhow::Result<()> {
     let config = tyme_config.lock().clone();
     let mut clint = get_mqtt_clint(&config)?;
@@ -26,8 +28,13 @@ pub async fn run_mqtt_clint(
     let strm = clint.get_stream(None);
     tokio::spawn(subscribe(strm, sub_clint, rec_msg_tx));
 
+    let header_clint = clint.clone();
+    tokio::spawn(subscribe_topic(header_clint, sub_header_tx));
+
     let conn_opts = get_conn_option(&config)?;
-    clint.connect(conn_opts).await?;
+    connect(&clint, conn_opts).await?;
+
+    task_manager.start().await?;
 
     while let Some(send_msg) = send_msg_rx.recv().await {
         let msg = send_msg.to_mqtt()?;
@@ -140,9 +147,23 @@ fn get_ssl_options(config: &TymeConfig) -> anyhow::Result<mqtt::SslOptions> {
     Ok(ssl_opts.finalize())
 }
 
+async fn subscribe_topic(
+    clint: AsyncClient,
+    mut sub_header_tx: UnboundedReceiver<Header>,
+) -> anyhow::Result<()> {
+    while let Some(header) = sub_header_tx.recv().await {
+        let topic = header.topic.clone();
+        let qos = header.qos;
+        if let Err(err) = clint.subscribe(topic, qos).await {
+            error!("Error subscribing to topic: {}", err);
+        }
+    }
+    Ok(())
+}
+
 async fn subscribe(
     mut strm: AsyncReceiver<Option<mqtt::Message>>,
-    clint: mqtt::AsyncClient,
+    clint: AsyncClient,
     rec_msg_tx: broadcast::Sender<(Header, RecMessage)>,
 ) {
     while let Some(msg_opt) = strm.next().await {
@@ -167,7 +188,7 @@ async fn subscribe(
                     if let Err(err) = rec_msg.to_html() {
                         error!("Error converting message to html: {}", err);
                     } else {
-                        match rec_msg.get_header() {
+                        match rec_msg.get_header().await.unwrap() {
                             Some(header) => {
                                 if let Err(err) = rec_msg_tx.send((header.clone(), rec_msg.clone()))
                                 {
@@ -200,4 +221,40 @@ async fn subscribe(
             info!("Reconnected.");
         }
     }
+}
+
+async fn connect(clint: &AsyncClient, conn_opts: mqtt::ConnectOptions) -> anyhow::Result<()> {
+    let rsp = clint.connect(conn_opts).await?;
+    let headers = Header::get_all_header().await?.into_iter();
+
+    if let Some(conn_rsp) = rsp.connect_response() {
+        info!(
+            "Connected to: '{}' with MQTT version {}",
+            conn_rsp.server_uri, conn_rsp.mqtt_version
+        );
+
+        if conn_rsp.session_present {
+            info!("Client session already present on broker.");
+        } else {
+            info!(
+                r#"Subscribing to topics [{}]..."#,
+                headers
+                    .clone()
+                    .map(|x| format!("{{topic:{:?},qos:{}}}", x.topic, x.qos))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            );
+            let sub_opts = vec![mqtt::SubscribeOptions::with_retain_as_published(); headers.len()];
+
+            let qos = headers.clone().map(|x| x.qos).collect::<Vec<i32>>();
+
+            let topics = headers.map(|x| x.topic).collect::<Vec<String>>();
+
+            clint
+                .subscribe_many_with_options(&topics, &qos, &sub_opts, None)
+                .await?;
+        }
+    }
+
+    Ok(())
 }

@@ -47,7 +47,6 @@ sqlx = { version = "0.7", features = [
     "macros",
     "chrono",
 ] }
-async-channel = "2.2.0"
 
 [target.x86_64-pc-windows-msvc.dependencies]
 paho-mqtt = "0.12"

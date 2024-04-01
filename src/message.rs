@@ -99,12 +99,11 @@ impl RecMessage {
         Ok(())
     }
 
-    pub fn get_header(&self) -> Option<Header> {
-        crate::headers
-            .lock()
-            .clone()
+    pub async fn get_header(&self) -> anyhow::Result<Option<Header>> {
+        Ok(Header::get_all_header()
+            .await?
             .into_iter()
-            .find(|pattern| pattern.mqtt_topic_matches(self.topic.as_ref()))
+            .find(|pattern| pattern.mqtt_topic_matches(self.topic.as_ref())))
     }
 }
 

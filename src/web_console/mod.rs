@@ -42,7 +42,9 @@ pub async fn run_guide_web_console() -> anyhow::Result<()> {
 
 pub async fn run_web_console(
     send_msg_tx: UnboundedSender<SendMessage>,
+    sub_header_tx: UnboundedSender<Header>,
     rec_msg_tx: broadcast::Sender<(Header, RecMessage)>,
+    task_manager: crate::TaskManager,
 ) -> anyhow::Result<()> {
     let (_tx, rx) = mpsc::channel::<()>(1);
     let config = crate::tyme_config.lock().clone();
@@ -69,7 +71,14 @@ pub async fn run_web_console(
 
     let app = Router::new()
         .merge(services::front_public_route())
-        .merge(services::backend(session_layer, shared_state, send_msg_tx, rec_msg_tx));
+        .merge(services::backend(
+            session_layer,
+            shared_state,
+            send_msg_tx,
+            rec_msg_tx,
+            sub_header_tx,
+            task_manager,
+        ));
 
     let server = server
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())

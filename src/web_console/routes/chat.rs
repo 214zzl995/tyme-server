@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr, ops::ControlFlow, sync::Arc};
+use std::{net::SocketAddr, ops::ControlFlow};
 
 use askama::Template;
 use axum::{
@@ -12,11 +12,10 @@ use axum::{
 };
 use futures::{SinkExt, StreamExt};
 use log::info;
-use parking_lot::Mutex;
 use serde_json::json;
 use tokio::sync::{
     broadcast::{self, Receiver},
-    mpsc::{Sender, UnboundedSender},
+    mpsc::UnboundedSender,
 };
 use tower_sessions::Session;
 
@@ -24,11 +23,6 @@ use crate::{
     header::Header,
     message::{RecMessage, SendMessage},
 };
-
-lazy_static! {
-    static ref WSCLINTS: Arc<Mutex<HashMap<String, Sender<wsMessage>>>> =
-        Arc::new(Mutex::new(HashMap::new()));
-}
 
 #[derive(serde::Deserialize)]
 pub struct MsgParams {
@@ -62,14 +56,18 @@ pub async fn get_mqtt_user() -> impl IntoResponse {
 
 #[allow(clippy::unused_async)]
 pub async fn get_all_toppic() -> impl IntoResponse {
-    Json(
-        json!({"result": "ok", "topics": crate::headers.lock().clone().into_iter().filter(|h| h.topic!="system/#").collect::<Vec<_>>()}),
-    )
+    match Header::get_db_headers().await {
+        Ok(headers) => Json(json!({"result": "ok", "topics": headers})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
 }
 
 #[allow(clippy::unused_async)]
-pub async fn subscribe_topic(Json(topics): Json<Vec<crate::header::Header>>) -> impl IntoResponse {
-    match crate::clint::subscribe_topic(topics).await {
+pub async fn subscribe_topic(
+    State(sub_header_tx): State<UnboundedSender<Header>>,
+    Json(topics): Json<crate::header::Header>,
+) -> impl IntoResponse {
+    match sub_header_tx.send(topics) {
         Ok(_) => Json(json!({"result": "ok", "message": "Push success"})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
     }
@@ -158,6 +156,7 @@ async fn handle_socket(
             let msg = serde_json::to_string(&msg).unwrap();
             let msg = wsMessage::Text(msg);
             if sink.send(msg).await.is_err() {
+                info!("Error sending message to {who}");
                 break;
             }
         }
@@ -206,13 +205,15 @@ fn process_message(msg: wsMessage, who: SocketAddr, session: Session) -> Control
         wsMessage::Close(c) => {
             if let Some(cf) = c {
                 info!(
-                    ">>> {} sent close with code {} and reason `{}`",
-                    who, cf.code, cf.reason
+                    ">>> {}: {} sent close with code {} and reason `{}`",
+                    session.id(),
+                    who,
+                    cf.code,
+                    cf.reason
                 );
             } else {
                 info!(">>> {who} somehow sent close message without CloseFrame");
             }
-            remove_clint(&session);
 
             return ControlFlow::Break(());
         }
@@ -225,10 +226,4 @@ fn process_message(msg: wsMessage, who: SocketAddr, session: Session) -> Control
         }
     }
     ControlFlow::Continue(())
-}
-
-pub fn remove_clint(session: &Session) {
-    let user_id = session.id().0.to_string();
-
-    WSCLINTS.lock().remove(&user_id);
 }

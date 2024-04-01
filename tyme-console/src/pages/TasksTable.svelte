@@ -46,7 +46,6 @@
     getAllTask().then((res) => {
       if (res.result === "ok") {
         tasks = res.tasks;
-        console.log(tasks);
       } else {
         error = res.message;
       }
@@ -147,8 +146,6 @@
             timeout: 3000,
           });
           let id = res.id;
-          console.log(tasks);
-          console.log(task);
           tasks = [
             {
               id: id,
@@ -157,7 +154,6 @@
             },
             ...tasks,
           ];
-          console.log(tasks);
         } else {
           addToast({
             type: "red",
@@ -176,7 +172,6 @@
 
   const toggleRow = (/** @type {any} */ id) => {
     openRowId = openRowId === id ? null : id;
-    console.log(openRowId);
   };
 
   const removeTaskF = (/** @type {any} */ id) => {

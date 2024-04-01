@@ -25,29 +25,22 @@
   }
 
   onMount(() => {
-    console.log(topicList);
     getAllTopic().then((res) => {
       topicList = res.topics;
-      console.log(topicList);
 
       const url = new URL(window.location.href);
       const topic = sessionStorage.getItem("topicPage");
       if (topic != "null") {
         topicIndex = topicList.findIndex((item) => item.topic == topic);
 
-        if (topicIndex == -1) {
+        if (topicIndex == -1 && topicList.length > 0) {
           topicIndex = 0;
         }
       } else {
         topicIndex = 0;
       }
-      changeTopic({ detail: topicIndex });
     });
   });
-
-  const changeTopic = (/** @type {{ detail: number; }} */ event) => {
-    topicIndex = event.detail;
-  };
 </script>
 
 <!-- 无法使用 grid 布局 尝试使用flex布局实现 -->
@@ -63,7 +56,7 @@
           text={topic.topic}
           {index}
           {topicIndex}
-          on:changeTopic={changeTopic}
+          on:changeTopic={() => (topicIndex = index)}
         />
       {/each}
     </div>
@@ -74,7 +67,9 @@
   >
     <div class="overflow-hidden">
       <span />
-      <ChatList header={topicList[topicIndex]} />
+      {#if topicIndex !== -1}
+        <ChatList header={topicList[topicIndex]} />
+      {/if}
     </div>
     <div class="flex-none h-48 md:h-64">
       <Editor header={topicList[topicIndex]} />

@@ -1,23 +1,4 @@
-use std::sync::Arc;
-
-use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-
-lazy_static! {
-    pub static ref HEADERS: Arc<Mutex<Vec<Header>>> = {
-        Arc::new(Mutex::new(
-            match tokio::task::block_in_place(move || {
-                futures::executor::block_on(async { Header::get_all_header().await })
-            }) {
-                Ok(headers) => headers,
-                Err(err) => {
-                    log::error!("Error creating the header: {}", err);
-                    std::process::exit(1);
-                }
-            },
-        ))
-    };
-}
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, sqlx::FromRow)]
 pub struct Header {
@@ -55,7 +36,7 @@ impl Header {
         true
     }
 
-    pub fn check(&self) -> anyhow::Result<()> {
+    pub fn _check(&self) -> anyhow::Result<()> {
         if self.topic.is_empty() {
             anyhow::bail!("topic is empty");
         }
@@ -72,7 +53,7 @@ impl Header {
     }
 
     pub async fn get_all_header() -> anyhow::Result<Vec<Header>> {
-        let mut headers = Self::get_db_header().await?;
+        let mut headers = Self::get_db_headers().await?;
         headers.push(Header {
             id: String::from(""),
             topic: "system/#".to_string(),

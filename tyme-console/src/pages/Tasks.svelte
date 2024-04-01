@@ -48,7 +48,6 @@
     getAllTask().then((res) => {
       if (res.result === "ok") {
         tasks = res.tasks;
-        console.log(tasks);
       } else {
         error = res.message;
       }
@@ -178,8 +177,6 @@
               timeout: 3000,
             });
             let id = res.id;
-            console.log(tasks);
-            console.log(modelTask);
             tasks = [
               {
                 id: id,
@@ -188,7 +185,6 @@
               },
               ...tasks,
             ];
-            console.log(tasks);
           } else {
             addToast({
               type: "red",

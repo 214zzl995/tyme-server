@@ -21,15 +21,13 @@
     qos: 0,
   };
 
-  let text = "";
+  let text = sessionStorage.getItem("text");
   let type;
   let topicError = false;
-  let inputTopic = "";
+  let inputTopic = localStorage.getItem("inputTopic");
   let submitSussess = false;
   let submitLoading = false;
   let editHasFocus = false;
-
-  const pattern = /^[a-zA-Z]+\/#$/;
 
   $: {
     if (inputTopic !== "") {
@@ -37,24 +35,9 @@
     }
   }
 
-  $: {
-    if (text !== "") {
-      sessionStorage.setItem("text", text);
-    }
-  }
+  $: sessionStorage.setItem("text", text);
 
   onMount(() => {
-    const inputTopicS = localStorage.getItem("inputTopic");
-
-    if (inputTopicS) {
-      inputTopic = inputTopicS;
-    }
-
-    const textS = sessionStorage.getItem("text");
-
-    if (textS) {
-      text = textS;
-    }
   });
 
   /**
@@ -65,7 +48,9 @@
   };
 
   const autoTopic = () => {
-    inputTopic = `${header.topic.replace(/[#+]/g, "$")}`;
+    if (header !== undefined) {
+      inputTopic = `${header.topic.replace(/[#+]/g, "$")}`;
+    }
   };
 
   const shortcutKeyHandleKeyDown = (
@@ -162,7 +147,7 @@
   };
 </script>
 
-<p class="hidden">{header}</p>
+<!-- <p class="hidden">{header}</p> -->
 <div
   class="w-full h-full border-t border-gray-300 flex flex-col justify-end items-end bg-slate-200"
 >
@@ -183,7 +168,6 @@
         on:click={autoTopic}
         role="button"
         tabindex="0"
-        class:hidden={!pattern.test(header.topic)}
         on:keydown={(e) => {}}
       >
         <iconify-icon icon="streamline:auto-flash" />
@@ -214,12 +198,11 @@
       class="px-3 resize-none overflow-y-auto border-0 outline-none text rounded-lg w-full h-full"
       on:focus={() => {
         editHasFocus = true;
-        console.log(editHasFocus);
       }}
       on:blur={() => {
         editHasFocus = false;
-        console.log(editHasFocus);
       }}
+      
       bind:value={text}
       on:keydown={shortcutKeyHandleKeyDown}
     />

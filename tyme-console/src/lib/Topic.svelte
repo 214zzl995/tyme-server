@@ -10,7 +10,7 @@
   $: checked = index === topicIndex;
 
   const changeTopic = () => {
-    dispatch("changeTopic", index);
+    dispatch("changeTopic");
   };
 </script>
 
