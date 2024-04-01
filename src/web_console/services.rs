@@ -43,7 +43,9 @@ async fn handle_error() -> (StatusCode, &'static str) {
 }
 
 pub fn guide_backend(shutdown_rx: mpsc::Sender<()>) -> Router {
-    Router::new().nest("/g", back_guide_route(shutdown_rx))
+    Router::new()
+        .nest("/g", back_guide_route(shutdown_rx))
+        .route("/auth/session", get(routes::guide))
 }
 
 pub fn backend<Store: SessionStore>(
@@ -79,7 +81,7 @@ pub fn backend<Store: SessionStore>(
 
 fn back_public_route() -> Router<()> {
     Router::new()
-        .route("/auth/session", get(routes::data_handler))
+        .route("/auth/session", get(routes::session))
         .route("/auth/login", post(routes::login))
         .route("/auth/logout", get(routes::logout))
         .route("/test", get(routes::not_implemented_route))

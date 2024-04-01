@@ -28,7 +28,8 @@ pub use sys::get_config;
 pub use sys::guide_finish;
 pub use sys::update_config;
 
-pub use session::data_handler;
+pub use session::session;
+pub use session::guide;
 pub use session::handler as session_handler;
 
 pub use task::add_task;
