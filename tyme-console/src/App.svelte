@@ -4,7 +4,6 @@
   import Login from "./pages/Login.svelte";
   import { onMount } from "svelte";
   import Chat from "./pages/Chat.svelte";
-  import Settings from "./pages/Settings.svelte";
   import Toasts from "./lib/Toasts.svelte";
   import Tasks from "./pages/Tasks.svelte";
   import Guide from "./pages/Guide.svelte";
@@ -39,18 +38,22 @@
 
   let currentHash = window.location.hash.substring(1);
 
-  if (currentHash !== "") {
-    routerId =
-      menuItems($user !== "").find((item) => item.label === currentHash)?.id ||
-      98;
-  }
+  routerId =
+    menuItems(loggedin).find((item) => item.label === currentHash)?.id ||
+    loggedin
+      ? 4
+      : 98;
 
   const handleLoginSuccess = () => {
+    console.log("Login Success");
     let currentHash = window.location.hash.substring(1);
-    let router = menuItems($user !== "").find(
-      (item) => item.label === currentHash,
-    );
-    router = router ? router : { label: "Chat", id: 4 };
+    let router;
+    if (currentHash !== "") {
+      router = menuItems(loggedin).find((item) => item.label === currentHash);
+    } else {
+      router = { label: "Chat", id: 4 };
+    }
+
     window.location.hash = router.label;
     routerId = router.id;
   };

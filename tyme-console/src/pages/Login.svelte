@@ -12,20 +12,13 @@
 
   const dispatch = createEventDispatcher();
 
-  onMount(() => {});
-
-  user.subscribe((value) => {
-    if (value && value !== "") {
-      dispatch("loginSuccess");
-    }
-  });
-
   async function handleLogin() {
     let loginResponse = await postLogin(username, password);
     if (loginResponse.result == "error") {
       errorMessage = loginResponse.message;
     } else {
       await getSession();
+      dispatch("loginSuccess");
     }
   }
 </script>
