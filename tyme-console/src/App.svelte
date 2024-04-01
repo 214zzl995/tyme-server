@@ -38,6 +38,16 @@
 
   let currentHash = window.location.hash.substring(1);
 
+  if (loggedin) {
+    routerId =
+      currentHash !== ""
+        ? menuItems(loggedin).find((item) => item.label === currentHash)?.id ||
+          4
+        : 4;
+  } else {
+    routerId = 98;
+  }
+
   routerId =
     menuItems(loggedin).find((item) => item.label === currentHash)?.id ||
     loggedin
