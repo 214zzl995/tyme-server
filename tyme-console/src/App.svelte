@@ -37,12 +37,14 @@
   };
 
   let currentHash = window.location.hash.substring(1);
+  console.log("loff", loggedin);
+  console.log("asd", $user !== "");
 
-  if (loggedin) {
+  if ($user !== "") {
     routerId =
       currentHash !== ""
-        ? menuItems(loggedin).find((item) => item.label === currentHash)?.id ||
-          4
+        ? menuItems($user !== "").find((item) => item.label === currentHash)
+            ?.id || 4
         : 4;
   } else {
     routerId = 98;
