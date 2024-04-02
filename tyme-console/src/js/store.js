@@ -9,7 +9,7 @@ export const mqttUser = writable("");
 
 export const socket = writable(undefined);
 
-export const createSocket = (/** @type {any} */ options) => {
+export const createSocket = (/** @type {import('./socket').Options} */ options) => {
     socket.set(new Socket(options));
 }
 

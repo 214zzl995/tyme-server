@@ -21,18 +21,7 @@ export async function getSession() {
             flushingTime: 0,
             reconnectDelay: 3000,
             binaryType: 'arraybuffer',
-            onopen: () => {
-                console.log("onopen");
-            },
-            onmessage: (/** @type {any} */ data) => {
-                console.log("onmessage", data);
-            },
-            onerror: (/** @type {any} */ error) => {
-                console.log("onerror", error);
-            },
-            onclose: (/** @type {any} */ event) => {
-                console.log("onclose", event);
-            },
+            heartbeat: true,
         })
 
         //获取 mqtt 用户名

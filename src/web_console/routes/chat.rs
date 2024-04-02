@@ -163,15 +163,11 @@ async fn handle_socket(
     });
 
     let mut recv_task = tokio::spawn(async move {
-        let mut cnt = 0;
-
         while let Some(Ok(msg)) = stream.next().await {
-            cnt += 1;
             if process_message(msg, who, session.clone()).is_break() {
                 break;
             }
         }
-        cnt
     });
 
     tokio::select! {
@@ -184,7 +180,7 @@ async fn handle_socket(
         }
         rv_b = (&mut recv_task) => {
             match rv_b {
-                Ok(b) => info!("Received {b} messages"),
+                Ok(_) => info!("Receive task completed"),
                 Err(b) => info!("Error receiving messages {b:?}")
             }
             send_task.abort();

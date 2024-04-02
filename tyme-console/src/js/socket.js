@@ -3,13 +3,35 @@
  * 主要功能：
  * 1. 自动重连；
  */
+
+/**
+ * @typedef {Object} Options
+ * @property {string} url - WebSocket 请求地址
+ * @property {'player'} node - 节点名称，只能是 'player'
+ * @property {'audio'} mode - 模式名称，只能是 'audio'
+ * @property {BinaryType} binaryType - WebSocket 的二进制类型
+ * @property {boolean} [debug] - 是否启用调试模式
+ * @property {number} [flushingTime] - 刷新时间
+ * @property {number} [reconnectDelay] - 重新连接延迟时间
+ * @property {function|undefined} [onopen] - 连接建立时的回调函数
+ * @property {function|undefined} [onmessage] - 接收到消息时的回调函数
+ * @property {function|undefined} [onerror] - 发生错误时的回调函数
+ * @property {function|undefined} [onclose] - 连接关闭时的回调函数
+ * @property {boolean|undefined} [isErrorReconnect] - 是否在错误时重新连接
+ * @property {boolean|undefined} [heartbeat] - 是否启用心跳机制
+ * @property {number|undefined} [heartbeatInterval] - 心跳超时时间
+ */
+
 export default class Socket {
     /**
      * WebSocket 实例
      * @type {WebSocket}
      */
     ws
-    // 相关配置项
+    /**
+     * 连接配置参数
+     * @type {Options}
+     */
     options
     /**
      * 错误消息队列
@@ -22,30 +44,18 @@ export default class Socket {
     * @type {Boolean}
     */
     isReconnectLoading = false
-    // 定时器超时重连 ID
+
+    /**
+     * 定时器ID
+     * @type {any}
+    */
     timeId = null
 
     /**
-     * @param {any} options
+     * @param {Options} options
      */
     constructor(options) {
-        /**
-         * options 支持传入参数
-         * url websocket请求地址
-         * node: 'player',
-             * mode: 'audio',
-             * debug: true,
-             * flushingTime: 0,
-         * reconnectDelay: 3000,
-         * onopen,
-         * onmessage,
-         * onerror,
-         * onclose
-         */
-        this.options = {
-            isErrorReconnect: false,
-            ...options
-        }
+        this.options = options;
         this.init()
     }
 
@@ -60,6 +70,10 @@ export default class Socket {
             this.onMessage(this.options.onmessage)
             this.onError(this.options.onerror)
             this.onClose(this.options.onclose)
+
+            if (this.options.heartbeat) {
+                this._sendPing();
+            }
         } else {
             console.error('该浏览器不支持WebSocket!');
         }
@@ -187,6 +201,12 @@ export default class Socket {
         this.ws = null
         this.errorStack = null
         console.log('websocket >>>> handleDestroy 实例已销毁!')
+    }
+
+    async _sendPing() {
+        await new Promise((resolve) => setTimeout(resolve, this.options.heartbeatInterval | 60000));
+        this.ws.send('ping');
+        this._sendPing();
     }
 
 }
