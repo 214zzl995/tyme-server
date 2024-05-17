@@ -1,28 +1,12 @@
 /** @type {import('tailwindcss').Config}*/
+const { withMaterialColors } = require('tailwind-material-colors');
+
 const config = {
   content: ['./src/**/*.{html,js,svelte,ts}', './node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}'],
-
-  plugins: [require('flowbite/plugin')],
-
   darkMode: 'class',
-
   theme: {
     extend: {
       colors: {
-        // flowbite-svelte
-        primary: {
-          50: '#EFF6FF',
-          100: '#DBEAF',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
-          950: "#172554"
-        }
       },
       gridTemplateRows: {
         '12': 'repeat(12, minmax(0, 1fr))',
@@ -49,9 +33,20 @@ const config = {
         'chat': 'calc(100vh - 7rem)',
         'main': 'calc(100vh - 4rem)',
         'md-main': 'calc(100vh - 5rem)',
-      }
+      },
     }
   }
 };
 
-module.exports = config;
+// https://tailwind-material-colors-docs.vercel.app/
+module.exports = withMaterialColors(config, {
+  primary: '#415F91',
+  secondary: '#565F71',
+  tertiary: '#705575',
+  error: "#BA1A1A",
+  background: "#F9F9FF",
+},
+  {
+    scheme: 'content',
+    contrast: 0,
+  });

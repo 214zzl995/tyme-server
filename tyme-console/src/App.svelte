@@ -12,37 +12,17 @@
 
   $: loggedin = $user !== "";
 
-  const menuItems = (/** @type {boolean} */ loggedin) => {
-    if (loggedin) {
-      return [
-        { label: "Chat", id: 4 },
-        { label: "Task", id: 5 },
-        {
-          label: "Logout",
-          id: 99,
-          icon: "solar:logout-linear",
-          color: "text-red-500",
-        },
-      ];
-    } else {
-      return [
-        {
-          label: "Login",
-          id: 98,
-          icon: "solar:login-linear",
-          color: "text-primary-500",
-        },
-      ];
-    }
-  };
+  const menuItems = [
+    { label: "Chat", id: 4 },
+    { label: "Task", id: 5 },
+  ];
 
   let currentHash = window.location.hash.substring(1);
 
   if ($user !== "") {
     routerId =
       currentHash !== ""
-        ? menuItems($user !== "").find((item) => item.label === currentHash)
-            ?.id || 4
+        ? menuItems.find((item) => item.label === currentHash)?.id || 4
         : 4;
   } else {
     routerId = 98;
@@ -53,7 +33,7 @@
     let currentHash = window.location.hash.substring(1);
     let router;
     if (currentHash !== "") {
-      router = menuItems(loggedin).find((item) => item.label === currentHash);
+      router = menuItems.find((item) => item.label === currentHash);
     } else {
       router = { label: "Chat", id: 4 };
     }
@@ -73,25 +53,24 @@
 {#if $guide}
   <Guide />
 {:else}
-  <!-- MENNU BAR ON TOP -->
-  <NavBar navItems={menuItems(loggedin)} bind:routerId />
-
-  <!-- PAGE LOADING -->
-  <div
-    class="min-h-dvh md:min-h-screen pt-16 md:pt-20 bg-gradient-to-r from-cyan-100 to-blue-100"
-  >
-    <div class="w-full flex justify-center font-sans min-h-full">
-      {#if routerId === 0}
-        <div class="w-1/2 flex justify-center" />
-      {:else if routerId === 4}
-        <Chat />
-      {:else if routerId === 5}
-        <Tasks />
-      {:else if routerId === 98}
-        <Login on:loginSuccess={handleLoginSuccess} />
-      {:else}
-        <h2>Page Not Found or Completed Yet</h2>
-      {/if}
-    </div>
+  <div class="h-[-webkit-fill-available] w-full font-sans">
+    {#if !loggedin}
+      <Login on:loginSuccess={handleLoginSuccess} />
+    {:else}
+      <div class = "grid grid-cols-12 grid-rows-1">
+        <div class="h-screen z-50 col-span-1">
+          <NavBar navItems={menuItems} bind:routerId />
+        </div>
+        <div class="flex-1 col-span-11">
+          {#if routerId === 4}
+            <Chat />
+          {:else if routerId === 5}
+            <Tasks />
+          {:else}
+            <h2>Page Not Found or Completed Yet</h2>
+          {/if}
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
