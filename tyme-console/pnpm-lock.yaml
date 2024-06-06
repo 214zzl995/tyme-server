@@ -1,19 +1,19 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@sveltejs/vite-plugin-svelte': ^2.4.2
-  autoprefixer: ^10.4.14
+  '@sveltejs/vite-plugin-svelte': ^2.4.6
+  autoprefixer: ^10.4.16
   cron-parser: ^4.9.0
   date-fns: ^2.30.0
   flowbite: ^1.8.1
   flowbite-svelte: ^0.44.22
   iconify-icon: ^1.0.8
-  postcss: ^8.4.24
+  postcss: ^8.4.31
   postcss-load-config: ^4.0.1
-  svelte: ^4.0.5
+  svelte: ^4.2.1
   tailwind-material-colors: ^3.0.0
-  tailwindcss: ^3.3.2
-  vite: ^4.4.5
+  tailwindcss: ^3.3.3
+  vite: ^4.4.9
   vite-plugin-compression: ^0.5.1
 
 dependencies:
@@ -636,7 +636,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: registry.npmmirror.com/browserslist/4.22.1
-      caniuse-lite: registry.npmmirror.com/caniuse-lite/1.0.30001542
+      caniuse-lite: registry.npmmirror.com/caniuse-lite/1.0.30001627
       fraction.js: registry.npmmirror.com/fraction.js/4.3.6
       normalize-range: registry.npmmirror.com/normalize-range/0.1.2
       picocolors: registry.npmmirror.com/picocolors/1.0.0
@@ -690,7 +690,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: registry.npmmirror.com/caniuse-lite/1.0.30001542
+      caniuse-lite: registry.npmmirror.com/caniuse-lite/1.0.30001627
       electron-to-chromium: registry.npmmirror.com/electron-to-chromium/1.4.537
       node-releases: registry.npmmirror.com/node-releases/2.0.13
       update-browserslist-db: registry.npmmirror.com/update-browserslist-db/1.0.13_browserslist@4.22.1
@@ -703,10 +703,10 @@ packages:
     engines: {node: '>= 6'}
     dev: true
 
-  registry.npmmirror.com/caniuse-lite/1.0.30001542:
-    resolution: {integrity: sha512-UrtAXVcj1mvPBFQ4sKd38daP8dEcXXr5sQe6QNNinaPd0iA/cxg9/l3VrSdL73jgw5sKyuQ6jNgiKO12W3SsVA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/caniuse-lite/-/caniuse-lite-1.0.30001542.tgz}
+  registry.npmmirror.com/caniuse-lite/1.0.30001627:
+    resolution: {integrity: sha512-4zgNiB8nTyV/tHhwZrFs88ryjls/lHiqFhrxCW4qSTeuRByBVnPYpDInchOIySWknznucaf31Z4KYqjfbrecVw==, registry: http://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/caniuse-lite/-/caniuse-lite-1.0.30001627.tgz}
     name: caniuse-lite
-    version: 1.0.30001542
+    version: 1.0.30001627
     dev: true
 
   registry.npmmirror.com/chokidar/3.5.3:

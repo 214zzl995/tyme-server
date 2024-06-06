@@ -1,84 +1,50 @@
 <script>
-  import { onMount } from "svelte";
-  import { getAllTopic } from "./../js/fetch.js";
-  import Topic from "../lib/Topic.svelte";
-  import Editor from "../lib/Editor.svelte";
+  import { topicActive } from "../js/store.js";
+  import { fade, fly } from "svelte/transition";
   import ChatList from "../lib/ChatList.svelte";
-
-  /**
-   * @typedef {Object} Topic
-   * @property {string} id - The topic id.
-   * @property {string} topic - The topic string.
-   * @property {number} qos - The QoS value.
-   */
-
-  /**
-   * @type {Array<Topic>}
-   */
-  let topicList = [];
-  let topicIndex = -1;
-
-  $: {
-    if (topicIndex != -1) {
-      sessionStorage.setItem("topicPage", topicList[topicIndex].topic);
-    }
-  }
-
-  onMount(() => {
-    getAllTopic().then((res) => {
-      topicList = res.topics;
-
-      const url = new URL(window.location.href);
-      const topic = sessionStorage.getItem("topicPage");
-      if (topic != "null") {
-        topicIndex = topicList.findIndex((item) => item.topic == topic);
-
-        if (topicIndex == -1 && topicList.length > 0) {
-          topicIndex = 0;
-        }
-      } else {
-        topicIndex = 0;
-      }
-    });
-  });
+  import {  cubicIn, cubicOut } from "svelte/easing";
 </script>
 
-<!-- 无法使用 grid 布局 尝试使用flex布局实现 -->
-<div
-  class="w-full sm:w-full h-screen flex flex-col md:flex-row"
->
-  <div
-    class="bg-white md:rounded md:shadow-md h-10 md:h-14 mb:mb-3 md:mr-3 md:mb-0 flex-none md:h-full md:w-40 border-b md:border-b-0 border-gray-200"
-  >
-    <div class="flex flex-row md:flex-col px-2 py-0.5 h-full topics">
-      {#each topicList as topic, index}
-        <Topic
-          text={topic.topic}
-          {index}
-          {topicIndex}
-          on:changeTopic={() => (topicIndex = index)}
-        />
-      {/each}
+<div class="w-full h-screen flex flex-col gap-8">
+  <div class="h-16 w-full bg-on-inverse-surface rounded-l-2xl mt-5 relative">
+    <div class="flex flex-col justify-center w-min absolute left-5 top-2">
+      {#key $topicActive?.topic}
+        <p
+          class="text-xl font-black"
+          in:fade|local={{
+            delay: 100,
+            easing: cubicIn,
+          }}
+          out:fade|local={{
+            duration: 150,
+            easing: cubicOut,
+          }}
+        >
+          {$topicActive === undefined ? "" : $topicActive.topic}
+        </p>
+        <p
+          class="text-sm font-black text-outline"
+          in:fade|local={{
+            delay: 100,
+            easing: cubicIn,
+          }}
+          out:fade|local={{
+            duration: 150,
+            easing: cubicOut,
+          }}
+        >
+          {$topicActive === undefined ? "" : "qos:" + $topicActive?.qos}
+        </p>
+      {/key}
     </div>
   </div>
 
   <div
-    class="bg-white md:rounded md:shadow-md flex-auto flex flex-col justify-between overflow-hidden"
+    class="flex-1 w-full bg-white dark:bg-on-inverse-surface rounded-tl-2xl overflow-auto"
   >
-    <div class="overflow-hidden">
-      <span />
-      {#if topicIndex !== -1}
-        <ChatList header={topicList[topicIndex]} />
-      {/if}
-    </div>
-    <div class="flex-none h-48 md:h-64">
-      <Editor header={topicList[topicIndex]} />
-    </div>
+    <ChatList header={$topicActive} />
   </div>
 </div>
 
 <style>
-  .topics {
-    overflow: overlay;
-  }
 </style>

@@ -1,14 +1,11 @@
 <script>
   import { getSession, postLogin } from "./../js/auth";
-  import { createEventDispatcher } from "svelte";
 
   let username = "",
     password = "";
 
   let errorMessage = "";
   let passwordShow = false;
-
-  const dispatch = createEventDispatcher();
 
   async function handleLogin() {
     let loginResponse = await postLogin(username, password);
@@ -19,17 +16,16 @@
         errorMessage = loginResponse.message;
       } else {
         await getSession();
-        dispatch("loginSuccess");
       }
     }
   }
 </script>
 
 <div
-  class="w-full h-full flex items-center justify-center"
+  class="w-full h-full flex items-center justify-center bg-surface"
 >
   <div
-    class="w-11/12 sm:w-3/4 md:w-2/5 lg:w-2/4 xl:w-1/4 p-8 p-6 mb-48 md:mb-36 md:border-2 md:border-outline-variant rounded-xl"
+    class="w-11/12 sm:w-3/4 md:w-2/5 lg:w-2/4 xl:w-1/4 p-8 p-6 mb-48 md:mb-36 rounded-xl md:bg-white md:dark:bg-on-inverse-surface"
   >
     <p
       class="text-4xl font-bold mb-2 flex flex-col gap-1 items-start md:mb-6 text-on-surface"

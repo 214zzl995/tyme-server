@@ -1,8 +1,10 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
-  import ChatCard from "./ChatCard.svelte";
+  import { onMount, onDestroy, afterUpdate } from "svelte";
   import { getChatMsg } from "../js/fetch";
   import { socket } from "../js/store.js";
+  import { fade, fly } from "svelte/transition";
+  import { backOut } from "svelte/easing";
+  import { format, set } from "date-fns";
 
   /**
    * @typedef {Object} Topic
@@ -20,20 +22,15 @@
     qos: 0,
   };
 
-  let pageNumber = 0;
+  let msgs = [];
+  let loading = true;
 
-  let divRef;
-
-  $: msgs = [];
-
-  $: {
-    if (header.topic !== undefined && header.topic !== "") {
-      msgs = [];
-      getChatMsg(header.id).then((res) => {
-        pushMsgs(res.data);
-        scrollToBottom(false);
-      });
-    }
+  $: if (header.topic !== undefined && header.topic !== "") {
+    loading = true;
+    msgs = [];
+    getChatMsg(header.id).then((res) => {
+     pushMsgs(res.data);
+    });
   }
 
   const socketMessageListener = (/** @type {{ data: any; }} */ event) => {
@@ -42,18 +39,6 @@
       return;
     }
     pushMsgs([data.msg]);
-    scrollToBottom(true);
-  };
-
-  const scrollToBottom = (/** @type {Boolean?} */ isAnimation) => {
-    if (divRef) {
-      requestAnimationFrame(() =>
-        divRef.scrollBy({
-          top: divRef.scrollHeight,
-          behavior: isAnimation ? "smooth" : "auto",
-        })
-      );
-    }
   };
 
   onMount(() => {
@@ -80,15 +65,60 @@
    * @param {any[]} msg
    */
   const pushMsgs = (msg) => {
-    msgs = [...msgs, ...msg]; // 使用展开运算符创建一个新数组，以便 Svelte 能够检测到变化
+    msgs = [...msg, ...msgs];
+    loading = false;
   };
 </script>
 
-<div class="w-full h-full overflow-y-scroll" bind:this={divRef}>
-  {#each msgs as msg}
-    <ChatCard {msg} />
-  {/each}
-</div>
+{#key header}
+  <!--
+    加了out会出现滚动条错误
+    out:fade|local={{
+      duration: 150,
+      easing: backOut,
+    }}  -->
 
-<style>
+  {#if loading}
+    <div class="w-full h-full flex justify-center items-center">
+      <iconify-icon
+        icon="svg-spinners:pulse-3"
+        width="3em"
+        height="3em"
+        class="text-primary"
+      ></iconify-icon>
+    </div>
+  {:else}
+    <div
+      class="w-full msgs-container p-5"
+      in:fly={{
+        y: 50,
+        delay: 200,
+        easing: backOut,
+      }}
+      out:fade|local={{
+        duration: 150,
+        easing: backOut,
+      }}
+    >
+      {#each msgs as msg}
+        <div class="p-2 w-full rounded-2xl">
+          <p class="mb-2 text-sm text-primary-container dark:text-tertiary">
+            <span class="">
+              {format(Date.parse(msg.timestamp), "yyyy-MM-dd HH:mm:ss")}
+            </span>
+            <span class="ml-2">
+              sender: <span class="font-semibold">{msg.sender}</span>
+            </span>
+          </p>
+          {@html msg.content.html}
+        </div>
+      {/each}
+    </div>
+  {/if}
+{/key}
+
+<style lang="postcss">
+  .msgs-container div:nth-child(odd) {
+    @apply bg-surface-bright;
+  }
 </style>

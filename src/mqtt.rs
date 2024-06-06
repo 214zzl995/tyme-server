@@ -190,10 +190,14 @@ async fn subscribe(
                     } else {
                         match rec_msg.get_header().await.unwrap() {
                             Some(header) => {
-                                if let Err(err) = rec_msg_tx.send((header.clone(), rec_msg.clone()))
-                                {
-                                    error!("Error sending message: {}", err);
-                                };
+                                if rec_msg_tx.receiver_count() > 0 {
+                                    if let Err(err) =
+                                        rec_msg_tx.send((header.clone(), rec_msg.clone()))
+                                    {
+                                        error!("Error sending message: {}", err);
+                                    };
+                                }
+
                                 tokio::spawn(async move {
                                     if !ephemeral {
                                         if let Err(err) = rec_msg.insert(&header.id).await {

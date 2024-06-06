@@ -1,5 +1,5 @@
 // 从 localStorage 中获取特定参数的值
-export const getStrageValue = async (/** @type {string} */ name) => {
+export const getStorageValue = async (/** @type {string} */ name) => {
     return new Promise((resolve, reject) => {
         try {
             const storedValue = localStorage.getItem(name);
@@ -15,7 +15,7 @@ export const getStrageValue = async (/** @type {string} */ name) => {
 };
 
 // 更新特定参数的值并存储到 localStorage
-export const updateStrageValue = async (/** @type {string} */ name, /** @type {any} */ value) => {
+export const updateStorageValue = async (/** @type {string} */ name, /** @type {any} */ value) => {
     return new Promise((resolve, reject) => {
         try {
             localStorage.setItem(name, JSON.stringify(value));

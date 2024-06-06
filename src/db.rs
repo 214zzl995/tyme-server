@@ -73,7 +73,7 @@ impl RecMessage {
 
     pub async fn get_msg_by_header(header_id: &str) -> anyhow::Result<Vec<RecMessage>> {
         let msgs:Vec<RecMessage> = sqlx::query_as(
-        r#"select m.id,m.topic,m.qos,m.retain,m.mine,m.timestamp,m.sender,m.receiver,m.type,m.raw,m.html from message m,header h where m.header_id = h.id and h.id = ?"#
+        r#"select m.id,m.topic,m.qos,m.retain,m.mine,m.timestamp,m.sender,m.receiver,m.type,m.raw,m.html from message m,header h where m.header_id = h.id and h.id = ? order by timestamp desc"#
          ).bind(header_id)
         .fetch_all(&*POOL)
         .await?;

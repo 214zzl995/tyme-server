@@ -1,5 +1,6 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import Socket from './socket';
+import { updateStorageValue } from './storage';
 
 export const user = writable("");
 
@@ -8,6 +9,22 @@ export const guide = writable(false);
 export const mqttUser = writable("");
 
 export const socket = writable(undefined);
+
+/** @type {import('svelte/store').Writable<Topic>} */
+export const topicActive = writable(undefined);
+
+/**
+ * @typedef {Object} Topic
+ * @property {string} id - The topic id.
+ * @property {string} topic - The topic string.
+ * @property {number} qos - The QoS value.
+ */
+export const changeActiveTopic = (/** @type {Topic} */ topic) => {
+    if (get(topicActive) === undefined || get(topicActive).id !== topic.id) {
+        topicActive.set(topic);
+        updateStorageValue("topic-active", topic);
+    }
+}
 
 export const createSocket = (/** @type {import('./socket').Options} */ options) => {
     socket.set(new Socket(options));

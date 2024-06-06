@@ -3,7 +3,6 @@ const { withMaterialColors } = require('tailwind-material-colors');
 
 const config = {
   content: ['./src/**/*.{html,js,svelte,ts}', './node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}'],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -40,11 +39,8 @@ const config = {
 
 // https://tailwind-material-colors-docs.vercel.app/
 module.exports = withMaterialColors(config, {
-  primary: '#415F91',
-  secondary: '#565F71',
-  tertiary: '#705575',
-  error: "#BA1A1A",
-  background: "#F9F9FF",
+  primary: '#101d52',
+  background: "#fbf8ff",
 },
   {
     scheme: 'content',
