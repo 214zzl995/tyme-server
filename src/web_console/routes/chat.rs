@@ -4,7 +4,7 @@ use askama::Template;
 use axum::{
     extract::{
         ws::{Message as wsMessage, WebSocket},
-        ConnectInfo, Path, State, WebSocketUpgrade,
+        ConnectInfo, Path, Query, State, WebSocketUpgrade,
     },
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -12,6 +12,7 @@ use axum::{
 };
 use futures::{SinkExt, StreamExt};
 use log::info;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::{
     broadcast::{self, Receiver},
@@ -34,6 +35,14 @@ pub struct MsgParams {
 struct MsgTemplate {
     name: String,
     content: String,
+}
+
+#[derive(Deserialize, Debug, Serialize, Default)]
+pub struct PageParam {
+    #[serde(default)]
+    pub page_num: usize,
+    #[serde(default)]
+    pub page_size: usize,
 }
 
 #[allow(clippy::unused_async)]
@@ -74,7 +83,7 @@ pub async fn subscribe_topic(
 }
 
 #[allow(clippy::unused_async)]
-pub async fn get_chat_msg(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn get_all_messages_by_header(Path(id): Path<String>) -> impl IntoResponse {
     match crate::message::RecMessage::get_msg_by_header(&id).await {
         Ok(msgs) => Json(json!({"result": "ok", "data": msgs})),
         Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
@@ -82,7 +91,26 @@ pub async fn get_chat_msg(Path(id): Path<String>) -> impl IntoResponse {
 }
 
 #[allow(clippy::unused_async)]
-pub async fn msg(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn get_message_count_by_header(Path(id): Path<String>) -> impl IntoResponse {
+    match crate::message::RecMessage::get_msg_count_by_header(&id).await {
+        Ok(count) => Json(json!({"result": "ok", "count": count})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
+}
+
+#[allow(clippy::unused_async)]
+pub async fn get_page_messages_by_header(
+    Path(id): Path<String>,
+    Query(page_param): Query<PageParam>,
+) -> impl IntoResponse {
+    match crate::message::RecMessage::get_page_msg_by_header(&id, &page_param).await {
+        Ok(msgs) => Json(json!({"result": "ok", "data": msgs})),
+        Err(e) => Json(json!({"result": "error", "message": e.to_string()})),
+    }
+}
+
+#[allow(clippy::unused_async)]
+pub async fn stand_alone_message(Path(id): Path<String>) -> impl IntoResponse {
     if let Ok(msg) = crate::db::get_msg_by_id(&id).await {
         if let Some(msg) = msg {
             let template = MsgTemplate {

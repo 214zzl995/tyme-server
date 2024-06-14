@@ -12,6 +12,7 @@ use crate::{
     header::Header,
     message::{RecMessage, SendMessage},
 };
+pub use routes::PageParam;
 
 mod middlewares;
 mod routes;

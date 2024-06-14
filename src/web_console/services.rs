@@ -159,8 +159,10 @@ fn back_chat_route_c(
         .merge(back_config_route())
         .merge(back_chat_route_ws(rec_msg_tx))
         .merge(back_chat_route_task(task_manager))
-        .route("/msgs/:header", get(routes::get_chat_msg))
-        .route("/msg/:id", get(routes::msg))
+        .route("/msgs/:header", get(routes::get_all_messages_by_header))
+        .route("/msg-count/:header", get(routes::get_message_count_by_header))
+        .route("/page-msgs/:header", get(routes::get_page_messages_by_header))
+        .route("/msg/:id", get(routes::stand_alone_message))
         .route("/get-mqtt-user", get(routes::get_mqtt_user))
         .route("/script-file-name", get(routes::get_all_script_file_name))
 }

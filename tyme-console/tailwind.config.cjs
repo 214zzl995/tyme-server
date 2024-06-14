@@ -39,8 +39,8 @@ const config = {
 
 // https://tailwind-material-colors-docs.vercel.app/
 module.exports = withMaterialColors(config, {
-  primary: '#101d52',
-  background: "#fbf8ff",
+  primary: "#2C638B",
+  background: "#F7F9FF",
 },
   {
     scheme: 'content',

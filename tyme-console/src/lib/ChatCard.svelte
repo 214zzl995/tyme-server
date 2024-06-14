@@ -1,7 +1,7 @@
 <script>
   import "iconify-icon";
   import { format } from "date-fns";
-  import { addToast } from "../js/store";
+  import { ErrorToast,PrimaryToast } from "../js/store";
 
   export let msg;
 
@@ -16,19 +16,9 @@
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(msg.content.raw);
-      addToast({
-        type: "green",
-        message: "复制成功",
-        dismissible: true,
-        timeout: 3000,
-      });
+      PrimaryToast("Copy Success");
     } catch (error) {
-      addToast({
-        type: "red",
-        message: "复制失败,错误原因：" + error,
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("Copy Failed");
     }
   };
 </script>

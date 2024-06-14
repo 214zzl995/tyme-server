@@ -13,7 +13,12 @@
   import Label from "flowbite-svelte/Label.svelte";
   import Input from "flowbite-svelte/Input.svelte";
   import Select from "flowbite-svelte/Select.svelte";
-  import { addToast } from "../js/store.js";
+  import {
+    ErrorToast,
+    PrimaryToast,
+    SecondaryToast,
+    TertiaryToast,
+  } from "../js/store.js";
   import Task from "../lib/Task.svelte";
   import cronParser from "cron-parser";
 
@@ -56,12 +61,7 @@
 
   $: if (uploadScriptFile !== undefined && uploadScriptFile.length > 0) {
     if (uploadScriptFile[0].name === "sys.lua") {
-      addToast({
-        type: "red",
-        message: "sys.lua is a system file, please do not upload it.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("sys.lua is a system file, please do not upload it.");
     }
 
     uploadScript(uploadScriptFile[0].name, uploadScriptFile[0]).then(() => {
@@ -76,13 +76,7 @@
           },
         ];
       }
-
-      addToast({
-        type: "green",
-        message: name + "上传成功",
-        dismissible: true,
-        timeout: 3000,
-      });
+      PrimaryToast(name + " upload success.");
     });
   }
 
@@ -109,44 +103,25 @@
 
   const modelConfirm = () => {
     if (modelTask.name === "") {
-      addToast({
-        type: "red",
-        message: "Task Name is required.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("Task Name is required.");
       return;
     }
 
     if (modelTask.cron === "") {
-      addToast({
-        type: "red",
-        message: "Cron is required.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("Cron is required.");
       return;
     }
 
     if (modelTask.script === "") {
-      addToast({
-        type: "red",
-        message: "Script is required.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("Script is required.");
       return;
     }
     if (isEdit) {
       updateTask(editId, modelTask)
         .then((res) => {
           if (res.result === "ok") {
-            addToast({
-              type: "green",
-              message: "Edit Task Success.",
-              dismissible: true,
-              timeout: 3000,
-            });
+            PrimaryToast("Edit Task Success.");
+
             tasks = tasks.map((item) => {
               if (item.id === editId) {
                 item.task = modelTask;
@@ -154,12 +129,7 @@
               return item;
             });
           } else {
-            addToast({
-              type: "red",
-              message: res.message,
-              dismissible: true,
-              timeout: 3000,
-            });
+            ErrorToast(res.message);
           }
         })
         .finally(() => {
@@ -170,12 +140,8 @@
       addTask(modelTask)
         .then((res) => {
           if (res.result === "ok") {
-            addToast({
-              type: "green",
-              message: "Add Task Success.",
-              dismissible: true,
-              timeout: 3000,
-            });
+            PrimaryToast("Add Task Success.");
+
             let id = res.id;
             tasks = [
               {
@@ -186,12 +152,7 @@
               ...tasks,
             ];
           } else {
-            addToast({
-              type: "red",
-              message: res.message,
-              dismissible: true,
-              timeout: 3000,
-            });
+            ErrorToast(res.message);
           }
         })
         .finally(() => {
@@ -221,12 +182,7 @@
         cronModelContent[i] = interval.next().toString();
       }
     } catch (e) {
-      addToast({
-        type: "red",
-        message: e.message,
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast(e.message);
     }
     cronParserModal = true;
   };

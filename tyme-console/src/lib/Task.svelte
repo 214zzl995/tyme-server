@@ -2,7 +2,7 @@
   import Button from "flowbite-svelte/Button.svelte";
   import "iconify-icon";
   import { removeTask, restartTask, startTask, stopTask } from "../js/fetch.js";
-  import { addToast } from "../js/store.js";
+  import { PrimaryToast, ErrorToast } from "../js/store.js";
   import { createEventDispatcher } from "svelte";
 
   export let runner;
@@ -16,20 +16,10 @@
   const remove = () => {
     removeTask(runner.task.id).then((res) => {
       if (res.result === "ok") {
-        addToast({
-          type: "green",
-          message: "Remove Task Success.",
-          dismissible: true,
-          timeout: 3000,
-        });
+        PrimaryToast("Remove Task Success.");
         dispatch("delete");
       } else {
-        addToast({
-          type: "red",
-          message: res.message,
-          dismissible: true,
-          timeout: 3000,
-        });
+        ErrorToast(res.message);
       }
     });
   };
@@ -41,19 +31,9 @@
     restartTask(runner.task.id)
       .then((res) => {
         if (res.result === "ok") {
-          addToast({
-            type: "green",
-            message: "Restart Task Success.",
-            dismissible: true,
-            timeout: 3000,
-          });
+          PrimaryToast("Restart Task Success.");
         } else {
-          addToast({
-            type: "red",
-            message: res.message,
-            dismissible: true,
-            timeout: 3000,
-          });
+          ErrorToast(res.message);
         }
       })
       .finally(() => {
@@ -67,21 +47,10 @@
     startTask(runner.task.id)
       .then((res) => {
         if (res.result === "ok") {
-          addToast({
-            type: "green",
-            message: "Start Task Success.",
-            dismissible: true,
-            timeout: 3000,
-          });
-
+          PrimaryToast("Start Task Success.");
           runner.running = true;
         } else {
-          addToast({
-            type: "red",
-            message: res.message,
-            dismissible: true,
-            timeout: 3000,
-          });
+          ErrorToast(res.message);
         }
       })
       .finally(() => {
@@ -93,21 +62,11 @@
     stopTask(runner.task.id)
       .then((res) => {
         if (res.result === "ok") {
-          addToast({
-            type: "green",
-            message: "Stop Task Success.",
-            dismissible: true,
-            timeout: 3000,
-          });
+          PrimaryToast("Stop Task Success.");
 
           runner.running = false;
         } else {
-          addToast({
-            type: "red",
-            message: res.message,
-            dismissible: true,
-            timeout: 3000,
-          });
+          ErrorToast(res.message);
         }
       })
       .finally(() => {

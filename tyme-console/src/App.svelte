@@ -6,8 +6,6 @@
   import Toasts from "./lib/Toasts.svelte";
   import Guide from "./pages/Guide.svelte";
 
-  let routerId = 98;
-
   $: loggedin = $user !== "";
 
   const menuItems = [

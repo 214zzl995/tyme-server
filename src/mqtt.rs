@@ -188,8 +188,8 @@ async fn subscribe(
                     if let Err(err) = rec_msg.to_html() {
                         error!("Error converting message to html: {}", err);
                     } else {
-                        match rec_msg.get_header().await.unwrap() {
-                            Some(header) => {
+                        match rec_msg.get_header().await {
+                            Ok(Some(header)) => {
                                 if rec_msg_tx.receiver_count() > 0 {
                                     if let Err(err) =
                                         rec_msg_tx.send((header.clone(), rec_msg.clone()))
@@ -206,8 +206,11 @@ async fn subscribe(
                                     }
                                 });
                             }
-                            None => {
+                            Ok(None) => {
                                 error!("No header found for message: {:?}", rec_msg);
+                            }
+                            Err(err) => {
+                                error!("Error getting header: {}", err);
                             }
                         };
                     };

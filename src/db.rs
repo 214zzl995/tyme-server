@@ -6,7 +6,7 @@ use sqlx::{
     MySql, Pool,
 };
 
-use crate::{header::Header, message::RecMessage, task::Task, tyme_config};
+use crate::{header::Header, message::RecMessage, task::Task, tyme_config, web_console::PageParam};
 
 lazy_static! {
     static ref POOL: Pool<MySql> = {
@@ -77,6 +77,29 @@ impl RecMessage {
          ).bind(header_id)
         .fetch_all(&*POOL)
         .await?;
+        Ok(msgs)
+    }
+
+    pub async fn get_msg_count_by_header(header_id: &str) -> anyhow::Result<i64> {
+        let count: (i64,) = sqlx::query_as(
+            r#"select count(*) from message m,header h where m.header_id = h.id and h.id = ?"#,
+        )
+        .bind(header_id)
+        .fetch_one(&*POOL)
+        .await?;
+        Ok(count.0)
+    }
+
+    pub async fn get_page_msg_by_header(
+        header_id: &str,
+        page_param: &PageParam,
+    ) -> anyhow::Result<Vec<RecMessage>> {
+        let msgs:Vec<RecMessage> = sqlx::query_as(
+        r#"select m.id,m.topic,m.qos,m.retain,m.mine,m.timestamp,m.sender,m.receiver,m.type,m.raw,m.html from message m,header h where m.header_id = h.id and h.id = ? order by timestamp desc limit ? offset ?"#
+         ).bind(header_id)
+        .bind(page_param.page_size as i64)
+        .bind((page_param.page_size * page_param.page_num) as i64)
+        .fetch_all(&*POOL).await?;
         Ok(msgs)
     }
 }

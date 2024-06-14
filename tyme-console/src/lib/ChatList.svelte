@@ -1,44 +1,51 @@
 <script>
-  import { onMount, onDestroy, afterUpdate } from "svelte";
-  import { getChatMsg } from "../js/fetch";
+  import { onMount, onDestroy } from "svelte";
+  import { getPageMessagesByHeader } from "../js/fetch";
   import { socket } from "../js/store.js";
   import { fade, fly } from "svelte/transition";
   import { backOut } from "svelte/easing";
-  import { format, set } from "date-fns";
+  import { format } from "date-fns";
+  import Chat from "../pages/Chat.svelte";
+  import ChatItem from "./ChatItem.svelte";
 
   /**
-   * @typedef {Object} Topic
-   * @property {string} id - The topic id.
-   * @property {string} topic - The topic string.
-   * @property {number} qos - The QoS value.
+   * @type {import("../js/store.js").Header}
    */
-
-  /**
-   * @type {Topic}
-   */
-  export let header = {
-    id: "",
-    topic: "",
-    qos: 0,
-  };
+  export let header;
+  export let currentPageNum;
+  export let pageSize;
 
   let msgs = [];
   let loading = true;
 
-  $: if (header.topic !== undefined && header.topic !== "") {
-    loading = true;
-    msgs = [];
-    getChatMsg(header.id).then((res) => {
-     pushMsgs(res.data);
-    });
+  $: if (currentPageNum !== undefined && currentPageNum !== -1) {
+    getMessages();
   }
+
+  $: if (header !== undefined) {
+    loading = true;
+  }
+
+  const getMessages = () => {
+    getPageMessagesByHeader(header.id, {
+      page_num: currentPageNum,
+      page_size: pageSize,
+    })
+      .then((res) => {
+        msgs = res.data;
+      })
+      .finally(() => {
+        if (loading) {
+          loading = false;
+        }
+      });
+  };
 
   const socketMessageListener = (/** @type {{ data: any; }} */ event) => {
     const data = JSON.parse(event.data);
     if (data.header.topic !== header.topic || data.header.qos !== header.qos) {
       return;
     }
-    pushMsgs([data.msg]);
   };
 
   onMount(() => {
@@ -60,24 +67,9 @@
       );
     }
   });
-
-  /**
-   * @param {any[]} msg
-   */
-  const pushMsgs = (msg) => {
-    msgs = [...msg, ...msgs];
-    loading = false;
-  };
 </script>
 
 {#key header}
-  <!--
-    加了out会出现滚动条错误
-    out:fade|local={{
-      duration: 150,
-      easing: backOut,
-    }}  -->
-
   {#if loading}
     <div class="w-full h-full flex justify-center items-center">
       <iconify-icon
@@ -92,25 +84,17 @@
       class="w-full msgs-container p-5"
       in:fly={{
         y: 50,
-        delay: 200,
+        delay: 100,
         easing: backOut,
       }}
-      out:fade|local={{
-        duration: 150,
+      out:fade={{
+        duration: 100,
         easing: backOut,
       }}
     >
       {#each msgs as msg}
-        <div class="p-2 w-full rounded-2xl">
-          <p class="mb-2 text-sm text-primary-container dark:text-tertiary">
-            <span class="">
-              {format(Date.parse(msg.timestamp), "yyyy-MM-dd HH:mm:ss")}
-            </span>
-            <span class="ml-2">
-              sender: <span class="font-semibold">{msg.sender}</span>
-            </span>
-          </p>
-          {@html msg.content.html}
+        <div>
+          <ChatItem {msg} />
         </div>
       {/each}
     </div>

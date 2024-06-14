@@ -66,7 +66,9 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
             },
-            _= tokio::signal::ctrl_c() => {}
+            _= tokio::signal::ctrl_c() => {
+                log::info!("Ctrl-C received, shutting down");
+            }
         };
     }
 
