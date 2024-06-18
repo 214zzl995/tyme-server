@@ -14,7 +14,7 @@
   import Label from "flowbite-svelte/Label.svelte";
   import Input from "flowbite-svelte/Input.svelte";
   import Select from "flowbite-svelte/Select.svelte";
-  import { addToast } from "../js/store.js";
+  import { PrimaryToast, ErrorToast } from "../js/store.js";
   import Table from "flowbite-svelte/Table.svelte";
   import TableHead from "flowbite-svelte/TableHead.svelte";
   import TableHeadCell from "flowbite-svelte/TableHeadCell.svelte";
@@ -54,12 +54,7 @@
 
   $: if (uploadScriptFile !== undefined && uploadScriptFile.length > 0) {
     if (uploadScriptFile[0].name === "sys.lua") {
-      addToast({
-        type: "red",
-        message: "sys.lua is a system file, please do not upload it.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("sys.lua is a system file, please do not upload it.");
     }
 
     const formData = new FormData();
@@ -77,12 +72,7 @@
         ];
       }
 
-      addToast({
-        type: "green",
-        message: name + "上传成功",
-        dismissible: true,
-        timeout: 3000,
-      });
+      PrimaryToast(name + " upload success.");
     });
   }
 
@@ -107,44 +97,24 @@
 
   const addTaskF = () => {
     if (task.name === "") {
-      addToast({
-        type: "red",
-        message: "Task Name is required.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("Task Name is required.");
       return;
     }
 
     if (task.cron === "") {
-      addToast({
-        type: "red",
-        message: "Cron is required.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("Cron is required.");
       return;
     }
 
     if (task.script === "") {
-      addToast({
-        type: "red",
-        message: "Script is required.",
-        dismissible: true,
-        timeout: 3000,
-      });
+      ErrorToast("Script is required.");
       return;
     }
 
     addTask(task)
       .then((res) => {
         if (res.result === "ok") {
-          addToast({
-            type: "green",
-            message: "Add Task Success.",
-            dismissible: true,
-            timeout: 3000,
-          });
+          PrimaryToast("add task success.");
           let id = res.id;
           tasks = [
             {
@@ -155,12 +125,7 @@
             ...tasks,
           ];
         } else {
-          addToast({
-            type: "red",
-            message: res.message,
-            dismissible: true,
-            timeout: 3000,
-          });
+          ErrorToast(res.message);
         }
       })
       .finally(() => {
@@ -177,20 +142,10 @@
   const removeTaskF = (/** @type {any} */ id) => {
     removeTask(id).then((res) => {
       if (res.result === "ok") {
-        addToast({
-          type: "green",
-          message: "Remove Task Success.",
-          dismissible: true,
-          timeout: 3000,
-        });
+        PrimaryToast("Remove Task Success.");
         tasks = tasks.filter((item) => item.id !== id);
       } else {
-        addToast({
-          type: "red",
-          message: res.message,
-          dismissible: true,
-          timeout: 3000,
-        });
+        ErrorToast(res.message);
       }
     });
   };
@@ -202,19 +157,9 @@
     restartTask(id)
       .then((res) => {
         if (res.result === "ok") {
-          addToast({
-            type: "green",
-            message: "Restart Task Success.",
-            dismissible: true,
-            timeout: 3000,
-          });
+          PrimaryToast("Restart Task Success.");
         } else {
-          addToast({
-            type: "red",
-            message: res.message,
-            dismissible: true,
-            timeout: 3000,
-          });
+          ErrorToast(res.message);
         }
       })
       .finally(() => {

@@ -5,13 +5,12 @@
   import Chat from "./pages/Chat.svelte";
   import Toasts from "./lib/Toasts.svelte";
   import Guide from "./pages/Guide.svelte";
+  import { fly } from "svelte/transition";
+  import { cubicInOut } from "svelte/easing";
 
   $: loggedin = $user !== "";
 
-  const menuItems = [
-    { label: "Chat", id: 4 },
-    { label: "Task", id: 5 },
-  ];
+  let topicDialogShow = false;
 </script>
 
 <Toasts />
@@ -23,12 +22,25 @@
     {#if !loggedin}
       <Login />
     {:else}
-      <div class="grid grid-cols-[250px_minmax(0,_1fr)] grid-rows-1 gap-4 bg-surface">
+      <div
+        class="grid grid-cols-[250px_minmax(0,_1fr)] grid-rows-1 gap-4 bg-surface"
+      >
         <div class="h-screen col-span-1">
-          <NavBar />
+          <NavBar bind:topicDialogShow />
         </div>
-        <div class="flex-1 col-span-1 ">
-           <Chat />
+        <div class="flex-1 col-span-1 relative overflow-hidden">
+          <!-- 出现方向性错误了 需要把Chat拆分为 Header 和 Main Main中需要添加AddTopic和 Task页面 未来还有 ignitor 触发器界面-->
+          {#if topicDialogShow}
+            <div
+              class="absolute top-0 right-0 bg-surface h-full w-full z-[998] rounded-l-2xl"
+              transition:fly={{
+                x: 500,
+                duration: 300,
+                easing: cubicInOut,
+              }}
+            ></div>
+          {/if}
+          <Chat />
         </div>
       </div>
     {/if}

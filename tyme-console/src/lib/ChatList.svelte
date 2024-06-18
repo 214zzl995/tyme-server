@@ -4,8 +4,6 @@
   import { socket } from "../js/store.js";
   import { fade, fly } from "svelte/transition";
   import { backOut } from "svelte/easing";
-  import { format } from "date-fns";
-  import Chat from "../pages/Chat.svelte";
   import ChatItem from "./ChatItem.svelte";
 
   /**

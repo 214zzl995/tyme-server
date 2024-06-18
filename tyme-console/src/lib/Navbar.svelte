@@ -7,6 +7,9 @@
   import { topicActive, changeActiveTopic } from "../js/store.js";
   import { getStorageValue } from "../js/storage.js";
   import { fade } from "svelte/transition";
+  import Modal from "./Modal.svelte";
+
+  export let topicDialogShow;
 
   const Logout = async () => {
     await getLogout();
@@ -26,6 +29,8 @@
    */
   let topicList = [];
   let loading = true;
+
+  let addTopicModalShow = false;
 
   onMount(() => {
     getAllTopic().then((res) => {
@@ -54,6 +59,9 @@
   <div class="mt-8">
     <button
       class="interactive-bg-secondary-container p-4 rounded-lg flex flex-row items-center gap-2 hover:shadow-md"
+      on:click={() => {
+        topicDialogShow = !topicDialogShow;
+      }}
     >
       <iconify-icon icon="line-md:plus-circle" width="1.5em" height="1.5em"
       ></iconify-icon>
@@ -88,6 +96,9 @@
               class="bg-transparent p-2.5 pl-4 rounded-full flex flex-row items-center gap-1 hover:bg-secondary-container/50 w-full"
               class:topic-active={topic.id === $topicActive?.id}
               on:click={() => {
+                if (topicDialogShow) {
+                  topicDialogShow = false;
+                }
                 changeActiveTopic(topic);
               }}
             >
@@ -106,8 +117,42 @@
   {/if}
 </nav>
 
+<Modal bind:open={addTopicModalShow} size="sm" title={"Add Topic"}>
+  <div>
+    <div class="gap-4 grid grid-cols-[40px__1fr]">
+      <label for="topic" class="font-semibold self-center">Topic</label>
+      <input
+        type="text"
+        id="topic"
+        class="p-2.5 rounded-lg w-full topic-input"
+      />
+      <label for="qos" class="font-semibold self-center">QoS</label>
+      <select id="qos" class="p-2.5 rounded-lg w-full topic-input">
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+      </select>
+    </div>
+
+    <div class="flex flex-row-reverse gap-2 mt-4">
+      <button
+        class="interactive-bg-secondary p-2.5 rounded-lg"
+        on:click={() => {
+          addTopicModalShow = false;
+        }}
+      >
+        Cancel
+      </button>
+      <button class="interactive-bg-primary p-2.5 rounded-lg"> Add </button>
+    </div>
+  </div>
+</Modal>
+
 <style lang="postcss">
   .topic-active {
     @apply bg-secondary-container/50;
+  }
+  .topic-input {
+    @apply bg-secondary-container/50 text-on-secondary-container border-0 outline-none rounded-xl p-4 transition-all;
   }
 </style>
